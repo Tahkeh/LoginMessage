@@ -2,20 +2,20 @@ package com.tahkeh.loginmessage.sub;
 
 import org.bukkit.entity.Player;
 
-import com.nijiko.permissions.PermissionHandler;
+import com.tahkeh.loginmessage.perm.PermissionsChecker;
 
 public class Permission extends DefaultEntry {
 
-    private final PermissionHandler handler;
+    private final PermissionsChecker checker;
 
-    public Permission(String permission, PermissionHandler handler) {
+    public Permission(String permission, PermissionsChecker checker) {
         super(permission);
-        this.handler = handler;
+        this.checker = checker;
     }
 
     @Override
     public boolean match(Player player) {
-        return this.handler.has(player, this.value);
+        return this.checker.has(player, this.value);
     }
 
 }

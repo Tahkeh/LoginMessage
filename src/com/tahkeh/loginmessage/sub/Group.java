@@ -2,7 +2,7 @@ package com.tahkeh.loginmessage.sub;
 
 import org.bukkit.entity.Player;
 
-import com.nijiko.permissions.PermissionHandler;
+import com.tahkeh.loginmessage.perm.GroupGetter;
 
 /**
  * Handles a group as trigger/reciever.
@@ -12,15 +12,15 @@ import com.nijiko.permissions.PermissionHandler;
  */
 public class Group extends DefaultEntry
 {
-    private final PermissionHandler handler;
+    private final GroupGetter groupGetter;
 
-    public Group(String group, PermissionHandler handler) {
+    public Group(String group, GroupGetter groupGetter) {
         super(group);
-        this.handler = handler;
+        this.groupGetter = groupGetter;
     }
 
     public boolean match(Player player) {
-        return this.handler.getGroup(player.getWorld().getName(), player.getName()).equalsIgnoreCase(this.value);
+        return this.groupGetter.getGroup(player).equalsIgnoreCase(this.value);
     }
 
 }

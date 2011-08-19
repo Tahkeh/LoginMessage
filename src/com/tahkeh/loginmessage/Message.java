@@ -29,6 +29,8 @@ import com.iConomy.system.Holdings;
 import com.maxmind.geoip.*;
 import com.nijiko.permissions.PermissionHandler;
 
+import com.tahkeh.loginmessage.perm.GroupGetter;
+import com.tahkeh.loginmessage.perm.PermissionsChecker;
 import com.tahkeh.loginmessage.sub.Cooldown;
 import com.tahkeh.loginmessage.sub.DefaultEntry;
 import com.tahkeh.loginmessage.sub.Delay;
@@ -368,6 +370,11 @@ public class Message extends PlayerListener // Handles everything
         List<String> groups = message.getStringList(grouppath, null);
         List<String> perms = message.getStringList(permspath, null);
 
+        GroupGetter groupGetter = null;
+        if (this.plugin.PermissionsEnabled()) {
+            groupGetter = new GroupGetter.PermsGroupGetter(Main.getPermissions());
+        }
+
         for (String group : groups) {
             boolean positive = DefaultEntry.isPositive(group);
             String unsignedGroup = DefaultEntry.getUnsignedText(group);
@@ -377,17 +384,24 @@ public class Message extends PlayerListener // Handles everything
                 entries.add(new Op(positive));
             } else if (unsignedGroup.equalsIgnoreCase("pri")) {
                 entries.add(new Pri(positive, trigger));
-            } else if (plugin.PermissionsEnabled()) {
-                entries.add(new Group(group, Main.getPermissions()));
+            } else if (groupGetter != null) {
+                entries.add(new Group(group, groupGetter));
             }
         }
 
         for (String user : users) {
             entries.add(new User(user));
         }
-        
+
+        PermissionsChecker checker;
+        if (this.plugin.PermissionsEnabled()) {
+            checker = new PermissionsChecker.PermissionsPluginChecker(Main.getPermissions());
+        } else {
+            checker = new PermissionsChecker.InteralPermissionsChecker();
+        }
+
         for (String perm : perms) {
-            entries.add(new Permission(perm, Main.getPermissions()));
+            entries.add(new Permission(perm, checker));
         }
 
         return entries;
@@ -445,12 +459,13 @@ public class Message extends PlayerListener // Handles everything
         int cd = message.getInt(keypath + ".cooldown", 0) * 1000;
         int dl = message.getInt(keypath + ".delay", 0);
         boolean cont = false;
-        
+
         Player[] players = this.plugin.getServer().getOnlinePlayers();
         String[] cdstrs = new String[players.length];
         int i = 0;
         for (Player player : players) {
-            // Convoluted way of having multiple keys in one - format them into a single string!
+            // Convoluted way of having multiple keys in one - format them into
+            // a single string!
             cdstrs[i++] = player.getName() + "." + event + "." + key;
         }
 
@@ -466,7 +481,8 @@ public class Message extends PlayerListener // Handles everything
                 } else if (cooldownvalues.get(cdstr)) {
                     cont = true;
                 } else if (!cdwaiting.get(cdstr)) // Don't want it to schedule
-                                                  // another timer if one is already
+                                                  // another timer if one is
+                                                  // already
                                                   // running, now do we?
                 {
                     cooldown.schedule(new Cooldown(this, cdstr), cd);
@@ -513,19 +529,19 @@ public class Message extends PlayerListener // Handles everything
             }
         }
     }
-    
+
     private static boolean matchEntries(Player player, Collection<Entry> entries) {
-        Boolean match = null;
+        boolean match = false;
         for (Entry entry : entries) {
             if (entry.match(player)) {
                 if (!entry.isPositive()) {
-                    match = false;
-                } else if (match == null) {
+                    return false;
+                } else {
                     match = true;
                 }
             }
         }
-        return match == null ? true : match;
+        return match;
     }
 
     private String[] getLines(String event, String name) {
@@ -577,9 +593,9 @@ public class Message extends PlayerListener // Handles everything
 
     @Override
     // End basic event passing
-    // This is a bit trickier, because we need to make sure the command typed is an LM command
-    public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event)
-    {
+    // This is a bit trickier, because we need to make sure the command typed is
+    // an LM command
+    public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
         message.load();
         Player p = event.getPlayer();
         String msg = event.getMessage();
