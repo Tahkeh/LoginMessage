@@ -1,0 +1,4 @@
+name: LoginMessage
+main: com.tahkeh.loginmessage.Main
+version: 0.7.1
+author: Tahkeh
