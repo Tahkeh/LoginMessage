@@ -10,25 +10,17 @@ import com.nijiko.permissions.PermissionHandler;
  * @author Tahkeh
  * 
  */
-public class Group implements Entry
+public class Group extends DefaultEntry
 {
-    private final String group;
-    private final boolean positive;
     private final PermissionHandler handler;
 
-    public Group(boolean positive, String group, PermissionHandler handler) {
-        this.group = group;
-        this.positive = positive;
+    public Group(String group, PermissionHandler handler) {
+        super(group);
         this.handler = handler;
     }
 
     public boolean match(Player player) {
-        return this.handler.getGroup(player.getWorld().getName(), player.getName()).equalsIgnoreCase(this.group);
-    }
-
-    @Override
-    public boolean isPositive() {
-        return this.positive;
+        return this.handler.getGroup(player.getWorld().getName(), player.getName()).equalsIgnoreCase(this.value);
     }
 
 }

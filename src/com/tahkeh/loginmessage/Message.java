@@ -30,10 +30,12 @@ import com.maxmind.geoip.*;
 import com.nijiko.permissions.PermissionHandler;
 
 import com.tahkeh.loginmessage.sub.Cooldown;
+import com.tahkeh.loginmessage.sub.DefaultEntry;
 import com.tahkeh.loginmessage.sub.Delay;
 import com.tahkeh.loginmessage.sub.Entry;
 import com.tahkeh.loginmessage.sub.Group;
 import com.tahkeh.loginmessage.sub.Op;
+import com.tahkeh.loginmessage.sub.Permission;
 import com.tahkeh.loginmessage.sub.Pri;
 import com.tahkeh.loginmessage.sub.Pub;
 import com.tahkeh.loginmessage.sub.User;
@@ -341,7 +343,7 @@ public class Message extends PlayerListener // Handles everything
     /**
      * Return all entries for a message.
      * 
-     * @param p
+     * @param trigger
      *            player who triggered the event.
      * @param all
      *            player who get checked.
@@ -353,35 +355,39 @@ public class Message extends PlayerListener // Handles everything
      *            triggers or receivers?
      * @return the set of entries for a messages.
      */
-    public Set<Entry> getEntries(Player p, String key, String event, String type) {
+    public Set<Entry> getEntries(Player trigger, String key, String event, String type) {
         message.load();
         Set<Entry> entries = new HashSet<Entry>();
         final String path = "messages." + event;
         final String keypath = path + "." + key;
         final String userpath = keypath + "." + type + ".users";
         final String grouppath = keypath + "." + type + ".groups";
+        final String permspath = keypath + "." + type + ".permissions";
 
         List<String> users = message.getStringList(userpath, null);
         List<String> groups = message.getStringList(grouppath, null);
+        List<String> perms = message.getStringList(permspath, null);
 
-        for (String g : groups) {
-            boolean positive = !(g.length() > 0 && g.charAt(0) == '-');
-            String unsignedGroup = positive ? g : g.substring(1);
+        for (String group : groups) {
+            boolean positive = DefaultEntry.isPositive(group);
+            String unsignedGroup = DefaultEntry.getUnsignedText(group);
             if (unsignedGroup.equalsIgnoreCase("pub")) {
-                entries.add(new Pub(positive ? null : p));
+                entries.add(new Pub(positive ? null : trigger));
             } else if (unsignedGroup.equalsIgnoreCase("op")) {
                 entries.add(new Op(positive));
             } else if (unsignedGroup.equalsIgnoreCase("pri")) {
-                entries.add(new Pri(positive, p));
+                entries.add(new Pri(positive, trigger));
             } else if (plugin.PermissionsEnabled()) {
-                entries.add(new Group(positive, g, Main.getPermissions()));
+                entries.add(new Group(group, Main.getPermissions()));
             }
         }
 
-        for (String u : users) {
-            boolean positive = !(u.length() > 0 && u.charAt(0) == '-');
-            String unsignedUser = positive ? u : u.substring(1);
-            entries.add(new User(positive, unsignedUser));
+        for (String user : users) {
+            entries.add(new User(user));
+        }
+        
+        for (String perm : perms) {
+            entries.add(new Permission(perm, Main.getPermissions()));
         }
 
         return entries;
