@@ -15,7 +15,8 @@ public class Group extends DefaultEntry
 
     public boolean match(Player player) {
         //TODO: Maybe use Permissions 3 calls
-        return this.handler.getGroup(player.getWorld().getName(), player.getName()).equalsIgnoreCase(this.value);
+    	String group = this.handler.getGroup(player.getWorld().getName(), player.getName()); 
+        return group == null ? false : group.equalsIgnoreCase(this.value);
     }
 
 }
