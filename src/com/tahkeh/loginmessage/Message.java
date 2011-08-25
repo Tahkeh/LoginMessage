@@ -4,11 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.logging.Logger;
@@ -20,27 +20,36 @@ import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.util.config.Configuration;
+import org.bukkit.util.config.ConfigurationNode;
 
 import com.iConomy.iConomy;
 import com.iConomy.system.Holdings;
 import com.maxmind.geoip.*;
 import com.nijiko.permissions.PermissionHandler;
 
-import com.tahkeh.loginmessage.sub.Cooldown;
-import com.tahkeh.loginmessage.sub.Delay;
-import com.tahkeh.loginmessage.sub.Entry;
-import com.tahkeh.loginmessage.sub.Group;
-import com.tahkeh.loginmessage.sub.User;
+import com.tahkeh.loginmessage.entries.DefaultEntry;
+import com.tahkeh.loginmessage.entries.Entry;
+import com.tahkeh.loginmessage.entries.Group;
+import com.tahkeh.loginmessage.entries.Op;
+import com.tahkeh.loginmessage.entries.Permission;
+import com.tahkeh.loginmessage.entries.Pri;
+import com.tahkeh.loginmessage.entries.Pub;
+import com.tahkeh.loginmessage.entries.User;
+import com.tahkeh.loginmessage.perm.PermissionsChecker;
+import com.tahkeh.loginmessage.timers.Cooldown;
+import com.tahkeh.loginmessage.timers.Delay;
+import com.tahkeh.loginmessage.timers.Cooldown.CooldownTask;
 
 public class Message extends PlayerListener //Handles everything message-related (so 90% of this plugin)
 {
+	public final static char SECTION_SIGN = '\u00A7';
 	private final Main plugin;
 	private final Configuration config;
 	private final Configuration message;
 	private final Logger log;
 	String separator = "%&%&"; //Currently a static string until I can figure out how to get YML to read characters as a string
-	Map<String, Boolean> cooldownvalues = new HashMap<String, Boolean>(); //Stores the cooldown keys, value in a Map - to be accessed by Cooldown class
-	Map<String, Boolean> cdwaiting = new HashMap<String, Boolean>(); //Like cooldownvalues, but Boolean is for whether or not a timer is running
+	
+	private final Cooldown cooldown;
 	
 	public Message(Main instance, Configuration config, Configuration message, Logger log)
 	{
@@ -48,6 +57,7 @@ public class Message extends PlayerListener //Handles everything message-related
 		this.config = config;
 		this.message = message;
 		this.log = log;
+		this.cooldown = new Cooldown();
 		}
 	
 	public String getTime(Long rawtime, boolean caps) //Neat little method to get the text-based version of the time!
@@ -164,8 +174,8 @@ public class Message extends PlayerListener //Handles everything message-related
     	    		   if(!sf2 && ! pr2){
     	    			   c1 = c; //Same deal as before
     	    		   }
-    	    		   b1 = b1.replaceAll("(&([a-z0-9]))", "¤$2"); //My good buddy replace-ampersands-with-simoleon-symbols regex
-    	    		   c1 = c1.replaceAll("(&([a-z0-9]))", "¤$2"); //When you think about it, it makes sense. $2 is the a-z/0-9 character
+    	    		   b1 = b1.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2"); //My good buddy replace-ampersands-with-simoleon-symbols regex
+    	    		   c1 = c1.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2"); //When you think about it, it makes sense. $2 is the a-z/0-9 character
         	            	  if(a.equals("d")){
         	            		  list = list + (on >= length ? b1 + current.getDisplayName() : new StringBuilder().append(b1 + current.getDisplayName()).append(c1 + ", ").toString());
         	  	                  on++;
@@ -294,192 +304,220 @@ public class Message extends PlayerListener //Handles everything message-related
 			      str = str.replaceAll("%time", getTime(rawtime, false));
 			      str = str.replaceAll("%Time", getTime(rawtime, true));
 			      str = str.replaceAll("%srtime", sdf.format(cal.getTime()));
-			      str = str.replaceAll("(&([a-z0-9]))", "¤$2");
+			      str = str.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
 				  str = str.replaceAll("%sp", "");
 		  return str;
 	  }
 	  
 	
-	public Set<Entry> getEntries(Player p, Player all, String key, String event, String type) //For receivers/triggers
+	public Set<Entry> getEntries(Player trigger, String key, String event, String type) //For receivers/triggers
 	{
 		message.load();
 		Set<Entry> entries = new HashSet<Entry>();
-		String path = "messages." + event;
-		String keypath = path + "." + key;
-		String userpath = keypath + "." + type + ".users";
-		String grouppath = keypath + "." + type + ".groups";
-		
-		List<String> users = message.getStringList(userpath, null);
-		List<String> groups = message.getStringList(grouppath, null);
-		
-		for(String g : groups)
-		{
-			if(g.equalsIgnoreCase("pub") && !g.equalsIgnoreCase("-pub"))
-			{
-				if(type.equalsIgnoreCase("receivers"))
-				{
-					entries.add(new User(all.getName()));
-				}
-				else //Things work differently for triggers - you only want the player triggering the event to be added to the list
-				{
-					entries.add(new User(p.getName()));
-				}
-			}
-			if(g.equalsIgnoreCase("-pub"))
-			{
-				if(!all.equals(p))
-				{
-					entries.add(new User(all.getName()));
-					break;
-				}
-			}
-			if(g.equalsIgnoreCase("op"))
-			{
-				if(type.equalsIgnoreCase("receivers") && all.isOp())
-				{
-					entries.add(new User(all.getName()));
-				}
-				else if(type.equalsIgnoreCase("triggers") && p.isOp())
-				{
-					entries.add(new User(p.getName()));
-				}
-			}
-			if(plugin.PermissionsEnabled())
-			{
-				entries.add(new Group(g, Main.getPermissions().getGroup(all.getWorld().getName(), all.getName())));
-			}
-			if(g.equalsIgnoreCase("pri"))
-			{
-				entries.add(new User(p.getName()));
-				break;
+		final String keypath = "messages." + event + "." + key + "." + type;
+		final String userpath = keypath + ".users";
+		final String grouppath = keypath + ".groups";
+		final String permspath = keypath + ".permissions";
+		for (String group : message.getStringList(grouppath, null)) {
+			boolean positive = DefaultEntry.isPositive(group);
+			String unsignedGroup = DefaultEntry.getUnsignedText(group);
+			if (unsignedGroup.equalsIgnoreCase("pub")) {
+				entries.add(new Pub(positive ? null : trigger));
+			} else if (unsignedGroup.equalsIgnoreCase("op")) {
+				entries.add(new Op(positive));
+			} else if (unsignedGroup.equalsIgnoreCase("pri")) {
+				entries.add(new Pri(positive, trigger));
+			} else if (this.plugin.PermissionsEnabled()) {
+				entries.add(new Group(group, Main.getPermissions()));
 			}
 		}
 
-		for(String u : users)
+		for(String user : message.getStringList(userpath, null))
 		{
-			for(Entry e : entries)
-			{
-				if(!e.match(p))
-				{
-					entries.add(new User(u));
-					break;
-				}
-			}
+			entries.add(new User(user));
 		}
-		
+
+		PermissionsChecker checker;
+		if (this.plugin.PermissionsEnabled()) {
+			checker = new PermissionsChecker.PermissionsPluginChecker(Main.getPermissions());
+		} else {
+			checker = new PermissionsChecker.InteralPermissionsChecker();
+		}
+
+		for (String perm : message.getStringList(permspath, null)) {
+			entries.add(new Permission(perm, checker));
+		}
 		return entries;
 	}
-	
-	public void preProcessMessage(Player p, String event, String cmdkey) //Check - is the triggerer listed as a trigger?
+
+	/**
+	 * Prints all messages which the player is triggering.
+	 * 
+	 * @param trigger
+	 *            the player who act as trigger.
+	 * @param event
+	 *            the event type (e.g. login, kick,...).
+	 * @param cmdkey
+	 *            the name of the message (for the commands). Will be ignored if
+	 *            the event isn't <code>command</code>.
+	 */
+	public void preProcessMessage(Player trigger, String event, String cmdkey)
 	{
 		message.load();
 		config.load();
-		boolean cont = true;
-		
-		for(Player all : plugin.getServer().getOnlinePlayers())
-		{
-			for(String key : message.getKeys("messages." + event))
-			{
-				if(event.equals("command") && !cmdkey.equals(key)) //We don't want all messages showing up for just one command
-				{
-					cont = false;
-				}
-				else
-				{
-					cont = true;
-				}
-				if(cont)
-				{
-					Set<Entry> triggers = getEntries(p, all, key, event, "triggers");
-					for(Entry t : triggers)
-					{
-						if(t.match(p))
-						{
-							finishMessage(p, all, event, key);
-						}
-						}
-					}
+
+		String[] messages;
+		if (event.equals("command")) {
+			messages = new String[] { cmdkey };
+		} else {
+			messages = message.getKeys("messages." + event).toArray(new String[0]);
+		}
+		for (String key : messages) {
+			Set<Entry> triggers = getEntries(trigger, key, event, "triggers");
+			if (matchEntries(trigger, triggers)) {
+				finishMessage(trigger, event, key);
+			}
+		}
+	}
+
+	private static boolean matchEntries(Player player, Collection<Entry> entries) {
+		boolean match = false;
+		for (Entry entry : entries) {
+			if (entry.match(player)) {
+				if (!entry.isPositive()) {
+					return false;
+				} else {
+					match = true;
 				}
 			}
+		}
+		return match;
 	}
-	
-	public void setCooldownValues(String cdstr, boolean bool) //To be accessed from Cooldown class
-	{
-		cooldownvalues.put(cdstr, bool);
+
+	/**
+	 * Returns the list of not empty message lines.
+	 * @param event the event name of the message.
+	 * @param name the name of the message.
+	 * @return the list of not empty message lines.
+	 */
+	private String[] getLines(String event, String name) {
+		String[] lines = getStringList(message, "messages." + event + "." + name + ".message", new String[0]);
+		List<String> cleanedLines = new ArrayList<String>(lines.length);
+		for (int i = 0; i < lines.length; i++) {
+			if (lines[i] != null && !lines[i].isEmpty()) {
+				cleanedLines.add(lines[i]);
+			}
+		}
+		return cleanedLines.toArray(new String[cleanedLines.size()]);
 	}
-	
-	public void setCooldownWaiting(String cdstr, boolean bool) //To be accessed from Cooldown class
-	{
-		cdwaiting.put(cdstr, bool);
+
+	/**
+	 * Returns a string list from a yml configuration node. If the node points
+	 * to a string list it returns the string list and if it is a string, a
+	 * string splited by new lines.
+	 * 
+	 * @param node
+	 *            yml node.
+	 * @param path
+	 *            path to the string.
+	 * @param def
+	 *            default value.
+	 * @return a string list from a yml configuration node.
+	 */
+	public static String[] getStringList(ConfigurationNode node, String path, String[] def) {
+		Object property = node.getProperty(path);
+		if (property instanceof List) {
+			@SuppressWarnings("unchecked")
+			List<Object> rawList = (List<Object>) property;
+			List<String> result = new ArrayList<String>(rawList.size());
+			for (Object object : rawList) {
+				if (object != null) {
+					result.add(object.toString());
+				}
+			}
+			return result.toArray(new String[result.size()]);
+		} else if (property != null) {
+			return property.toString().split("\\n");
+		} else {
+			return def;
+		}
 	}
-	
-	public void finishMessage(Player p, Player all, String event, String key) //Final touches - delay and cooldown
+
+	public void finishMessage(Player p, String event, String key) //Final touches - delay and cooldown
 	{
 		message.load();
-		String keypath = "messages." + event + "." + key;
-		Timer cooldown = new Timer();
-		Timer delay = new Timer();
+		final String keypath = "messages." + event + "." + key;
 		int cd = message.getInt(keypath + ".cooldown", 0) * 1000;
 		int dl = message.getInt(keypath + ".delay", 0);
-		boolean cont = false;
-		String cdstr = all.getName() + "." + event + "." + key; //Convoluted way of having multiple keys in one - format them into a single string!
+
+		Player[] players = this.plugin.getServer().getOnlinePlayers();
+		List<Player> cooledDown = new ArrayList<Player>(players.length);
+		CooldownTask task = null;
+		
 		
 		//Since the only number lower than 1000 that is possible for the cooldown is 0,
 		//we make sure it isn't for the same reason as the delay.
 		if(cd > 0)
 		{
-			if(cooldownvalues.get(cdstr) == null)
-			{
-				cont = true;
-				setCooldownValues(cdstr, true);
-				setCooldownWaiting(cdstr, false);
+			List<String> cdstrs = new ArrayList<String>(players.length);
+			for (Player player : players) {
+				if (this.cooldown.isCooledDown(player, key, event)) {
+					cooledDown.add(player);
+					cdstrs.add(Cooldown.createKey(player, key, event));
+				}
 			}
-			else if(cooldownvalues.get(cdstr))
-			{
-				cont = true;
-			}
-			else if(!cdwaiting.get(cdstr)) //Don't want it to schedule another timer if one is already running, now do we?
-			{
-				cooldown.schedule(new Cooldown(this, cdstr), cd);
-				setCooldownWaiting(cdstr, true);
-			}
+			task = this.cooldown.createTask(cdstrs, this.cooldown, cd);
 		}
 		else
 		{
-			cont = true;
+			cooledDown.addAll(Arrays.asList(players));
+			task = null;
 		}
-		//Check if the delay isn't greater than or equal to 3.
-		//Anything below 3 milliseconds makes your computer sad from my experience.
-		if(dl >= 3 && cont)
-		{
-			delay.schedule(new Delay(this, key, all, p, event), dl);
-		}
-		else if(cont)
-		{
-			sendMessage(all, p, key, event);
-			setCooldownValues(cdstr, false);
+
+		if (cooledDown.size() > 0) {
+			//Check if the delay isn't greater than or equal to 3.
+			//Anything below 3 milliseconds makes your computer sad from my experience.
+			if(dl >= 3)
+			{
+				new Timer().schedule(new Delay(this, key, p, event, cooledDown, task), dl);
+			}
+			else
+			{
+				sendMessage(p, cooledDown, key, event, task);
+			}
 		}
 		//SO MANY ELSE CASES
 	}
-	public void sendMessage(Player all, Player p, String key, String event) //The grand finale - get the right message, and if the player is a receiver, send it!
+
+	/**
+	 * Sends the message to all receivers.
+	 * 
+	 * @param trigger
+	 *            the player who triggered the message.
+	 * @param possibleReceivers
+	 *            the players who should receive the message if they are
+	 *            receivers.
+	 * @param key
+	 *            the name of the message.
+	 * @param event
+	 *            the event type of the message (e.g. login).
+	 */
+	public void sendMessage(Player trigger, Collection<Player> possibleReceivers, String key, String event, CooldownTask task) //The grand finale - get the right message, and if the player is a receiver, send it!
 	{
 		message.load();
 		config.load();
-		Set<Entry> receivers = getEntries(p, all, key, event, "receivers");
-		for(String str : message.getStringList("messages." + event + "." + key + ".message", null))
-		{
-			if(!str.isEmpty() || str != null)
-			{
-				for(Entry r : receivers)
-				{
-					if(r.match(all))
-					{
-						all.sendMessage(process(str, p, event));
-						break;
-					}
-				}
+		Set<Entry> receivers = getEntries(trigger, key, event, "receivers");
+		String[] lines = this.getLines(event, key);
+		for (Player receiver : possibleReceivers) {
+			if (matchEntries(receiver, receivers)) {
+				for (String str : lines) {
+					receiver.sendMessage(process(str, trigger, event));
 				}
 			}
+		}
+		if (task != null) {
+			task.trigger();
+		}
 	}
 	//Begin basic event passing
 	public void onPlayerJoin(PlayerJoinEvent event)
