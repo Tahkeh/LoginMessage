@@ -264,7 +264,6 @@ public class Message extends PlayerListener //Handles everything message-related
 	    	  }
 	      else if(str.contains("%ip"))
 	      {
-	    	  System.out.println("contains %ip");
 	    	  str = str.replaceAll("%ip", Main.getExternalIp().getHostAddress());  
 	    	  }
 	    	  for(String g : geoipcodes){
