@@ -22,6 +22,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.util.config.Configuration;
 import org.bukkit.util.config.ConfigurationNode;
 
+import sun.java2d.SunGraphicsEnvironment.TTorT1Filter;
+
 import com.iConomy.iConomy;
 import com.iConomy.system.Holdings;
 import com.maxmind.geoip.*;
@@ -43,6 +45,8 @@ import com.tahkeh.loginmessage.timers.Cooldown.CooldownTask;
 public class Message extends PlayerListener //Handles everything message-related (so 90% of this plugin)
 {
 	public final static char SECTION_SIGN = '\u00A7';
+	private final static String[] EMPTY_STRING_ARRAY = new String[0];
+
 	private final Main plugin;
 	private final Configuration config;
 	private final Configuration message;
@@ -400,7 +404,28 @@ public class Message extends PlayerListener //Handles everything message-related
 	 * @return the list of not empty message lines.
 	 */
 	private String[] getLines(String event, String name) {
-		String[] lines = getStringList(message, "messages." + event + "." + name + ".message", new String[0]);
+		List<ConfigurationNode> messages = this.message.getNodeList("messages." + event + "." + name + ".messages", null);
+		String[] lines = EMPTY_STRING_ARRAY;
+		if (messages != null && messages.size() > 0) {
+			//See: MinecraftUtil.getRandomFromChances
+			// Read chances
+			double totalchance = 0;
+			double defChance = 1.0 / messages.size();
+			for (ConfigurationNode messageNode : messages) {
+				totalchance += messageNode.getDouble("chance", defChance);
+			}
+
+			double value = Math.random() * totalchance;
+			for (ConfigurationNode messageNode : messages) {
+				value -= messageNode.getDouble("chance", defChance);
+				if (value < 0) {
+					lines = getStringList(messageNode, "message", EMPTY_STRING_ARRAY);
+					break;
+				}
+			}
+		} else {
+			lines = getStringList(message, "messages." + event + "." + name + ".message", EMPTY_STRING_ARRAY);
+		}
 		List<String> cleanedLines = new ArrayList<String>(lines.length);
 		for (int i = 0; i < lines.length; i++) {
 			if (lines[i] != null && !lines[i].isEmpty()) {
@@ -507,12 +532,16 @@ public class Message extends PlayerListener //Handles everything message-related
 		config.load();
 		Set<Entry> receivers = getEntries(trigger, key, event, "receivers");
 		String[] lines = this.getLines(event, key);
-		for (Player receiver : possibleReceivers) {
-			if (matchEntries(receiver, receivers)) {
-				for (String str : lines) {
-					receiver.sendMessage(process(str, trigger, event));
+		if (lines.length > 0) {
+			for (Player receiver : possibleReceivers) {
+				if (matchEntries(receiver, receivers)) {
+					for (String str : lines) {
+						receiver.sendMessage(process(str, trigger, event));
+					}
 				}
 			}
+		} else {
+			this.log.info("Empty login message named '" + key + "' (Event: '" + event + "') found.");
 		}
 		if (task != null) {
 			task.trigger();
@@ -557,16 +586,17 @@ public class Message extends PlayerListener //Handles everything message-related
 	{
 		message.load();
 		Player p = event.getPlayer();
-		String msg = event.getMessage();
-		String cmd = msg.substring(1); //This is the bare command, without "/"
+		String cmd = event.getMessage().substring(1); //This is the bare command, without "/"
 		List<String> commands = message.getKeys("messages.command");
-		for(String key : commands)
-		{
-			if(msg.equalsIgnoreCase("/" + key)) //If what you typed == an LM command message, go right ahead!
+		if (commands != null) {
+			for(String key : commands)
 			{
-				event.setCancelled(true); //TODO If I don't do this, it says "Unknown command". I guess I should use onCommand in Main class?
-				preProcessMessage(p, "command", cmd); //Here we actually use that preProcessMessage parameter
-				break;
+				if(cmd.equalsIgnoreCase(key)) //If what you typed == an LM command message, go right ahead!
+				{
+					event.setCancelled(true); //TODO If I don't do this, it says "Unknown command". I guess I should use onCommand in Main class?
+					preProcessMessage(p, "command", cmd); //Here we actually use that preProcessMessage parameter
+					break;
+				}
 			}
 		}
 	}
