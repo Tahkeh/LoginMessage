@@ -20,7 +20,7 @@ public abstract class PermissionsChecker {
         }
     }
 
-    public static class InteralPermissionsChecker extends PermissionsChecker {
+    public static class InternalPermissionsChecker extends PermissionsChecker {
 
         @Override
         public boolean has(Player player, String perm) {
