@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
  * Basic entry files. Simply checks if the player is matched by this player. Any
  * entry could be positive or negative. If the entry is matching the player and
  * it is positive, than the player is meant by this entry. If the entry is
- * matching and negative, than it wasn't meant by this entry and should skipped
+ * matching and negative, than it wasn't meant by this entry and should skiped
  * (no other positive node override this negative one).
  * 
  * @author Tahkeh
