@@ -1,7 +1,11 @@
 package com.tahkeh.loginmessage;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,10 +13,12 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.Timer;
 import java.util.logging.Logger;
 
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -21,8 +27,6 @@ import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.util.config.Configuration;
 import org.bukkit.util.config.ConfigurationNode;
-
-import sun.java2d.SunGraphicsEnvironment.TTorT1Filter;
 
 import com.iConomy.iConomy;
 import com.iConomy.system.Holdings;
@@ -51,6 +55,7 @@ public class Message extends PlayerListener //Handles everything message-related
 	private final Configuration config;
 	private final Configuration message;
 	private final Logger log;
+	public static Properties prop = new Properties();
 	String separator = "%&%&"; //Currently a static string until I can figure out how to get YML to read characters as a string
 	
 	private final Cooldown cooldown;
@@ -63,6 +68,115 @@ public class Message extends PlayerListener //Handles everything message-related
 		this.log = log;
 		this.cooldown = new Cooldown();
 		}
+	
+	public void load() {
+		File store = new File(plugin.getDataFolder(), "store.txt");
+		boolean initial = false;
+		if (!store.exists()) {
+			initialLoad(store);
+			initial = true;
+		}
+		//populateProperties("", store);
+		if (initial) {
+			log.info("[LoginMessage] Initial load complete!");
+		}
+	}
+	
+	public void initialLoad(File store) {
+		log.info("[LoginMessage] Beginning initial load...");
+		try {
+			store.createNewFile();
+			FileOutputStream o = new FileOutputStream(store);
+			prop.store(o, "LoginMessage property store file - don't edit this unless you know what you're doing!");
+			o.flush();
+			o.close();
+		} catch (IOException e) {
+			log.info("[LoginMessage] Unable to create store.txt. Aborting initial load.");
+			return;
+		}
+	}
+	
+	public void populateProperties(String event, File store) { // Method currently buggy, do not use.
+		config.load();
+		File geoip = new File(plugin.getDataFolder(), "GeoLiteCity.dat");
+		try {
+			FileOutputStream o = new FileOutputStream(store);
+			if(plugin.getServer().getOnlinePlayers().length > 0) {
+				for(Player p : plugin.getServer().getOnlinePlayers()) {
+					if(geoip.exists()) {
+							String ip = isLocal(p) ? Main.getExternalIp().getHostAddress() : p.getAddress().getAddress().getHostAddress();
+							LookupService ls = new LookupService(geoip);
+							Location loc = ls.getLocation(ip);
+							if(prop.getProperty(p.getName() + ".city", "").isEmpty() && loc.city != null) {
+								prop.put(p.getName() + ".city", loc.city);
+							}
+							if(prop.getProperty(p.getName() + ".ccode", "").isEmpty() && loc.countryCode != null) {
+								prop.put(p.getName() + ".ccode", loc.countryCode);
+							}
+							if(prop.getProperty(p.getName() + ".cname", "").isEmpty() && loc.countryName != null) {
+								prop.put(p.getName() + ".cname", loc.countryName);
+							}
+							if(prop.getProperty(p.getName() + ".zip", "").isEmpty() && loc.postalCode != null) {
+								prop.put(p.getName() + ".zip", loc.postalCode);
+							}
+							if(prop.getProperty(p.getName() + ".rcode", "").isEmpty() && loc.region != null) {
+								prop.put(p.getName() + ".rcode", loc.region);
+							}
+							if(prop.getProperty(p.getName() + ".rname", "").isEmpty() && loc.countryCode != null && loc.region != null) {
+								String ccode = prop.getProperty(p.getName() + ".ccode", loc.countryCode);
+								String rcode = prop.getProperty(p.getName() + ".rcode", loc.region);
+								prop.put(p.getName() + ".rname", regionName.regionNameByCode(ccode, rcode));
+							}
+							ls.close();
+					}
+				}
+			}
+			prop.store(o, "LoginMessage property store file - don't edit this unless you know what you're doing!");
+			o.close();
+		} catch (IOException e) {
+		}
+	}
+	
+	/**
+	 * Check the .dat files in the default world folder. If the given player is 
+	 * found, return true.
+	 * @param p
+	 * 			the name of the player to look for
+	 * @return whether or not player 'p' has joined the server before
+	 */
+	public boolean existingPlayer(String p) {
+		String pdir = getDefaultWorld().getName() + File.separator + "players";
+		File playerfile = new File(pdir);
+		String[] playerfiles = playerfile.list();
+		for(String player : playerfiles) {
+			if(player.contains(p)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Get the first loaded, or default world.
+	 * @return the default world
+	 */
+	public World getDefaultWorld() {
+		  return plugin.getServer().getWorlds().get(0);
+		}
+	
+	public String getLocation(String type, Player p, String event) {
+		load();
+		config.load();
+		File store = new File(plugin.getDataFolder(), "store.txt");
+		String location = "";
+		try {
+			FileInputStream in = new FileInputStream(store);
+			prop.load(in);
+			location = prop.getProperty(p.getName() + "." + type, process(config.getProperty(type + "fail").toString(), p, event));
+		} catch (IOException e) {
+		}
+		return location;
+	}
 	
 	public String getTime(Long rawtime, boolean caps) //Neat little method to get the text-based version of the time!
 	{
@@ -200,37 +314,46 @@ public class Message extends PlayerListener //Handles everything message-related
 		return event.equals("kick") || event.equals("quit");
 	}
 	
-	public String process(String str, Player player, String event){ //AVERT YOUR EYES, THIS IS ONE MESSY METHOD
+	public String process(String str, Player player, String event) {
 		config.load();
 		message.load();
-		File geoip = new File(plugin.getDataFolder(), "GeoLiteCity.dat");
-		String[] geoipcodes = {"%city", "%ccode", "%cname", "%zip", "%region"};
 		Player[] online = plugin.getServer().getOnlinePlayers();
 		int serverlist = online.length;
-		if(isLeaveEvent(event)){
+		if (isLeaveEvent(event)) {
 			serverlist = serverlist - 1;
 		}
-		//TODO Clean up, clean up, everybody do your share - this is a wreck
-		String serverliststring = Integer.toString(serverlist);
-	      int servermax = plugin.getServer().getMaxPlayers();
-	      String servermaxstring = Integer.toString(servermax);
-		  str = str.replaceAll("%dpnm", player.getDisplayName());
-	      str = str.replaceAll("%nm", player.getName());
-	      str = str.replaceAll("%size", serverliststring);
-	      str = str.replaceAll("%max", servermaxstring);
-	      if(str.contains("%ol" + separator))
-	      {
-	    	  str = olProcess(str, player, event);
-	      }
-	      if (plugin.iConomyEnabled())
-	      {
-	    	  if(!iConomy.hasAccount(player.getName()))
-	    	  {
-	    		  str = str.replaceAll("%bal", "");
-	    		  }
+		int servermax = plugin.getServer().getMaxPlayers();
+		str = str.replaceAll("%dpnm", player.getDisplayName());
+		str = str.replaceAll("%nm", player.getName());
+		str = str.replaceAll("%size", Integer.toString(serverlist));
+		str = str.replaceAll("%max", Integer.toString(servermax));
+		if (str.contains("%ol" + separator)) {
+			str = olProcess(str, player, event);
+		} else if (str.contains("%ol")) {
+			String list = "";
+			int on = 0;
+			List<Player> all_list = new ArrayList<Player>();
+			for (Player all : online) {
+				while (!all_list.contains(all)) {
+					all_list.add(all);
+				}
+				if (isLeaveEvent(event)) {
+					all_list.remove(player);
+				}
+			for (Player current : all_list) {
+		        if (current == null) { on++;
+		        } else {
+		          list = list + (on >= serverlist ? current.getName() : new StringBuilder().append(current.getName()).append(", ").toString());
+		          on++;
+		        }
+		      }
+			}
+		}
+		if (plugin.iConomyEnabled()) {
+			if (!iConomy.hasAccount(player.getName())) {
+				str = str.replaceAll("%bal", "");
+			}
 			Holdings balance = iConomy.getAccount(player.getName()).getHoldings();
-<<<<<<< HEAD
-<<<<<<< HEAD
 			str = str.replaceAll("%bal", balance.toString());
 		}
 		if (plugin.PermissionsEnabled()) {
@@ -312,115 +435,9 @@ public class Message extends PlayerListener //Handles everything message-related
 		}
 		return r;
 	}
-	/**
-	 * Gets receivers or triggers.
-	 * @param trigger
-	 * 			the player triggering the event
-	 * @param key
-	 * 			the name of the message
-	 * @param event
-	 * 			the event type
-	 * @param type
-	 * 			the type of entries to get (receivers/triggers)
-	 * @return the set of entries
-	 */
-	public Set<Entry> getEntries(Player trigger, String key, String event, String type)
-=======
-=======
->>>>>>> parent of 57b7a9b... Added firstlogin event; fixed NPEs for null messages; started persistence support.
-	        str = str.replaceAll("%bal", balance.toString());
-	      }
-	      if (plugin.PermissionsEnabled())
-	      {
-	    	PermissionHandler handler = Main.getPermissions();
-	        String groupname = handler.getGroup(player.getWorld().getName(), player.getName());
-	        str = str.replaceAll("%group", groupname);
-	        
-	        if (handler.getGroupPrefix(player.getWorld().getName(), groupname) != null || handler.getGroupSuffix(player.getWorld().getName(), groupname) != null)
-	        {
-	          String prefix = handler.getGroupPrefix(player.getWorld().getName(), groupname);
-	          String suffix = handler.getGroupSuffix(player.getWorld().getName(), groupname);
-	          String permissionslist = "";
-	          int length1 = online.length - 1;
-	          int on1 = 0;
-	          for (Player current : online) {
-	            if (current == null)
-	            {
-	            	on1++;
-	            }
-	            else
-	            {
-	              String prefix2 = handler.getGroupPrefix(current.getWorld().getName(), handler.getGroup(current.getWorld().getName(), current.getName()));
-	              String suffix2 = handler.getGroupSuffix(current.getWorld().getName(), handler.getGroup(current.getWorld().getName(), current.getName()));
-	              permissionslist = permissionslist + (on1 >= length1 ? prefix2 + current.getName() + suffix2 : new StringBuilder().append(prefix2).append(current.getName()).append(suffix2).append(", ").toString());
-	              on1++;
-	            }
-	          }
-	          str = str.replaceAll("%prefix", prefix);
-	          str = str.replaceAll("%suffix", suffix);
-	          str = str.replaceAll("%perol", permissionslist);
-	        }
-	      }
-	      String ip = player.getAddress().getAddress().getHostAddress();
-	      if(!plugin.isLocal(player)){
-	    	  str = str.replaceAll("%ip", ip);
-	    	  }
-	      else if(str.contains("%ip"))
-	      {
-<<<<<<< HEAD
-=======
-	    	  System.out.println("contains %ip");
->>>>>>> parent of 57b7a9b... Added firstlogin event; fixed NPEs for null messages; started persistence support.
-	    	  str = str.replaceAll("%ip", Main.getExternalIp().getHostAddress());  
-	    	  }
-	    	  for(String g : geoipcodes){
-	    		  if(str.contains(g)){
-	    			  if(geoip.exists()){
-				    	  Location loc = null;
-				    	  LookupService location = null;
-								try {
-									location = new LookupService(geoip);
-								} catch (IOException e) {
-									log.info("[LoginMessage] Could not initiate GeoIP lookup service.");
-								}
-						      loc = location.getLocation(ip);
-							      if(!plugin.isLocal(player)){
-								      str = str.replaceAll("%city", loc.city);
-								      str = str.replaceAll("%ccode", loc.countryCode);
-								      str = str.replaceAll("%cname", loc.countryName);
-								      str = str.replaceAll("%zip", loc.postalCode);
-								      str = str.replaceAll("%region", loc.region);
-							      } else {
-								    	  str = str.replaceAll("%city", config.getString("local.city"));
-								    	  str = str.replaceAll("%ccode", config.getString("local.countrycode"));
-								    	  str = str.replaceAll("%cname", config.getString("local.countryname"));
-								    	  str = str.replaceAll("%zip", config.getString("local.zip"));
-								    	  str = str.replaceAll("%region", config.getString("local.region"));
-								    	  }
-							      location.close();
-							      }
-	    		  }
-	    	  }
-			      Long rawtime = player.getWorld().getTime();
-			      String rtime = rawtime.toString();
-			      Calendar cal = Calendar.getInstance();
-			      SimpleDateFormat sdf = new SimpleDateFormat(config.getString("format"));
-			      str = str.replaceAll("%world", player.getWorld().getName());
-			      str = str.replaceAll("%rtime", rtime);
-			      str = str.replaceAll("%time", getTime(rawtime, false));
-			      str = str.replaceAll("%Time", getTime(rawtime, true));
-			      str = str.replaceAll("%srtime", sdf.format(cal.getTime()));
-			      str = str.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
-				  str = str.replaceAll("%sp", "");
-		  return str;
-	  }
 	  
 	
 	public Set<Entry> getEntries(Player trigger, String key, String event, String type) //For receivers/triggers
-<<<<<<< HEAD
->>>>>>> 4f699c1faa7d115d3d53de4fc5bcb473189085dd
-=======
->>>>>>> parent of 57b7a9b... Added firstlogin event; fixed NPEs for null messages; started persistence support.
 	{
 		message.load();
 		Set<Entry> entries = new HashSet<Entry>();
@@ -654,48 +671,62 @@ public class Message extends PlayerListener //Handles everything message-related
 			task.trigger();
 		}
 	}
-	//Begin basic event passing
-	public void onPlayerJoin(PlayerJoinEvent event)
-	{
+	public boolean notNull(String event) {
+		message.load();
+		String msgnode = "messages";
+		List<String> messages = message.getKeys("messages");
+		List<String> keys = message.getKeys("messages." + event);
+		if(messages != null && keys != null && msgnode.length() != 0) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	// Begin basic event passing
+	public void onPlayerJoin(PlayerJoinEvent event) {
 		config.load();
 		Player p = event.getPlayer();
-		preProcessMessage(p, "login", "");
-		
-		if(config.getBoolean("clearjoinmsg", true))
-		{
+			if(existingPlayer(p.getName()) && notNull("login")) {
+				preProcessMessage(p, "login", "");
+			} else if(notNull("firstlogin")) {
+				preProcessMessage(p, "firstlogin", "");
+			}
+
+		if (config.getBoolean("clearjoinmsg", true)) {
 			event.setJoinMessage(null);
 		}
 	}
-	public void onPlayerQuit(PlayerQuitEvent event)
-	{
+
+	public void onPlayerQuit(PlayerQuitEvent event) {
 		config.load();
 		Player p = event.getPlayer();
-		preProcessMessage(p, "quit", "");
-		
-		if(config.getBoolean("clearquitmsg", true))
-		{
+		if(notNull("quit")) {
+			preProcessMessage(p, "quit", "");
+		}
+
+		if (config.getBoolean("clearquitmsg", true)) {
 			event.setQuitMessage(null);
 		}
 	}
-	public void onPlayerKick(PlayerKickEvent event)
-	{
+
+	public void onPlayerKick(PlayerKickEvent event) {
 		config.load();
 		Player p = event.getPlayer();
-		preProcessMessage(p, "kick", "");
-		
-		if(config.getBoolean("clearkickmsg", true))
-		{
+		if(notNull("kick")) {
+			preProcessMessage(p, "kick", "");
+		}
+
+		if (config.getBoolean("clearkickmsg", true)) {
 			event.setLeaveMessage(null);
 		}
 	}
-	//End basic event passing
-	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) //This is a bit trickier, because we need to make sure the command typed is an LM command
-	{
+
+	// End basic event passing
+	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
 		message.load();
 		Player p = event.getPlayer();
-<<<<<<< HEAD
 		String msg = event.getMessage();
-<<<<<<< HEAD
 		String cmd = msg.substring(1); // This is the bare command, without "/"
 		if(notNull("command")) {
 			List<String> commands = message.getKeys("messages.command");
@@ -703,30 +734,8 @@ public class Message extends PlayerListener //Handles everything message-related
 				if (key != null && msg.equalsIgnoreCase("/" + key)) {
 					event.setCancelled(true);
 					preProcessMessage(p, "command", cmd);
-=======
-		String cmd = event.getMessage().substring(1); //This is the bare command, without "/"
-		List<String> commands = message.getKeys("messages.command");
-		if (commands != null) {
-			for(String key : commands)
-			{
-				if(cmd.equalsIgnoreCase(key)) //If what you typed == an LM command message, go right ahead!
-				{
-					event.setCancelled(true); //TODO If I don't do this, it says "Unknown command". I guess I should use onCommand in Main class?
-					preProcessMessage(p, "command", cmd); //Here we actually use that preProcessMessage parameter
->>>>>>> 4f699c1faa7d115d3d53de4fc5bcb473189085dd
 					break;
 				}
-=======
-		String cmd = msg.substring(1); //This is the bare command, without "/"
-		List<String> commands = message.getKeys("messages.command");
-		for(String key : commands)
-		{
-			if(msg.equalsIgnoreCase("/" + key)) //If what you typed == an LM command message, go right ahead!
-			{
-				event.setCancelled(true); //TODO If I don't do this, it says "Unknown command". I guess I should use onCommand in Main class?
-				preProcessMessage(p, "command", cmd); //Here we actually use that preProcessMessage parameter
-				break;
->>>>>>> parent of 57b7a9b... Added firstlogin event; fixed NPEs for null messages; started persistence support.
 			}
 		}
 	}
