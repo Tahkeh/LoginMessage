@@ -1,19 +1,23 @@
 package com.tahkeh.loginmessage;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.URL;
+import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.bukkit.Server;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
@@ -21,15 +25,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 
 import com.iConomy.iConomy;
-import com.maxmind.geoip.Location;
-import com.maxmind.geoip.LookupService;
 import com.nijiko.permissions.PermissionHandler;
 import com.nijikokun.bukkit.Permissions.Permissions;
 
 public class Main extends JavaPlugin //Main class, 'nuff said
 {
-	
-	//Create variables
 	private Logger log;
 	public static boolean directory = new File("plugins/LoginMessage/").mkdir();
 	public Configuration config;
@@ -37,6 +37,10 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 	private Config cfg;
 	public static Message msg;
 	public static PermissionHandler Permissions;
+	public static String bpu = "BukkitPluginUtilities";
+	public static String bpuname = "bukkitutil-1.1.0.jar";
+	public static String bpupath = "http://cloud.github.com/downloads/xZise/Bukkit-Plugin-Utilties/" + bpuname;
+	public static String bpudest = "lib" + File.separator + bpuname;
 	static iConomy iConomy = null;
 	private static Server Server = null;
   
@@ -53,7 +57,17 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 			} else {
 			}
 		}
-
+	
+	public void registerEvents() {
+		PluginManager pm = getServer().getPluginManager();
+        pm.registerEvent(Event.Type.PLAYER_JOIN, msg, Event.Priority.Normal, this);
+        pm.registerEvent(Event.Type.PLAYER_QUIT, msg, Event.Priority.Normal, this);
+        pm.registerEvent(Event.Type.PLAYER_KICK, msg, Event.Priority.Normal, this);
+        pm.registerEvent(Event.Type.PLAYER_COMMAND_PREPROCESS, msg, Event.Priority.Normal, this);
+        pm.registerEvent(Event.Type.PLUGIN_ENABLE, new SListener(this), Event.Priority.Monitor, this);
+        pm.registerEvent(Event.Type.PLUGIN_DISABLE, new SListener(this), Event.Priority.Monitor, this);
+	}
+	
 	public void onDisable()
 	{
 		log.info("[LoginMessage] version " + this.getDescription().getVersion() + " disabled");
@@ -71,6 +85,7 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 	    config.load();
 	    message.load();
 	    msg = new Message(this, config, message, log);
+	    msg.load();
 	    if(PermissionsEnabled())
 	    {
 	    	setupPermissions();
@@ -78,64 +93,38 @@ public class Main extends JavaPlugin //Main class, 'nuff said
         cfg.setup();
         config.load();
         Server = getServer();
-        //Register events
-        PluginManager pm = getServer().getPluginManager();
-        pm.registerEvent(Event.Type.PLAYER_JOIN, msg, Event.Priority.Monitor, this);
-        pm.registerEvent(Event.Type.PLAYER_QUIT, msg, Event.Priority.Monitor, this);
-        pm.registerEvent(Event.Type.PLAYER_KICK, msg, Event.Priority.Monitor, this);
-        pm.registerEvent(Event.Type.PLAYER_COMMAND_PREPROCESS, msg, Event.Priority.Monitor, this);
-        pm.registerEvent(Event.Type.PLUGIN_ENABLE, new SListener(this), Event.Priority.Monitor, this);
-        pm.registerEvent(Event.Type.PLUGIN_DISABLE, new SListener(this), Event.Priority.Monitor, this);
-        if(new File(getDataFolder(), "GeoLiteCity.dat").exists())
-        {
-        	fillLocalFields(); //If GeoLiteCity.dat is in LoginMessage folder, fill out local fields with fillLocalFields()
-        	}
+        downloadFile(bpupath, bpudest, bpu);
+        registerEvents();
         }
-  
-	public boolean localNotFilled()
-	{
-		config.load();
-		//Get local fields
-	    String ccode = config.getString("local.countrycode", "");
-	    String cname = config.getString("local.countryname", "");
-	    String city = config.getString("local.city", "");
-	    String region = config.getString("local.region", "");
-	    String zip = config.getString("local.zip", "");
-	    return(ccode.equals("") || cname.equals("") || city.equals("") || region.equals("") || zip.equals("")); //return true if any local field is not filled out
-  }
-  
-	public boolean isLocal(Player p)
-	{
-		config.load();
-		return(config.getString("local.players", "").contains(p.getName())); //Return true if p is in local.players in config.yml
-		}
 	
-	public void fillLocalFields()
-	{
-		config.load();
-		File geoip = new File(getDataFolder(), "GeoLiteCity.dat");
-		if(geoip.exists()){
-			if(localNotFilled()){ //If GeoLiteCity.dat is in LoginMessage folder and the local fields are not filled
-				log.info("[LoginMessage] Attempting to fill in local fields...");
-				try {
-					InetAddress ip = getExternalIp();
-					LookupService location = new LookupService(geoip, LookupService.GEOIP_MEMORY_CACHE);
-					Location loc = location.getLocation(ip);
-					//Fill local fields with data from GeoIP
-					config.setProperty("local.countrycode", loc.countryCode);
-					config.setProperty("local.countryname", loc.countryName);
-					config.setProperty("local.city", loc.city);
-					config.setProperty("local.region", loc.region);
-					config.setProperty("local.zip", loc.postalCode);
-					config.save();
-					log.info("[LoginMessage] Successfully filled in local fields!");
-					location.close();
-					} catch (Exception e) {
-						log.info("[LoginMessage] Unable to fill in local fields.");
-						}
+	public void downloadFile(String urlpath, String dest, String file) {
+		if(!new File(dest).exists()) {
+			log.info("[LoginMessage] Downloading " + file + "...");
+			try {
+				URL url = new URL(urlpath);
+				URLConnection con = url.openConnection();
+				BufferedOutputStream o = new BufferedOutputStream(new FileOutputStream(dest));
+				BufferedInputStream in = new BufferedInputStream(con.getInputStream());
+				byte[] buffer = new byte[Integer.parseInt(url.openConnection().getHeaderField("Content-Length"))];
+				long count = 0;
+				int n = 0;
+				
+				while (-1 != (n = in.read(buffer))) {
+					o.write(buffer, 0, n);
+					count += n;
 					}
+				o.flush();
+				o.close();
+				log.info("[LoginMessage] Successfully downloaded " + file + "!");
+			} catch (IOException e) {
+				log.severe("[LoginMessage] Something went wrong when downloading " + file + "!");
+				if(file.equals(bpu)) {
+					log.severe("[LoginMessage] Disabling LM...");
+					getPluginLoader().disablePlugin(this);
+				}
 			}
 		}
+	}
   
   public boolean iConomyEnabled()
   {

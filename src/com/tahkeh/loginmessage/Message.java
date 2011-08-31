@@ -497,7 +497,12 @@ public class Message extends PlayerListener //Handles everything message-related
 		if (event.equals("command")) {
 			messages = new String[] { cmdkey };
 		} else {
-			messages = message.getKeys("messages." + event).toArray(new String[0]);
+			List<String> keyList = message.getKeys("messages." + event);
+			if (keyList == null)   {
+			  messages = EMPTY_STRING_ARRAY;
+			} else {
+			  messages = keyList.toArray(EMPTY_STRING_ARRAY);
+			}
 		}
 		for (String key : messages) {
 			Set<Entry> triggers = getEntries(trigger, key, event, "triggers");
@@ -634,7 +639,6 @@ public class Message extends PlayerListener //Handles everything message-related
 				sendMessage(p, cooledDown, key, event, task);
 			}
 		}
-		//SO MANY ELSE CASES
 	}
 
 	/**
@@ -665,31 +669,19 @@ public class Message extends PlayerListener //Handles everything message-related
 				}
 			}
 		} else {
-			this.log.info("Empty login message named '" + key + "' (Event: '" + event + "') found.");
+			this.log.info("Empty message named '" + key + "' (Event: '" + event + "') found.");
 		}
 		if (task != null) {
 			task.trigger();
 		}
 	}
-	public boolean notNull(String event) {
-		message.load();
-		String msgnode = "messages";
-		List<String> messages = message.getKeys("messages");
-		List<String> keys = message.getKeys("messages." + event);
-		if(messages != null && keys != null && msgnode.length() != 0) {
-			return true;
-		} else {
-			return false;
-		}
-	}
 	
-	// Begin basic event passing
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		config.load();
 		Player p = event.getPlayer();
-			if(existingPlayer(p.getName()) && notNull("login")) {
+			if(existingPlayer(p.getName())) {
 				preProcessMessage(p, "login", "");
-			} else if(notNull("firstlogin")) {
+			} else {
 				preProcessMessage(p, "firstlogin", "");
 			}
 
@@ -701,9 +693,7 @@ public class Message extends PlayerListener //Handles everything message-related
 	public void onPlayerQuit(PlayerQuitEvent event) {
 		config.load();
 		Player p = event.getPlayer();
-		if(notNull("quit")) {
-			preProcessMessage(p, "quit", "");
-		}
+		preProcessMessage(p, "quit", "");
 
 		if (config.getBoolean("clearquitmsg", true)) {
 			event.setQuitMessage(null);
@@ -713,23 +703,20 @@ public class Message extends PlayerListener //Handles everything message-related
 	public void onPlayerKick(PlayerKickEvent event) {
 		config.load();
 		Player p = event.getPlayer();
-		if(notNull("kick")) {
-			preProcessMessage(p, "kick", "");
-		}
+		preProcessMessage(p, "kick", "");
 
 		if (config.getBoolean("clearkickmsg", true)) {
 			event.setLeaveMessage(null);
 		}
 	}
 
-	// End basic event passing
 	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
 		message.load();
 		Player p = event.getPlayer();
 		String msg = event.getMessage();
 		String cmd = msg.substring(1); // This is the bare command, without "/"
-		if(notNull("command")) {
-			List<String> commands = message.getKeys("messages.command");
+		List<String> commands = message.getKeys("messages.command");
+		if(commands != null) {
 			for (String key : commands) {
 				if (key != null && msg.equalsIgnoreCase("/" + key)) {
 					event.setCancelled(true);
