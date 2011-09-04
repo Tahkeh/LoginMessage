@@ -1,19 +1,14 @@
 package com.tahkeh.loginmessage;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.Timer;
 import java.util.logging.Logger;
@@ -28,11 +23,9 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.util.config.Configuration;
 import org.bukkit.util.config.ConfigurationNode;
 
-import com.iConomy.iConomy;
-import com.iConomy.system.Holdings;
-import com.maxmind.geoip.*;
 import com.nijiko.permissions.PermissionHandler;
 
+import com.tahkeh.loginmessage.eco.EconomyChecker;
 import com.tahkeh.loginmessage.entries.DefaultEntry;
 import com.tahkeh.loginmessage.entries.Entry;
 import com.tahkeh.loginmessage.entries.Group;
@@ -42,6 +35,7 @@ import com.tahkeh.loginmessage.entries.Pri;
 import com.tahkeh.loginmessage.entries.Pub;
 import com.tahkeh.loginmessage.entries.User;
 import com.tahkeh.loginmessage.perm.PermissionsChecker;
+import com.tahkeh.loginmessage.store.Store;
 import com.tahkeh.loginmessage.timers.Cooldown;
 import com.tahkeh.loginmessage.timers.Delay;
 import com.tahkeh.loginmessage.timers.Cooldown.CooldownTask;
@@ -55,86 +49,57 @@ public class Message extends PlayerListener //Handles everything message-related
 	private final Configuration config;
 	private final Configuration message;
 	private final Logger log;
-	public static Properties prop = new Properties();
+	private final Store store;
 	String separator = "%&%&"; //Currently a static string until I can figure out how to get YML to read characters as a string
+	boolean cont = true;
 	
 	private final Cooldown cooldown;
 	
-	public Message(Main instance, Configuration config, Configuration message, Logger log)
+	public Message(Main instance, Configuration config, Configuration message, Logger log, Store store)
 	{
 		this.plugin = instance;
 		this.config = config;
 		this.message = message;
 		this.log = log;
 		this.cooldown = new Cooldown();
+		this.store = store;
 		}
-	
-	public void load() {
-		File store = new File(plugin.getDataFolder(), "store.txt");
-		boolean initial = false;
-		if (!store.exists()) {
-			initialLoad(store);
-			initial = true;
+
+	public String getTimeDifference(long start) {
+		Date end = Calendar.getInstance().getTime();
+		long difference = (end.getTime() - start) / 1000;
+		long date[] = new long[] {0, 0, 0, 0};
+		StringBuilder sb = new StringBuilder();
+		
+		date[3] = (difference >= 60 ? difference % 60 : difference);
+		date[2] = (difference = (difference / 60)) >= 60 ? difference % 60 : difference;
+		date[1] = (difference = (difference / 60)) >= 24 ? difference % 24 : difference;
+		date[0] = (difference = (difference / 24));
+		
+		if (date[0] > 0) {
+			sb.append(String.format("%d day%s", date[0], date[0] != 1 ? "s" : ""));
 		}
-		//populateProperties("", store);
-		if (initial) {
-			log.info("[LoginMessage] Initial load complete!");
-		}
-	}
-	
-	public void initialLoad(File store) {
-		log.info("[LoginMessage] Beginning initial load...");
-		try {
-			store.createNewFile();
-			FileOutputStream o = new FileOutputStream(store);
-			prop.store(o, "LoginMessage property store file - don't edit this unless you know what you're doing!");
-			o.flush();
-			o.close();
-		} catch (IOException e) {
-			log.info("[LoginMessage] Unable to create store.txt. Aborting initial load.");
-			return;
-		}
-	}
-	
-	public void populateProperties(String event, File store) { // Method currently buggy, do not use.
-		config.load();
-		File geoip = new File(plugin.getDataFolder(), "GeoLiteCity.dat");
-		try {
-			FileOutputStream o = new FileOutputStream(store);
-			if(plugin.getServer().getOnlinePlayers().length > 0) {
-				for(Player p : plugin.getServer().getOnlinePlayers()) {
-					if(geoip.exists()) {
-							String ip = isLocal(p) ? Main.getExternalIp().getHostAddress() : p.getAddress().getAddress().getHostAddress();
-							LookupService ls = new LookupService(geoip);
-							Location loc = ls.getLocation(ip);
-							if(prop.getProperty(p.getName() + ".city", "").isEmpty() && loc.city != null) {
-								prop.put(p.getName() + ".city", loc.city);
-							}
-							if(prop.getProperty(p.getName() + ".ccode", "").isEmpty() && loc.countryCode != null) {
-								prop.put(p.getName() + ".ccode", loc.countryCode);
-							}
-							if(prop.getProperty(p.getName() + ".cname", "").isEmpty() && loc.countryName != null) {
-								prop.put(p.getName() + ".cname", loc.countryName);
-							}
-							if(prop.getProperty(p.getName() + ".zip", "").isEmpty() && loc.postalCode != null) {
-								prop.put(p.getName() + ".zip", loc.postalCode);
-							}
-							if(prop.getProperty(p.getName() + ".rcode", "").isEmpty() && loc.region != null) {
-								prop.put(p.getName() + ".rcode", loc.region);
-							}
-							if(prop.getProperty(p.getName() + ".rname", "").isEmpty() && loc.countryCode != null && loc.region != null) {
-								String ccode = prop.getProperty(p.getName() + ".ccode", loc.countryCode);
-								String rcode = prop.getProperty(p.getName() + ".rcode", loc.region);
-								prop.put(p.getName() + ".rname", regionName.regionNameByCode(ccode, rcode));
-							}
-							ls.close();
-					}
-				}
+		if (date[1] > 0) {
+			if (sb.length() > 0) {
+				sb.append(", ");
 			}
-			prop.store(o, "LoginMessage property store file - don't edit this unless you know what you're doing!");
-			o.close();
-		} catch (IOException e) {
+			sb.append(String.format("%d hour%s", date[1], date[1] != 1 ? "s" : ""));
 		}
+		if (date[2] > 0) {
+			if (sb.length() > 0) {
+				sb.append(", ");
+			}
+			sb.append(String.format("%d minute%s", date[2], date[2] != 1 ? "s" : ""));
+		}
+		if (date[3] > 0) {
+			if (sb.length() > 0) {
+				sb.append(", ");
+			}
+			sb.append(String.format("%d second%s", date[3], date[3] != 1 ? "s" : ""));
+		} else if (difference == 0) {
+			sb.append("a moment");
+		}
+		return sb.toString();
 	}
 	
 	/**
@@ -165,17 +130,7 @@ public class Message extends PlayerListener //Handles everything message-related
 		}
 	
 	public String getLocation(String type, Player p, String event) {
-		load();
-		config.load();
-		File store = new File(plugin.getDataFolder(), "store.txt");
-		String location = "";
-		try {
-			FileInputStream in = new FileInputStream(store);
-			prop.load(in);
-			location = prop.getProperty(p.getName() + "." + type, process(config.getProperty(type + "fail").toString(), p, event));
-		} catch (IOException e) {
-		}
-		return location;
+		return store.getLocation(type, p, event);
 	}
 	
 	public String getTime(Long rawtime, boolean caps) //Neat little method to get the text-based version of the time!
@@ -222,6 +177,24 @@ public class Message extends PlayerListener //Handles everything message-related
 		  }
 		return "";
 	  }
+	
+	public String textProcess(String str) {
+		boolean vowel = false;
+		if(str.contains("%an%")) {
+			String code = str.substring(str.indexOf("%an%"), str.indexOf("%an%") + 4);
+			String letter = str.substring(str.indexOf("%an%") + 5, str.indexOf("%an%") + 6);
+			if(letter.equalsIgnoreCase("a") || letter.equalsIgnoreCase("e") || letter.equalsIgnoreCase("i") || letter.equalsIgnoreCase("o") || letter.equalsIgnoreCase("u")) {
+				vowel = true;
+			}
+			if(vowel) {
+				str = str.replace(code, "an");
+			} else {
+				str = str.replace(code, "a");
+			}
+		}
+		
+		return str;
+	}
 	
 	public String olProcess(String str, Player player, String event) //Method for processing %ol code
 	{
@@ -314,21 +287,22 @@ public class Message extends PlayerListener //Handles everything message-related
 		return event.equals("kick") || event.equals("quit");
 	}
 	
-	public String process(String str, Player player, String event) {
+	public String process(String str, Player p, String event) {
 		config.load();
 		message.load();
 		Player[] online = plugin.getServer().getOnlinePlayers();
+		EconomyChecker checker = null;
 		int serverlist = online.length;
 		if (isLeaveEvent(event)) {
 			serverlist = serverlist - 1;
 		}
 		int servermax = plugin.getServer().getMaxPlayers();
-		str = str.replaceAll("%dpnm", player.getDisplayName());
-		str = str.replaceAll("%nm", player.getName());
+		str = str.replaceAll("%dpnm", p.getDisplayName());
+		str = str.replaceAll("%nm", p.getName());
 		str = str.replaceAll("%size", Integer.toString(serverlist));
 		str = str.replaceAll("%max", Integer.toString(servermax));
 		if (str.contains("%ol" + separator)) {
-			str = olProcess(str, player, event);
+			str = olProcess(str, p, event);
 		} else if (str.contains("%ol")) {
 			String list = "";
 			int on = 0;
@@ -338,7 +312,7 @@ public class Message extends PlayerListener //Handles everything message-related
 					all_list.add(all);
 				}
 				if (isLeaveEvent(event)) {
-					all_list.remove(player);
+					all_list.remove(p);
 				}
 			for (Player current : all_list) {
 		        if (current == null) { on++;
@@ -349,22 +323,27 @@ public class Message extends PlayerListener //Handles everything message-related
 		      }
 			}
 		}
-		if (plugin.iConomyEnabled()) {
-			if (!iConomy.hasAccount(player.getName())) {
-				str = str.replaceAll("%bal", "");
-			}
-			Holdings balance = iConomy.getAccount(player.getName()).getHoldings();
-			str = str.replaceAll("%bal", balance.toString());
+		if (plugin.iConomyEnabled() && !plugin.BOSEconomyEnabled()) {
+			checker = new EconomyChecker.iConomyChecker();
+		} else if (!plugin.iConomyEnabled() && plugin.BOSEconomyEnabled()) {
+			checker = new EconomyChecker.BOSEconomyChecker(Main.getBOSEconomy());
+		} else if (plugin.iConomyEnabled() && plugin.BOSEconomyEnabled()) {
+			log.info("[LoginMessage] You have both BOSEconomy and iConomy enabled!");
+			log.info("[LoginMessage] Switching to iConomy...");
+			checker = new EconomyChecker.iConomyChecker();
+		}
+		if(plugin.iConomyEnabled() || plugin.BOSEconomyEnabled()) {
+			str = str.replaceAll("%bal", checker.getBalance(p));
 		}
 		if (plugin.PermissionsEnabled()) {
 			PermissionHandler handler = Main.getPermissions();
-			String groupname = handler.getGroup(player.getWorld().getName(),
-					player.getName());
+			String groupname = handler.getGroup(p.getWorld().getName(),
+					p.getName());
 			str = str.replaceAll("%group", groupname);
 
-			if (handler.getGroupPrefix(player.getWorld().getName(), groupname) != null || handler.getGroupSuffix(player.getWorld().getName(), groupname) != null) {
-				String prefix = handler.getGroupPrefix(player.getWorld().getName(), groupname);
-				String suffix = handler.getGroupSuffix(player.getWorld().getName(), groupname);
+			if (handler.getGroupPrefix(p.getWorld().getName(), groupname) != null || handler.getGroupSuffix(p.getWorld().getName(), groupname) != null) {
+				String prefix = handler.getGroupPrefix(p.getWorld().getName(), groupname);
+				String suffix = handler.getGroupSuffix(p.getWorld().getName(), groupname);
 				String permissionslist = "";
 				int length1 = online.length - 1;
 				int on1 = 0;
@@ -383,57 +362,46 @@ public class Message extends PlayerListener //Handles everything message-related
 				str = str.replaceAll("%perol", permissionslist);
 			}
 		}
-		String ip = player.getAddress().getAddress().getHostAddress();
-		if (!isLocal(player)) {
+		String ip = p.getAddress().getAddress().getHostAddress();
+		if (!isLocal(p)) {
 			str = str.replaceAll("%ip", ip);
 		} else {
 			str = str.replaceAll("%ip", Main.getExternalIp().getHostAddress());
 		}
 		if(str.contains("%city")) {
-			str = str.replaceAll("%city", getLocation("city", player, event));
+			str = str.replaceAll("%city", getLocation("city", p, event));
 		}
 		if(str.contains("%ccode")) {
-			str = str.replaceAll("%ccode", getLocation("ccode", player, event));
+			str = str.replaceAll("%ccode", getLocation("ccode", p, event));
 		}
 		if(str.contains("%cname")) {
-			str = str.replaceAll("%cname", getLocation("cname", player, event));
+			str = str.replaceAll("%cname", getLocation("cname", p, event));
 		}
 		if(str.contains("%zip")) {
-			str = str.replaceAll("%zip", getLocation("zip", player, event));
+			str = str.replaceAll("%zip", getLocation("zip", p, event));
 		}
 		if(str.contains("%rcode")) {
-			str = str.replaceAll("%rcode", getLocation("rcode", player, event));
+			str = str.replaceAll("%rcode", getLocation("rcode", p, event));
 		}
 		if(str.contains("%rname")) {
-			str = str.replaceAll("%rname", getLocation("rname", player, event));
+			str = str.replaceAll("%rname", getLocation("rname", p, event));
 		}
-		Long rawtime = player.getWorld().getTime();
+		Long rawtime = p.getWorld().getTime();
 		Calendar cal = Calendar.getInstance();
 		SimpleDateFormat sdf = new SimpleDateFormat(config.getString("format"));
-		str = str.replaceAll("%world", player.getWorld().getName());
+		str = str.replaceAll("%world", p.getWorld().getName());
 		str = str.replaceAll("%rtime", rawtime.toString());
 		str = str.replaceAll("%time", getTime(rawtime, false));
 		str = str.replaceAll("%Time", getTime(rawtime, true));
 		str = str.replaceAll("%srtime", sdf.format(cal.getTime()));
+		str = str.replaceAll("%laston", getTimeDifference(store.getLastLogin(p)));
 		str = str.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
 		str = str.replaceAll("%sp", "");
-		return str;
+		return textProcess(str);
 	}
 
 	public boolean isLocal(Player p) {
-		boolean r = false;
-		try {
-			String localip = InetAddress.getLocalHost().getHostAddress();
-			String ip = p.getAddress().getAddress().getHostAddress();
-			String shortlocalip = localip.substring(0, localip.length() - 3); // The last 3 indexes
-			String shortip = ip.substring(0, ip.length() - 3); // could differ, so we exclude them
-			
-			if(shortlocalip.contains(shortip) || shortip.contains(shortlocalip)) {
-				r = true;
-			}
-		} catch (UnknownHostException e) {
-		}
-		return r;
+		return store.isLocal(p);
 	}
 	  
 	
@@ -669,7 +637,7 @@ public class Message extends PlayerListener //Handles everything message-related
 				}
 			}
 		} else {
-			this.log.info("Empty message named '" + key + "' (Event: '" + event + "') found.");
+			this.log.info("[LoginMessage] Empty message named '" + key + "' (Event: '" + event + "') found.");
 		}
 		if (task != null) {
 			task.trigger();
@@ -679,11 +647,9 @@ public class Message extends PlayerListener //Handles everything message-related
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		config.load();
 		Player p = event.getPlayer();
-			if(existingPlayer(p.getName())) {
-				preProcessMessage(p, "login", "");
-			} else {
-				preProcessMessage(p, "firstlogin", "");
-			}
+		String e = existingPlayer(p.getName()) ? "login" : "firstlogin";
+		store.load(e);
+		preProcessMessage(p, e, "");
 
 		if (config.getBoolean("clearjoinmsg", true)) {
 			event.setJoinMessage(null);
@@ -691,16 +657,23 @@ public class Message extends PlayerListener //Handles everything message-related
 	}
 
 	public void onPlayerQuit(PlayerQuitEvent event) {
-		config.load();
-		Player p = event.getPlayer();
-		preProcessMessage(p, "quit", "");
+		if(cont) {
+			store.load("quit");
+			config.load();
+			Player p = event.getPlayer();
+			preProcessMessage(p, "quit", "");
 
-		if (config.getBoolean("clearquitmsg", true)) {
-			event.setQuitMessage(null);
+			if (config.getBoolean("clearquitmsg", true)) {
+				event.setQuitMessage(null);
+			}
+		} else {
+			cont = true;
 		}
 	}
 
 	public void onPlayerKick(PlayerKickEvent event) {
+		cont = false;
+		store.load("kick");
 		config.load();
 		Player p = event.getPlayer();
 		preProcessMessage(p, "kick", "");
@@ -711,6 +684,7 @@ public class Message extends PlayerListener //Handles everything message-related
 	}
 
 	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
+		store.load("command");
 		message.load();
 		Player p = event.getPlayer();
 		String msg = event.getMessage();

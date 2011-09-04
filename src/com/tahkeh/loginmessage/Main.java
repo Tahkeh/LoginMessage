@@ -27,6 +27,10 @@ import org.bukkit.util.config.Configuration;
 import com.iConomy.iConomy;
 import com.nijiko.permissions.PermissionHandler;
 import com.nijikokun.bukkit.Permissions.Permissions;
+import com.tahkeh.loginmessage.store.PropertiesFile;
+import com.tahkeh.loginmessage.store.Store;
+
+import cosine.boseconomy.BOSEconomy;
 
 public class Main extends JavaPlugin //Main class, 'nuff said
 {
@@ -35,13 +39,16 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 	public Configuration config;
 	public Configuration message;
 	private Config cfg;
+	public PropertiesFile prop;
 	public static Message msg;
 	public static PermissionHandler Permissions;
+	public static Store store;
 	public static String bpu = "BukkitPluginUtilities";
 	public static String bpuname = "bukkitutil-1.1.0.jar";
 	public static String bpupath = "http://cloud.github.com/downloads/xZise/Bukkit-Plugin-Utilties/" + bpuname;
 	public static String bpudest = "lib" + File.separator + bpuname;
 	static iConomy iConomy = null;
+	static BOSEconomy bose = null;
 	private static Server Server = null;
   
 	//setupPermissions() method from Permissions API
@@ -78,17 +85,22 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 	{
 		log = Logger.getLogger("Minecraft");
 	    log.info("[LoginMessage] version " + this.getDescription().getVersion() + " enabled");
+	    prop = new PropertiesFile("plugins" + File.separator + "LoginMessage" + File.separator + "store.txt");
 	    config = new Configuration(new File(getDataFolder(), "config.yml"));
 	    message = new Configuration(new File(getDataFolder(), "messages.yml"));
 	    cfg = new Config(getDataFolder(), this);
 	    cfg.setup();
 	    config.load();
 	    message.load();
-	    msg = new Message(this, config, message, log);
-	    msg.load();
+	    store = new Store(this, prop);
+	    store.load("enable");
+	    msg = new Message(this, config, message, log, store);
 	    if(PermissionsEnabled())
 	    {
 	    	setupPermissions();
+	    }
+	    if(getServer().getPluginManager().getPlugin("BOSEconomy") != null) {
+	    	bose = (BOSEconomy) getServer().getPluginManager().getPlugin("BOSEconomy");
 	    }
         cfg.setup();
         config.load();
@@ -131,6 +143,11 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 	  return(config.getBoolean("useico", true) && getServer().getPluginManager().getPlugin("iConomy") != null); //return true if useico in config.yml is set to true and iConomy exists
   }
   
+  public boolean BOSEconomyEnabled()
+  {
+	  return(config.getBoolean("useico", true) && getServer().getPluginManager().getPlugin("BOSEconomy") != null); //return true if useico in config.yml is set to true and BOSEconomy exists
+  }
+  
   public boolean PermissionsEnabled()
   {
 	  return(config.getBoolean("useper", true) && getServer().getPluginManager().getPlugin("Permissions") != null); //return true if useper in config.yml is set to true and Permissions exists
@@ -140,10 +157,9 @@ public class Main extends JavaPlugin //Main class, 'nuff said
   {
       return Server;
   }
-
-  public static iConomy getiConomy()
-  {
-      return iConomy;
+  
+  public static BOSEconomy getBOSEconomy() {
+	  return bose;
   }
   
   public static PermissionHandler getPermissions()

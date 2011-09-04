@@ -34,8 +34,8 @@ public class Config //For all your configuration needs
 				o.write("#clearkickmsg: If true, the default 'Player left the game' will not be shown (for kicked players).\n");
 				o.write("clearkickmsg: true\n");
 				o.write("\n");
-				o.write("#useico: If false, iConomy will not be used, even if it's in the plugins folder.\n");
-				o.write("useico: true\n");
+				o.write("#useeco: If false, iConomy/BOSEconomy will not be used, even if it's in the plugins folder.\n");
+				o.write("useeco: true\n");
 				o.write("\n");
 				o.write("#useper: If false, Permissions will not be used, even if it's in the plugins folder.\n");
 				o.write("useper: true\n");
@@ -44,8 +44,7 @@ public class Config //For all your configuration needs
 				o.write("#Go to goo.gl/3nZ5y to learn how to properly format.\n");
 				o.write("format: K:mm a z\n");
 				o.write("\n");
-				o.write("#These fields are what will be displayed if a GeoIP lookup fails. You may use % codes and colors here.\n");
-				o.write("#Feel free to put your own witty twist on things here!\n");
+				o.write("#These fields are what will be displayed if a GeoIP lookup fails.\n");
 				o.write("cityfail: Ragington\n");
 				o.write("ccodefail: USL\n");
 				o.write("cnamefail: United States of Lolz\n");

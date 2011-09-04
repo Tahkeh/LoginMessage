@@ -3,4 +3,7 @@ target
 .DS_Store
 .project
 .settings
+.classpath/TODO
+/TODO
+
 .classpath
