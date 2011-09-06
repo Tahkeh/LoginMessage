@@ -11,7 +11,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Timer;
-import java.util.logging.Logger;
 
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -23,9 +22,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.util.config.Configuration;
 import org.bukkit.util.config.ConfigurationNode;
 
-import com.nijiko.permissions.PermissionHandler;
-
-import com.tahkeh.loginmessage.eco.EconomyChecker;
 import com.tahkeh.loginmessage.entries.DefaultEntry;
 import com.tahkeh.loginmessage.entries.Entry;
 import com.tahkeh.loginmessage.entries.Group;
@@ -34,33 +30,40 @@ import com.tahkeh.loginmessage.entries.Permission;
 import com.tahkeh.loginmessage.entries.Pri;
 import com.tahkeh.loginmessage.entries.Pub;
 import com.tahkeh.loginmessage.entries.User;
-import com.tahkeh.loginmessage.perm.PermissionsChecker;
 import com.tahkeh.loginmessage.store.Store;
 import com.tahkeh.loginmessage.timers.Cooldown;
 import com.tahkeh.loginmessage.timers.Delay;
 import com.tahkeh.loginmessage.timers.Cooldown.CooldownTask;
 
+import de.xzise.XLogger;
+import de.xzise.wrappers.economy.EconomyHandler;
+import de.xzise.wrappers.permissions.BufferPermission;
+import de.xzise.wrappers.permissions.PermissionsHandler;
+
 public class Message extends PlayerListener //Handles everything message-related (so 90% of this plugin)
 {
 	public final static char SECTION_SIGN = '\u00A7';
 	private final static String[] EMPTY_STRING_ARRAY = new String[0];
+	private final static BufferPermission<String> PREFIX_PERMISSION = BufferPermission.create("prefix", (String) null);
+	private final static BufferPermission<String> SUFFIX_PERMISSION = BufferPermission.create("suffix", (String) null);
 
 	private final Main plugin;
 	private final Configuration config;
 	private final Configuration message;
-	private final Logger log;
+	private final XLogger logger;
 	private final Store store;
+
 	String separator = "%&%&"; //Currently a static string until I can figure out how to get YML to read characters as a string
 	boolean cont = true;
 	
 	private final Cooldown cooldown;
 	
-	public Message(Main instance, Configuration config, Configuration message, Logger log, Store store)
+	public Message(Main instance, Configuration config, Configuration message, XLogger logger, Store store)
 	{
 		this.plugin = instance;
 		this.config = config;
 		this.message = message;
-		this.log = log;
+		this.logger = logger;
 		this.cooldown = new Cooldown();
 		this.store = store;
 		}
@@ -135,48 +138,25 @@ public class Message extends PlayerListener //Handles everything message-related
 	
 	public String getTime(Long rawtime, boolean caps) //Neat little method to get the text-based version of the time!
 	{
-		  String Day = config.getString("day");
-		  String day = Day.toLowerCase();
-		  
-		  String Dusk = config.getString("sunset");
-		  String dusk = Dusk.toLowerCase();
-		  
-		  String Dawn = config.getString("sunrise");
-		  String dawn = Dawn.toLowerCase();
-		  
-		  String Night = config.getString("night");
-		  String night = Night.toLowerCase();
-		  
-		  if(caps == false)
-		  {
-			  if(rawtime == 24000 || rawtime <= 11999)
-			  {
-				  return day;
-			  }
-			  else if(rawtime == 12000 || rawtime <= 12999){
-				  return dusk;
-			  }
-			  else if(rawtime == 13000 || rawtime <= 22999){
-				  return night;
-			  }
-			  else if(rawtime == 23000 || rawtime <= 23999){
-				  return dawn;
-			  }
-		  }
-		  else if(rawtime == 24000 || rawtime <= 11999){
-			  return Day;
-		  }
-		  else if(rawtime == 12000 || rawtime <= 12999){
-			  return Dusk;
-		  }
-		  else if(rawtime == 13000 || rawtime <= 22999){
-			  return Night;
-		  }
-		  else if(rawtime == 23000 || rawtime <= 23999){
-			  return Dawn;
-		  }
-		return "";
-	  }
+		String day = config.getString("day");
+		String dusk = config.getString("sunset");
+		String dawn = config.getString("sunrise");
+		String night = config.getString("night");
+
+		int modTime = (int) (rawtime % 24000);
+
+		String name = "";
+		if (modTime == 24000 || modTime <= 11999) {
+			name = day;
+		} else if (modTime == 12000 || modTime <= 12999) {
+			name = dusk;
+		} else if (modTime == 13000 || modTime <= 22999) {
+			name = night;
+		} else if (modTime == 23000 || modTime <= 23999) {
+			name = dawn;
+		}
+		return caps ? name : name.toLowerCase();
+	}
 	
 	public String textProcess(String str) {
 		boolean vowel = false;
@@ -221,7 +201,7 @@ public class Message extends PlayerListener //Handles everything message-related
         }
         
        if(s.substring(separator.length() - 1, s.indexOf(":")).length() == 1 || s.substring(separator.length() - 1, s.indexOf(":")).length() == 0){
-    	   PermissionHandler handler = Main.getPermissions();
+    	   PermissionsHandler handler = Main.getPermissions();
     	   //Credit to mathmaniac43 for awesome string trimming with substring()
     	   String a = s.substring(separator.length() - 1, s.indexOf(":"));
            s = s.substring(s.indexOf(":") + 1);
@@ -254,10 +234,12 @@ public class Message extends PlayerListener //Handles everything message-related
     	    	   for(Player current : all_list){
     	    		   String b1 = "";
     	    		   String c1 = "";
-    	    		   if(plugin.PermissionsEnabled())
-    	    		   { //This is incredibly long (just FYI)
-    	    			   b1 = (sf1 && !pr1 && plugin.PermissionsEnabled() ? handler.getGroupSuffix(current.getWorld().getName(), handler.getGroup(current.getWorld().getName(), current.getName())) : handler.getGroupPrefix(current.getWorld().getName(), handler.getGroup(current.getWorld().getName(), current.getName())));
-        	    		   c1 = (sf2 && !pr2 && plugin.PermissionsEnabled() ? handler.getGroupSuffix(current.getWorld().getName(), handler.getGroup(current.getWorld().getName(), current.getName())) : handler.getGroupPrefix(current.getWorld().getName(), handler.getGroup(current.getWorld().getName(), current.getName())));
+    	    		   if(handler.isActive())
+    	    		   {
+    	    			   String world = current.getWorld().getName();
+    	    			   String group = getFirst(handler.getGroup(world, current.getName()));
+    	    			   b1 = sf1 && !pr1 ? getSuffix(group, world) : getPrefix(group, world);
+        	    		   c1 = sf2 && !pr2 ? getSuffix(group, world) : getPrefix(group, world);
     	    		   }
     	    		   if(!sf1 && !pr1){
     	    			   b1 = b; //If we're using pr/sf, then the string will be b1, which is defined earlier
@@ -282,28 +264,46 @@ public class Message extends PlayerListener //Handles everything message-related
 		return str;
 	}
 	
+	private static <T> T getFirst(T[] array) {
+		return getFirst(array, null);
+	}
+	
+	private static <T> T getFirst(T[] array, T def) {
+		if (array != null && array.length > 0) {
+			return array[0];
+		} else {
+			return def;
+		}
+	}
+	private static String getPrefix(String group, String world) {
+		return Main.getPermissions().getString(world, group, PREFIX_PERMISSION);
+	}
+	
+	private static String getSuffix(String group, String world) {
+		return Main.getPermissions().getString(world, group, SUFFIX_PERMISSION);
+	}
+	
 	public boolean isLeaveEvent(String event) //For %ol and %size
 	{
 		return event.equals("kick") || event.equals("quit");
 	}
 	
-	public String process(String str, Player p, String event) {
+	public String process(String str, Player player, String event) {
 		config.load();
 		message.load();
 		String list = "";
 		Player[] online = plugin.getServer().getOnlinePlayers();
-		EconomyChecker checker = null;
 		int serverlist = online.length;
 		if (isLeaveEvent(event)) {
 			serverlist = serverlist - 1;
 		}
 		int servermax = plugin.getServer().getMaxPlayers();
-		str = str.replaceAll("%dpnm", p.getDisplayName());
-		str = str.replaceAll("%nm", p.getName());
+		str = str.replaceAll("%dpnm", player.getDisplayName());
+		str = str.replaceAll("%nm", player.getName());
 		str = str.replaceAll("%size", Integer.toString(serverlist));
 		str = str.replaceAll("%max", Integer.toString(servermax));
 		if (str.contains("%ol" + separator)) {
-			str = olProcess(str, p, event);
+			str = olProcess(str, player, event);
 		} else if (str.contains("%ol")) {
 			int on = 0;
 			int length = serverlist - 1;
@@ -313,7 +313,7 @@ public class Message extends PlayerListener //Handles everything message-related
 					all_list.add(all);
 				}
 				if (isLeaveEvent(event)) {
-					all_list.remove(p);
+					all_list.remove(player);
 				}
 			for (Player current : all_list) {
 				list = list + (on >= length ? current.getName() : new StringBuilder().append(current.getName()).append(", ").toString());
@@ -322,78 +322,81 @@ public class Message extends PlayerListener //Handles everything message-related
 			}
 			str = str.replaceAll("%ol", list);
 		}
-		if (plugin.iConomyEnabled() && !plugin.BOSEconomyEnabled()) {
-			checker = new EconomyChecker.iConomyChecker();
-		} else if (!plugin.iConomyEnabled() && plugin.BOSEconomyEnabled()) {
-			checker = new EconomyChecker.BOSEconomyChecker(Main.getBOSEconomy());
-		} else if (plugin.iConomyEnabled() && plugin.BOSEconomyEnabled()) {
-			log.info("[LoginMessage] You have both BOSEconomy and iConomy enabled!");
-			log.info("[LoginMessage] Switching to iConomy...");
-			checker = new EconomyChecker.iConomyChecker();
+
+		EconomyHandler economy = Main.getEconomy();
+		if (economy.isActive()) {
+			str = str.replaceAll("%bal", Double.toString(economy.getBalance(player.getName())));
 		}
-		if(plugin.iConomyEnabled() || plugin.BOSEconomyEnabled()) {
-			str = str.replaceAll("%bal", checker.getBalance(p));
-		}
-		if (plugin.PermissionsEnabled()) {
-			PermissionHandler handler = Main.getPermissions();
-			String groupname = handler.getGroup(p.getWorld().getName(),
-					p.getName());
+		PermissionsHandler permissions = Main.getPermissions();
+		if (permissions.isActive()) {
+			String groupname = getFirst(permissions.getGroup(player.getWorld().getName(),
+					player.getName()));
 			str = str.replaceAll("%group", groupname);
 
-			if (handler.getGroupPrefix(p.getWorld().getName(), groupname) != null || handler.getGroupSuffix(p.getWorld().getName(), groupname) != null) {
-				String prefix = handler.getGroupPrefix(p.getWorld().getName(), groupname);
-				String suffix = handler.getGroupSuffix(p.getWorld().getName(), groupname);
-				String permissionslist = "";
-				int length1 = online.length - 1;
-				int on1 = 0;
+			String world = player.getWorld().getName();
+			if (getPrefix(groupname, world) != null || getSuffix(groupname, world) != null) {
+				String prefix = getPrefix(groupname, world);
+				String suffix = getSuffix(groupname, world);
+
+				if (prefix != null) {
+					str = str.replaceAll("%prefix", prefix);
+				}
+				if (suffix != null) {
+					str = str.replaceAll("%suffix", suffix);
+				}
+
+				StringBuilder permissionslist = new StringBuilder();
+				int playerLength = online.length;
 				for (Player current : online) {
-					if (current == null) {
-						on1++;
-					} else {
-						String prefix2 = handler.getGroupPrefix(current.getWorld().getName(), handler.getGroup(current.getWorld().getName(), current.getName()));
-						String suffix2 = handler.getGroupSuffix(current.getWorld().getName(), handler.getGroup(current.getWorld().getName(), current.getName()));
-						permissionslist = permissionslist + (on1 >= length1 ? prefix2 + current.getName() + suffix2 : new StringBuilder().append(prefix2).append(current.getName()).append(suffix2).append(", ").toString());
-						on1++;
+					if (current != null) {
+						String currentGroup = getFirst(permissions.getGroup(world, current.getName()));
+						if (currentGroup != null) {
+							String currentPrefix = getPrefix(currentGroup, world);
+							String currentSuffix = getSuffix(currentGroup, world);
+							permissionslist.append(currentPrefix).append(player.getName()).append(currentSuffix);
+							if (playerLength > 1) {
+								permissionslist.append(", ");
+							}
+						}
+						playerLength--;
 					}
 				}
-				str = str.replaceAll("%prefix", prefix);
-				str = str.replaceAll("%suffix", suffix);
-				str = str.replaceAll("%perol", permissionslist);
+				str = str.replaceAll("%perol", permissionslist.toString());
 			}
 		}
-		String ip = p.getAddress().getAddress().getHostAddress();
-		if (!isLocal(p)) {
+		String ip = player.getAddress().getAddress().getHostAddress();
+		if (!isLocal(player)) {
 			str = str.replaceAll("%ip", ip);
 		} else {
 			str = str.replaceAll("%ip", Main.getExternalIp().getHostAddress());
 		}
 		if(str.contains("%city")) {
-			str = str.replaceAll("%city", getLocation("city", p, event));
+			str = str.replaceAll("%city", getLocation("city", player, event));
 		}
 		if(str.contains("%ccode")) {
-			str = str.replaceAll("%ccode", getLocation("ccode", p, event));
+			str = str.replaceAll("%ccode", getLocation("ccode", player, event));
 		}
 		if(str.contains("%cname")) {
-			str = str.replaceAll("%cname", getLocation("cname", p, event));
+			str = str.replaceAll("%cname", getLocation("cname", player, event));
 		}
 		if(str.contains("%zip")) {
-			str = str.replaceAll("%zip", getLocation("zip", p, event));
+			str = str.replaceAll("%zip", getLocation("zip", player, event));
 		}
 		if(str.contains("%rcode")) {
-			str = str.replaceAll("%rcode", getLocation("rcode", p, event));
+			str = str.replaceAll("%rcode", getLocation("rcode", player, event));
 		}
 		if(str.contains("%rname")) {
-			str = str.replaceAll("%rname", getLocation("rname", p, event));
+			str = str.replaceAll("%rname", getLocation("rname", player, event));
 		}
-		Long rawtime = p.getWorld().getTime();
+		Long rawtime = player.getWorld().getTime();
 		Calendar cal = Calendar.getInstance();
 		SimpleDateFormat sdf = new SimpleDateFormat(config.getString("format"));
-		str = str.replaceAll("%world", p.getWorld().getName());
+		str = str.replaceAll("%world", player.getWorld().getName());
 		str = str.replaceAll("%rtime", rawtime.toString());
 		str = str.replaceAll("%time", getTime(rawtime, false));
 		str = str.replaceAll("%Time", getTime(rawtime, true));
 		str = str.replaceAll("%srtime", sdf.format(cal.getTime()));
-		str = str.replaceAll("%laston", getTimeDifference(store.getLastLogin(p)));
+		str = str.replaceAll("%laston", getTimeDifference(store.getLastLogin(player)));
 		str = str.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
 		str = str.replaceAll("%sp", "");
 		return textProcess(str);
@@ -406,7 +409,6 @@ public class Message extends PlayerListener //Handles everything message-related
 	
 	public Set<Entry> getEntries(Player trigger, String key, String event, String type) //For receivers/triggers
 	{
-		message.load();
 		Set<Entry> entries = new HashSet<Entry>();
 		final String keypath = "messages." + event + "." + key + "." + type;
 		final String userpath = keypath + ".users";
@@ -421,7 +423,7 @@ public class Message extends PlayerListener //Handles everything message-related
 				entries.add(new Op(positive));
 			} else if (unsignedGroup.equalsIgnoreCase("pri")) {
 				entries.add(new Pri(positive, trigger));
-			} else if (this.plugin.PermissionsEnabled()) {
+			} else {
 				entries.add(new Group(group, Main.getPermissions()));
 			}
 		}
@@ -431,15 +433,8 @@ public class Message extends PlayerListener //Handles everything message-related
 			entries.add(new User(user));
 		}
 
-		PermissionsChecker checker;
-		if (this.plugin.PermissionsEnabled()) {
-			checker = new PermissionsChecker.PermissionsPluginChecker(Main.getPermissions());
-		} else {
-			checker = new PermissionsChecker.InteralPermissionsChecker();
-		}
-
 		for (String perm : message.getStringList(permspath, null)) {
-			entries.add(new Permission(perm, checker));
+			entries.add(new Permission(perm, Main.getPermissions()));
 		}
 		return entries;
 	}
@@ -636,7 +631,7 @@ public class Message extends PlayerListener //Handles everything message-related
 				}
 			}
 		} else {
-			this.log.info("[LoginMessage] Empty message named '" + key + "' (Event: '" + event + "') found.");
+			this.logger.info("Empty message named '" + key + "' (Event: '" + event + "') found.");
 		}
 		if (task != null) {
 			task.trigger();
