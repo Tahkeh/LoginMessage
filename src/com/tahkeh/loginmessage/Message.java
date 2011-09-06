@@ -290,6 +290,7 @@ public class Message extends PlayerListener //Handles everything message-related
 	public String process(String str, Player p, String event) {
 		config.load();
 		message.load();
+		String list = "";
 		Player[] online = plugin.getServer().getOnlinePlayers();
 		EconomyChecker checker = null;
 		int serverlist = online.length;
@@ -304,8 +305,8 @@ public class Message extends PlayerListener //Handles everything message-related
 		if (str.contains("%ol" + separator)) {
 			str = olProcess(str, p, event);
 		} else if (str.contains("%ol")) {
-			String list = "";
 			int on = 0;
+			int length = serverlist - 1;
 			List<Player> all_list = new ArrayList<Player>();
 			for (Player all : online) {
 				while (!all_list.contains(all)) {
@@ -315,13 +316,11 @@ public class Message extends PlayerListener //Handles everything message-related
 					all_list.remove(p);
 				}
 			for (Player current : all_list) {
-		        if (current == null) { on++;
-		        } else {
-		          list = list + (on >= serverlist ? current.getName() : new StringBuilder().append(current.getName()).append(", ").toString());
-		          on++;
-		        }
+				list = list + (on >= length ? current.getName() : new StringBuilder().append(current.getName()).append(", ").toString());
+		        on++;
 		      }
 			}
+			str = str.replaceAll("%ol", list);
 		}
 		if (plugin.iConomyEnabled() && !plugin.BOSEconomyEnabled()) {
 			checker = new EconomyChecker.iConomyChecker();
@@ -654,7 +653,7 @@ public class Message extends PlayerListener //Handles everything message-related
 		if (config.getBoolean("clearjoinmsg", true)) {
 			event.setJoinMessage(null);
 		}
-	}
+	}	
 
 	public void onPlayerQuit(PlayerQuitEvent event) {
 		if(cont) {
