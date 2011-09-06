@@ -5,34 +5,33 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
-import java.util.logging.Logger;
+
+import de.xzise.XLogger;
 
 public final class PropertiesFile {
-	private static final Logger log = Logger.getLogger("Minecraft");
-	private String fileName;
+	private final File file;
 	private Properties props = new Properties();
 
-	public PropertiesFile(String fileName) {
-		this.fileName = fileName;
+	public PropertiesFile(File file, XLogger logger) {
+		this.file = file;
 
-		File file = new File(fileName);
 		try {
 			if (file.exists())
 				load();
 			else
 				save();
 		} catch (IOException ex) {
-			log.severe("[LoginMessage] Unable to load " + fileName + "!");
+			logger.severe("[LoginMessage] Unable to load " + file.getAbsolutePath() + "!");
 		}
 	}
 
 	public void load() throws IOException {
-		this.props.load(new FileInputStream(this.fileName));
+		this.props.load(new FileInputStream(this.file));
 	}
 
 	public void save() {
 		try {
-			this.props.store(new FileOutputStream(this.fileName), null);
+			this.props.store(new FileOutputStream(this.file), null);
 		} catch (IOException localIOException) {
 		}
 	}
