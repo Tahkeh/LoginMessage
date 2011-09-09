@@ -10,7 +10,7 @@ public class SListener extends ServerListener
 
     @Override
     public void onPluginDisable(PluginDisableEvent event) {
-		if ()Main.getEconomy().unload(event.getPlugin())) {
+		if (Main.getEconomy().unload(event.getPlugin())) {
 			Main.getEconomy().load();    
 		}
 		if (Main.getPermissions().unload(event.getPlugin())) {

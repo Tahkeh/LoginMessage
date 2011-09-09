@@ -17,7 +17,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.bukkit.Server;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -44,7 +43,6 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 	public Message msg;
 	public Store store;
 	
-	private static Server Server = null;
 	private XLogger logger;
 	private static PermissionsHandler permissions;
 	private static EconomyHandler economy;
@@ -69,8 +67,12 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 	{
 		if (downloadFile(BPU_PATH, BPU_DEST, BPU))
 		{
-			logger = new XLogger(this);
-			prop = new PropertiesFile(new File(this.getDataFolder(), "store.txt"), logger);
+			try {
+				logger = new XLogger(this);
+			} catch(NoClassDefFoundError e) {
+				Logger.getLogger("Minecraft").info("[LoginMessage] Reload the server!");
+			}
+			prop = new PropertiesFile(new File(getDataFolder(), "store.txt"), logger);
 			config = new Configuration(new File(getDataFolder(), "config.yml"));
 			message = new Configuration(new File(getDataFolder(), "messages.yml"));
 			cfg = new Config(getDataFolder(), this);
@@ -82,7 +84,6 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 			msg = new Message(this, config, message, logger, store);
 			cfg.setup();
 			config.load();
-			Server = getServer();
 			PluginManager pm = getServer().getPluginManager();
 			// Init handlers
 			permissions = new PermissionsHandler(pm, config.getString("plugins.permissions"), this.logger);
@@ -108,8 +109,7 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 				BufferedInputStream in = new BufferedInputStream(con.getInputStream());
 				byte[] buffer = new byte[Integer.parseInt(url.openConnection().getHeaderField("Content-Length"))];
 				//TODO: Review this statement!
-				@SuppressWarnings("unused")
-                long count = 0;
+				long count = 0;
 				int n = 0;
 				
 				while (-1 != (n = in.read(buffer))) {
@@ -126,26 +126,6 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 		}
 		return true;
 	}
-  
-  public boolean iConomyEnabled()
-  {
-	  return(config.getBoolean("useico", true) && getServer().getPluginManager().getPlugin("iConomy") != null); //return true if useico in config.yml is set to true and iConomy exists
-  }
-  
-  public boolean BOSEconomyEnabled()
-  {
-	  return(config.getBoolean("useico", true) && getServer().getPluginManager().getPlugin("BOSEconomy") != null); //return true if useico in config.yml is set to true and BOSEconomy exists
-  }
-  
-  public boolean PermissionsEnabled()
-  {
-	  return(config.getBoolean("useper", true) && getServer().getPluginManager().getPlugin("Permissions") != null); //return true if useper in config.yml is set to true and Permissions exists
-  }
-  
-  public static Server getBukkitServer()
-  {
-      return Server;
-  }
 
   public static EconomyHandler getEconomy()
   {
