@@ -678,7 +678,13 @@ public class Message extends PlayerListener //Handles everything message-related
 	}
 
 	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
-		store.load("command");
+		/*message.load();
+		if(message.getKeys("messages.command") != null) {
+			for(String key : message.getKeys("messages.command")) {
+				plugin.getCommand(key);
+			}
+		}
+		/*store.load("command");
 		message.load();
 		Player p = event.getPlayer();
 		String msg = event.getMessage();
@@ -686,12 +692,15 @@ public class Message extends PlayerListener //Handles everything message-related
 		List<String> commands = message.getKeys("messages.command");
 		if(commands != null) {
 			for (String key : commands) {
+				if(config.getString("messages.command." + key + ".arg", "").contains("player")) {
+					
+				}
 				if (key != null && msg.equalsIgnoreCase("/" + key)) {
 					event.setCancelled(true);
 					preProcessMessage(p, "command", cmd);
 					break;
 				}
 			}
-		}
+		}*/
 	}
 }

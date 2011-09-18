@@ -30,7 +30,7 @@ public class Store {
 		File geoip = new File(plugin.getDataFolder(), "GeoLiteCity.dat");
 		if(plugin.getServer().getOnlinePlayers().length > 0) {
 			for(Player p : plugin.getServer().getOnlinePlayers()) {
-				if(event.equals("quit") || event.equals("kick") || event.equals("firstlogin")) {
+				if(event.equals("quit") || event.contains("kick") || event.equals("firstlogin")) {
 					Date now = new Date();
 					prop.setLong(p.getName() + ".laston", now.getTime());
 				}
