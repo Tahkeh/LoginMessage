@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -71,6 +72,8 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 				logger = new XLogger(this);
 			} catch(NoClassDefFoundError e) {
 				Logger.getLogger("Minecraft").info("[LoginMessage] Reload the server!");
+				this.getPluginLoader().disablePlugin(this);
+				return;
 			}
 			prop = new PropertiesFile(new File(getDataFolder(), "store.txt"), logger);
 			config = new Configuration(new File(getDataFolder(), "config.yml"));
@@ -120,7 +123,7 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 				o.close();
 				log.info("[LoginMessage] Successfully downloaded " + file + "!");
 			} catch (IOException e) {
-				log.severe("[LoginMessage] Something went wrong when downloading " + file + "!");
+				log.log(Level.SEVERE, "[LoginMessage] Something went wrong when downloading " + file + "!", e);
 				return false;
 			}
 		}

@@ -561,44 +561,45 @@ public class Message extends PlayerListener //Handles everything message-related
 	public void finishMessage(Player p, String event, String key) //Final touches - delay and cooldown
 	{
 		message.load();
-		final String keypath = "messages." + event + "." + key;
-		int cd = message.getInt(keypath + ".cooldown", 0) * 1000;
-		int dl = message.getInt(keypath + ".delay", 0);
+		String[] lines = this.getLines(event, key);
+		if (lines.length == 0) {
+			this.logger.info("Empty message named '" + key + "' (Event: '" + event + "') found.");
+		} else {
+			final String keypath = "messages." + event + "." + key;
+			int cd = message.getInt(keypath + ".cooldown", 0) * 1000;
+			int dl = message.getInt(keypath + ".delay", 0);
 
-		Player[] players = this.plugin.getServer().getOnlinePlayers();
-		List<Player> cooledDown = new ArrayList<Player>(players.length);
-		CooldownTask task = null;
-		
-		
-		//Since the only number lower than 1000 that is possible for the cooldown is 0,
-		//we make sure it isn't for the same reason as the delay.
-		if(cd > 0)
-		{
-			List<String> cdstrs = new ArrayList<String>(players.length);
-			for (Player player : players) {
-				if (this.cooldown.isCooledDown(player, key, event)) {
-					cooledDown.add(player);
-					cdstrs.add(Cooldown.createKey(player, key, event));
+			Player[] players = this.plugin.getServer().getOnlinePlayers();
+			List<Player> cooledDown = new ArrayList<Player>(players.length);
+			CooldownTask task = null;
+			Set<Entry> receivers = getEntries(p, key, event, "receivers");
+
+			// Since the only number lower than 1000 that is possible for the
+			// cooldown is 0,
+			// we make sure it isn't for the same reason as the delay.
+			if (cd > 0) {
+				List<String> cdstrs = new ArrayList<String>(players.length);
+				for (Player player : players) {
+					if (this.cooldown.isCooledDown(player, key, event) && matchEntries(player, receivers)) {
+						cooledDown.add(player);
+						cdstrs.add(Cooldown.createKey(player, key, event));
+					}
 				}
+				task = this.cooldown.createTask(cdstrs, this.cooldown, cd);
+			} else {
+				cooledDown.addAll(Arrays.asList(players));
+				task = null;
 			}
-			task = this.cooldown.createTask(cdstrs, this.cooldown, cd);
-		}
-		else
-		{
-			cooledDown.addAll(Arrays.asList(players));
-			task = null;
-		}
 
-		if (cooledDown.size() > 0) {
-			//Check if the delay isn't greater than or equal to 3.
-			//Anything below 3 milliseconds makes your computer sad from my experience.
-			if(dl >= 3)
-			{
-				new Timer().schedule(new Delay(this, key, p, event, cooledDown, task), dl);
-			}
-			else
-			{
-				sendMessage(p, cooledDown, key, event, task);
+			if (cooledDown.size() > 0) {
+				// Check if the delay isn't greater than or equal to 3.
+				// Anything below 3 milliseconds makes your computer sad from my
+				// experience.
+				if (dl >= 3) {
+					new Timer().schedule(new Delay(this, lines, p, event, cooledDown, task), dl);
+				} else {
+					sendMessage(p, cooledDown, lines, event, task);
+				}
 			}
 		}
 	}
@@ -616,22 +617,12 @@ public class Message extends PlayerListener //Handles everything message-related
 	 * @param event
 	 *            the event type of the message (e.g. login).
 	 */
-	public void sendMessage(Player trigger, Collection<Player> possibleReceivers, String key, String event, CooldownTask task) //The grand finale - get the right message, and if the player is a receiver, send it!
+	public void sendMessage(Player trigger, Collection<Player> possibleReceivers, String[] lines, String event, CooldownTask task) //The grand finale - get the right message, and if the player is a receiver, send it!
 	{
-		message.load();
-		config.load();
-		Set<Entry> receivers = getEntries(trigger, key, event, "receivers");
-		String[] lines = this.getLines(event, key);
-		if (lines.length > 0) {
-			for (Player receiver : possibleReceivers) {
-				if (matchEntries(receiver, receivers)) {
-					for (String str : lines) {
-						receiver.sendMessage(process(str, trigger, event));
-					}
-				}
+		for (Player receiver : possibleReceivers) {
+			for (String str : lines) {
+				receiver.sendMessage(process(str, trigger, event));
 			}
-		} else {
-			this.logger.info("Empty message named '" + key + "' (Event: '" + event + "') found.");
 		}
 		if (task != null) {
 			task.trigger();
