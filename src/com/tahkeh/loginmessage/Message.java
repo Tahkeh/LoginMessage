@@ -3,7 +3,6 @@ package com.tahkeh.loginmessage;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -587,7 +586,11 @@ public class Message extends PlayerListener //Handles everything message-related
 				}
 				task = this.cooldown.createTask(cdstrs, this.cooldown, cd);
 			} else {
-				cooledDown.addAll(Arrays.asList(players));
+				for (Player player : players) {
+					if (matchEntries(player, receivers)) {
+						cooledDown.add(player);
+					}
+				}
 				task = null;
 			}
 
