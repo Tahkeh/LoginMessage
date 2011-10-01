@@ -23,6 +23,7 @@ public class Store {
 	}
 	
 	public void load(String event) {
+		// Load is its own method due to possibilities of other "load" operations in the future
 		populateProperties(event);
 	}
 	
@@ -68,15 +69,14 @@ public class Store {
 		}
 	}
 	
-	public long getLastLogin(Player p) {
+	public long getLastLogin(String p) {
 		Date now = new Date();
-		return prop.getLong(p.getName() + ".laston", now.getTime());
+		return prop.getLong(p + ".laston", now.getTime());
 	}
 	
-	public String getLocation(String type, Player p, String event) {
+	public String getLocation(String type, String p) {
 		load("null");
-		plugin.config.load();
-		return prop.getString(p.getName() + "." + type, plugin.config.getProperty(type + "fail").toString());
+		return prop.getString(p + "." + type, plugin.config.getProperty(type + "fail").toString());
 	}
 	
 	public boolean isLocal(Player p) {

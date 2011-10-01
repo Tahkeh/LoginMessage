@@ -17,14 +17,13 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 
+import com.tahkeh.loginmessage.listeners.EListener;
+import com.tahkeh.loginmessage.listeners.PListener;
 import com.tahkeh.loginmessage.store.PropertiesFile;
 import com.tahkeh.loginmessage.store.Store;
 
@@ -52,20 +51,22 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 	
 	public void registerEvents() {
 		PluginManager pm = getServer().getPluginManager();
-		pm.registerEvent(Event.Type.PLAYER_JOIN, msg, Event.Priority.Normal, this);
-		pm.registerEvent(Event.Type.PLAYER_QUIT, msg, Event.Priority.Normal, this);
-		pm.registerEvent(Event.Type.PLAYER_KICK, msg, Event.Priority.Normal, this);
-		pm.registerEvent(Event.Type.PLAYER_COMMAND_PREPROCESS, msg, Event.Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLAYER_JOIN, new PListener(msg), Event.Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLAYER_QUIT, new PListener(msg), Event.Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLAYER_KICK, new PListener(msg), Event.Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLAYER_COMMAND_PREPROCESS, new PListener(msg), Event.Priority.Normal, this);
+		pm.registerEvent(Event.Type.ENTITY_DEATH, new EListener(msg), Event.Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLUGIN_ENABLE, new SListener(), Event.Priority.Monitor, this);
 		pm.registerEvent(Event.Type.PLUGIN_DISABLE, new SListener(), Event.Priority.Monitor, this);
 	}
 
 	public void onDisable()
 	{
+		getServer().getScheduler().cancelTasks(this);
 		logger.disableMsg();
 	}
-
-  
+	
+	
 	public void onEnable()
 	{
 		if (downloadFile(BPU_PATH, BPU_DEST, BPU))
@@ -83,8 +84,8 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 			config.load();
 			message.load();
 			store = new Store(this, prop);
-			store.load("enable");
 			msg = new Message(this, config, message, logger, store);
+			msg.load("load");
 			cfg.setup();
 			config.load();
 			PluginManager pm = getServer().getPluginManager();

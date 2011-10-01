@@ -34,11 +34,20 @@ public class Config //For all your configuration needs
 				o.write("#clearkickmsg: If true, the default 'Player left the game' will not be shown (for kicked players).\n");
 				o.write("clearkickmsg: true\n");
 				o.write("\n");
+				o.write("#cleardeathmsg: If true, the default death messages will not be shown.\n");
+				o.write("cleardeathmsg: true\n");
+				o.write("\n");
 				o.write("#plugins: Put 'null' or 'none' in these fields to prevent LoginMessage from using these plugins when they're installed.\n");
 				o.write("plugins:\n");
 				o.write("    permissions: ''\n");
 				o.write("    economy: ''\n");
 				o.write("\n");
+				o.write("#autoload: When true, LoginMessage will automatically reload its files when an event is called.\n");
+				o.write("autoload: true\n");
+				o.write("\n");
+				o.write("#separator: This is what will be used to separate advanced %ol codes.\n");
+				o.write("#Keep all text within the single quotes.\n");
+				o.write("separator: '%&%&'\n");
 				o.write("#format: This is the formatting used for the %srtime code.\n");
 				o.write("#Go to goo.gl/3nZ5y to learn how to properly format.\n");
 				o.write("format: K:mm a z\n");
@@ -55,7 +64,16 @@ public class Config //For all your configuration needs
 				o.write("day: Day\n");
 				o.write("sunset: Dusk\n");
 				o.write("night: Night\n");
-				o.write("sunrise: Dawn"); //Add \n if more text is added past this point
+				o.write("sunrise: Dawn\n");
+				o.write("\n");
+				o.write("#istrue/isfalse: What to return for true/false codes (keep capitalized).\n");
+				o.write("#Keep all text within the single quotes. You may use color codes here if you wish.\n");
+				o.write("istrue: '&2Yes'\n");
+				o.write("isfalse: '&4No'\n");
+				o.write("\n");
+				o.write("#noplayerfound: What to return when a player types in a player name that does not exist (as a command argument).\n");
+				o.write("#Keep all text within the single quotes. You may use color codes and the %nm code to return the non-existant player.\n");
+				o.write("noplayerfound: '&cPlayer \"%nm\" does not exist!'"); // Add \n if more text is added past this point
 				
 				o.close();
 				fw.close();
@@ -73,7 +91,7 @@ public class Config //For all your configuration needs
 				msg.createNewFile();
 				FileWriter fw = new FileWriter(msg);
 				BufferedWriter o = new BufferedWriter(fw);
-				o.write("#Create new messages here. See the readme file for help.\n");
+				o.write("#Create new messages here. See the wiki for help.\n");
 				o.write("messages:\n");
 				o.write("    login:\n");
 				o.write("        motd:\n");
