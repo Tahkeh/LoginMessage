@@ -3,7 +3,6 @@ package com.tahkeh.loginmessage;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -681,37 +680,54 @@ public class Message
 
 	public void finishMessage(OfflinePlayer p, String event, String key, Map<String, String> args) // Final touches - delay and cooldown
 	{
-		final String keypath = "messages." + event + "." + key;
-		int cd = message.getInt(keypath + ".cooldown", 0) * 1000;
-		int dl = message.getInt(keypath + ".delay", 0);
-
-		Player[] players = this.plugin.getServer().getOnlinePlayers();
-		List<Player> cooledDown = new ArrayList<Player>(players.length);
-		CooldownTask task = null;
-
-		// Since the only number lower than 1000 that is possible for the
-		// cooldown is 0, we make sure it isn't for the same reason as the delay.
-		if (cd > 0) {
-			List<String> cdstrs = new ArrayList<String>(players.length);
-			for (Player player : players) {
-				if (this.cooldown.isCooledDown(player, key, event)) {
-					cooledDown.add(player);
-					cdstrs.add(Cooldown.createKey(player, key, event));
-				}
-			}
-			task = this.cooldown.createTask(cdstrs, this.cooldown, cd);
+		String[] lines = this.getLines(event, key);
+		if (lines.length == 0) {
+			this.logger.info("Empty message named '" + key + "' (Event: '" + event + "') found.");
 		} else {
-			cooledDown.addAll(Arrays.asList(players));
-			task = null;
-		}
+			final String keypath = "messages." + event + "." + key;
+			int cd = message.getInt(keypath + ".cooldown", 0) * 1000;
+			int dl = message.getInt(keypath + ".delay", 0);
 
-		if (cooledDown.size() > 0) {
-			// Check if the delay isn't greater than or equal to 3.
-			// Anything below 3 milliseconds makes your computer sad from my experience.
-			if (dl >= 3) {
-				new Timer().schedule(new Delay(this, key, p, event, cooledDown, task, args), dl);
+			Player[] players = this.plugin.getServer().getOnlinePlayers();
+			List<Player> cooledDown = new ArrayList<Player>(players.length);
+			CooldownTask task = null;
+			Player truetrigger = null;
+			if (event.equals("command") && args.containsKey("trigger")) {
+				truetrigger = plugin.getServer().getPlayerExact(args.get("trigger"));
+			} else if (p != null) {
+				truetrigger = plugin.getServer().getPlayerExact(p.getName());
+			}
+			Set<Entry> receivers = getEntries(truetrigger, key, event, "receivers");
+
+			// Since the only number lower than 1000 that is possible for the
+			// cooldown is 0, we make sure it isn't for the same reason as the delay.
+			if (cd > 0) {
+				List<String> cdstrs = new ArrayList<String>(players.length);
+				for (Player player : players) {
+					if (this.cooldown.isCooledDown(player, key, event) && matchEntries(player, receivers)) {
+						cooledDown.add(player);
+						cdstrs.add(Cooldown.createKey(player, key, event));
+					}
+				}
+				task = this.cooldown.createTask(cdstrs, this.cooldown, cd);
 			} else {
-				sendMessage(p, cooledDown, key, event, task, args);
+				for (Player player : players) {
+					if (matchEntries(player, receivers)) {
+						cooledDown.add(player);
+					}
+				}
+				task = null;
+			}
+
+			if (cooledDown.size() > 0) {
+				// Check if the delay isn't greater than or equal to 3.
+				// Anything below 3 milliseconds makes your computer sad from my
+				// experience.
+				if (dl >= 3) {
+					new Timer().schedule(new Delay(this, lines, p, event, cooledDown, task, args), dl);
+				} else {
+					sendMessage(p, cooledDown, lines, event, task, args);
+				}
 			}
 		}
 	}
@@ -729,26 +745,12 @@ public class Message
 	 * @param event
 	 *            the event type of the message (e.g. login).
 	 */
-	public void sendMessage(OfflinePlayer trigger, Collection<Player> possibleReceivers, String key, String event, CooldownTask task, Map<String, String> args)
+	public void sendMessage(OfflinePlayer trigger, Collection<Player> possibleReceivers, String[] lines, String event, CooldownTask task, Map<String, String> args)
 	{
-		Player truetrigger = null;
-		if (event.equals("command") && args.containsKey("trigger")) {
-			truetrigger = plugin.getServer().getPlayerExact(args.get("trigger"));
-		} else if (trigger != null) {
-			truetrigger = plugin.getServer().getPlayerExact(trigger.getName());
-		}
-		Set<Entry> receivers = getEntries(truetrigger, key, event, "receivers");
-		String[] lines = this.getLines(event, key);
-		if (lines.length > 0) {
-			for (Player receiver : possibleReceivers) {
-				if (matchEntries(receiver, receivers)) {
-					for (String str : lines) {
-						receiver.sendMessage(processLine(str, trigger, event, args));
-					}
-				}
+		for (Player receiver : possibleReceivers) {
+			for (String str : lines) {
+				receiver.sendMessage(processLine(str, trigger, event, args));
 			}
-		} else {
-			this.logger.info("Empty message named '" + key + "' (Event: '" + event + "') found.");
 		}
 		if (task != null) {
 			task.trigger();
