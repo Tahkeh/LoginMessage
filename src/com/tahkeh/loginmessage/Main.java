@@ -36,10 +36,11 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 	public final static String BPU = "BukkitPluginUtilities";
 	public final static String BPU_NAME = "bukkitutil-1.2.0.jar";
 	public final static String BPU_PATH = "http://cloud.github.com/downloads/xZise/Bukkit-Plugin-Utilties/" + BPU_NAME;
-	public final static String BPU_DEST = "lib" + File.separator + "BukkitPluginUtilities.jar";
+	public final static String BPU_DEST = "lib" + File.separator + BPU + ".jar";
 
 	public Configuration config;
 	public Configuration message;
+	public Configuration list;
 	private Config cfg;
 	public PropertiesFile prop;
 	public Message msg;
@@ -79,12 +80,13 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 			prop = new PropertiesFile(new File(getDataFolder(), "store.txt"), logger);
 			config = new Configuration(new File(getDataFolder(), "config.yml"));
 			message = new Configuration(new File(getDataFolder(), "messages.yml"));
-			cfg = new Config(getDataFolder(), this);
+			list = new Configuration(new File(getDataFolder(), "list.yml"));
+			cfg = new Config(getDataFolder(), this, logger);
 			cfg.setup();
 			config.load();
 			message.load();
 			store = new Store(this, prop);
-			msg = new Message(this, config, message, logger, store);
+			msg = new Message(this, config, message, list, logger, store);
 			msg.load("load");
 			cfg.setup();
 			config.load();

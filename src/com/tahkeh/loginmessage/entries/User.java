@@ -1,6 +1,6 @@
 package com.tahkeh.loginmessage.entries;
 
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 
 public class User extends DefaultEntry {
 
@@ -8,7 +8,7 @@ public class User extends DefaultEntry {
         super(user);
     }
 
-    public boolean match(Player player) {
+    public boolean match(OfflinePlayer player) {
         return player.getName().equals(this.value);
     }
 }

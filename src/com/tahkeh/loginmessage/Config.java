@@ -5,19 +5,24 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import de.xzise.XLogger;
+
 public class Config //For all your configuration needs
 {
 
 	private File folder;
+	private XLogger log;
 
-	public Config(File folder, Main instance)
+	public Config(File folder, Main instance, XLogger log)
 	{
 		this.folder = folder;
-	    }
+		this.log = log;
+		}
 	
 	public void setup(){
 		File cfg = new File(folder, "config.yml");
 		File msg = new File(folder, "messages.yml");
+		File list = new File(folder, "list.yml");
 		if(!cfg.exists()) //If, for some reason, the player decides to delete their .yml files, LM will create defaults
 		{
 			try
@@ -71,6 +76,13 @@ public class Config //For all your configuration needs
 				o.write("istrue: '&2Yes'\n");
 				o.write("isfalse: '&4No'\n");
 				o.write("\n");
+				o.write("#status: Shows the text based status for the %status code. \"afk\" is only applicable to AdminCmd users.\n");
+				o.write("#Keep all text within the single quotes. You may use color codes here if you wish.\n");
+				o.write("status:\n");
+				o.write("    online: '&2Online'\n");
+				o.write("    offline: '&7Offline'\n");
+				o.write("    afk: '&6AFK'\n");
+				o.write("\n");
 				o.write("#noplayerfound: What to return when a player types in a player name that does not exist (as a command argument).\n");
 				o.write("#Keep all text within the single quotes. You may use color codes and the %nm code to return the non-existant player.\n");
 				o.write("noplayerfound: '&cPlayer \"%nm\" does not exist!'"); // Add \n if more text is added past this point
@@ -81,7 +93,7 @@ public class Config //For all your configuration needs
 			}
 			catch (IOException e)
 			{
-				System.out.println("[LoginMessage] Error creating config.yml file.");
+				log.severe("[LoginMessage] Error creating config.yml file.");
 			}
 		}
 		if(!msg.exists())
@@ -199,9 +211,49 @@ public class Config //For all your configuration needs
 			}
 			catch (IOException e)
 			{
-				System.out.println("[LoginMessage] Error creating messages.yml file.");
+				log.severe("[LoginMessage] Error creating messages.yml file.");
 			}
 		}
+		if(!list.exists())
+		{
+			try
+			{
+				list.createNewFile();
+				FileWriter fw = new FileWriter(list);
+				BufferedWriter o = new BufferedWriter(fw);
+				o.write("#Create new lists here. See the wiki for help.\n");
+				o.write("lists:\n");
+				o.write("    def:\n");
+				o.write("        players:\n");
+				o.write("            groups: [pub]\n");
+				o.write("            users: []\n");
+				o.write("            permissions: []\n");
+				o.write("        format: '%nm'\n");
+				o.write("        separator: ', '\n");
+				o.write("    perm:\n");
+				o.write("        players:\n");
+				o.write("            groups: [pub]\n");
+				o.write("            users: []\n");
+				o.write("            permissions: []\n");
+				o.write("        format: '%prefix%nm%suffix (%group)'\n");
+				o.write("        separator: ', '\n");
+				o.write("    all:\n");
+				o.write("        players:\n");
+				o.write("            groups: [pub]\n");
+				o.write("            users: [-Player]\n");
+				o.write("            permissions: []\n");
+				o.write("        format: '&f[%Status&f] %nm'\n");
+				o.write("        separator: ', '\n");
+				o.write("        online: false"); //Add \n if more text is added past this point
+				
+				o.close();
+				fw.close();
+			}
+			catch (IOException e)
+			{
+				log.severe("[LoginMessage] Error creating list.yml file.");
+			}
+	}
 	}
 	
 }

@@ -3,3 +3,17 @@ main: com.tahkeh.loginmessage.Main
 version: 0.7.3
 author: Tahkeh
 authors: [xZise]
+
+commands:
+    lmsg:
+        aliases: [loginmessage, loginmsg, lmessage]
+
+permissions:
+    loginmessage.*:
+        description: Give players permission for all LoginMessage permissions.
+        default: op
+        children:
+            loginmessage.reload: true
+    loginmessage.reload:
+        description: Allows players to reload LoginMessage files.
+        default: op

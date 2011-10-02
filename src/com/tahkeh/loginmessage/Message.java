@@ -57,6 +57,7 @@ public class Message
 	private final Main plugin;
 	private final Configuration config;
 	private final Configuration message;
+	private final Configuration list;
 	private final XLogger logger;
 	private final Store store;
 
@@ -66,11 +67,12 @@ public class Message
 	
 	private final Cooldown cooldown;
 	
-	public Message(Main instance, Configuration config, Configuration message, XLogger logger, Store store)
+	public Message(Main instance, Configuration config, Configuration message, Configuration list, XLogger logger, Store store)
 	{
 		this.plugin = instance;
 		this.config = config;
 		this.message = message;
+		this.list = list;
 		this.logger = logger;
 		this.cooldown = new Cooldown();
 		this.store = store;
@@ -80,6 +82,7 @@ public class Message
 		if(config.getBoolean("autoload", true) || event.equals("load")) {
 			config.load();
 			message.load();
+			list.load();
 		}
 		separator = config.getString("separator", "%&%&");
 		store.load(event);
@@ -96,8 +99,8 @@ public class Message
 		if(keys != null && !event.equals("interval")) {
 			for(String key : keys) {
 				if(!running.contains(key)) {
-					int interval = message.getInt("messages.interval." + key + ".interval", 0);
-					plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, new Interval(this, key), 0, interval * 20);
+					int interval = message.getInt("messages.interval." + key + ".interval", 300);
+					plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, new Interval(this, key), event.equals("load") ? interval * 20 : 0, interval * 20);
 					running.add(key);
 				}
 			}
@@ -172,8 +175,7 @@ public class Message
 		return store.getLocation(type, p);
 	}
 	
-	public String getTime(Long rawtime, boolean caps) //Neat little method to get the text-based version of the time!
-	{
+	public String getTime(Long rawtime, boolean caps) {
 		String day = config.getString("day");
 		String dusk = config.getString("sunset");
 		String dawn = config.getString("sunrise");
@@ -194,8 +196,7 @@ public class Message
 		return caps ? name : name.toLowerCase();
 	}
 	
-	public String getGameMode(GameMode mode, boolean caps)
-	{
+	public String getGameMode(GameMode mode, boolean caps) {
 		String name = "";
 		
 		if(mode == GameMode.CREATIVE) {
@@ -232,8 +233,8 @@ public class Message
 	}
 
 	public String booleanToName(boolean bool, boolean caps) {
-		String t = config.getString("istrue", "Yes");
-		String f = config.getString("isfalse", "No");
+		String t = config.getString("istrue", "&2Yes");
+		String f = config.getString("isfalse", "&4No");
 		String name = "";
 
 		if (bool) {
@@ -245,6 +246,27 @@ public class Message
 		name = name.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
 
 		return caps ? name : name.toLowerCase();
+	}
+	
+	public String getStatus(OfflinePlayer p, boolean caps) {
+		AFKHandler afkhandler = new AFKHandler(plugin);
+		String status = "";
+		String online = config.getString("status.online", "&2Online");
+		String offline = config.getString("status.offline", "&7Offline");
+		String afk = config.getString("status.afk", "&6AFK");
+		
+		if (p.isOnline()) {
+			status = caps ? online : online.toLowerCase();
+			if (afkhandler.isActive()) {
+				if (afkhandler.isAFK(plugin.getServer().getPlayerExact(p.getName()))) {
+					status = afk;
+				}
+			}
+		} else {
+			status = caps ? offline : offline.toLowerCase();
+		}
+		
+		return status;
 	}
 	
 	public String textProcess(String str) {
@@ -267,7 +289,7 @@ public class Message
 	
 	public String processOnlineList(String str, Player p, String event) {
 		PermissionsHandler handler = Main.getPermissions();
-		if(str.contains("%ol" + separator)) {
+		if (str.contains("%ol" + separator)) {
 			String list = "";
 			int on = 0;
 			Player[] players = plugin.getServer().getOnlinePlayers();
@@ -278,7 +300,7 @@ public class Message
 			while(s.indexOf(code) >= 0) {
 				s = s.substring(s.indexOf(code) + 1);
 			}
-			for(Player all : players) {
+			for (Player all : players) {
 				while(!online.contains(all)) {
 					online.add(all);
 				}
@@ -287,7 +309,7 @@ public class Message
 					length = length - 1;
 				}
 			}
-			if(s.substring(code.length() - 1, s.indexOf(":")).length() == 1 || s.substring(code.length() - 1, s.indexOf(":")).length() == 0) {
+			if (s.substring(code.length() - 1, s.indexOf(":")).length() == 1 || s.substring(code.length() - 1, s.indexOf(":")).length() == 0) {
 				String a = s.substring(code.length() - 1, s.indexOf(":"));
 		        s = s.substring(s.indexOf(":") + 1);
 		        String b = s.substring(0, s.indexOf(":"));
@@ -314,9 +336,27 @@ public class Message
 		        str = str.replaceAll(ol, list);
 			}
 		}
-		if(str.contains("%ol_")) {
+		if (str.contains("%ol_")) {
+			List<String> pub = new ArrayList<String>();
+			pub.add("pub");
+			if (list.getKeys("lists") != null) {
+				for (String key : list.getKeys("lists")) {
+					if (str.contains("%ol_" + key)) {
+						String path = "lists." + key;
+						boolean online = list.getBoolean(path + ".online", true);
+						List<String> groups = list.getStringList(path + ".players.groups", pub);
+						List<String> users = list.getStringList(path + ".players.users", null);
+						List<String> permissions = list.getStringList(path + ".players.permissions", null);
+						String format = list.getString(path + ".format", "%nm");
+						String separator = list.getString(path + ".separator", ", ");
+						Player trigger = isLeaveEvent(event) ? p : null;
+						PlayerList playerList = new PlayerList(plugin, online, groups, users, permissions, format, separator, trigger);
+						str = str.replaceAll("%ol_" + key, playerList.getList());
+					}
+				}
+			}
 		}
-		if(str.contains("%ol")) {
+		if (str.contains("%ol")) {
 			String list = "";
 			int on = 0;
 			Player[] players = plugin.getServer().getOnlinePlayers();
@@ -351,9 +391,8 @@ public class Message
 				"%curxp", "%totalxp", "%food", "%exhaust", "%sat", "%ip"
 				};
 		String[] playerCodes = {
-				"%laston", "%nm", "%status", "%Status", "%banned", "%Banned",
-				"%white", "%White", "%op", "%Op", "%city", "%ccode", "%zip",
-				"%rcode", "%rname"
+				"%laston", "%nm", "%online", "%Online", "%status", "%Status", "%banned", "%Banned",
+				"%white", "%White", "%op", "%Op", "%city", "%ccode", "%zip", "%rcode", "%rname"
 		};
 		
 		if (isLeaveEvent(event)) {
@@ -363,8 +402,10 @@ public class Message
 		if(p != null) {
 			str = str.replaceAll("%laston", getTimeDifference(store.getLastLogin(p.getName())));		
 			str = str.replaceAll("%nm", p.getName());
-			str = str.replaceAll("%status", booleanToName(p.isOnline(), false));
-			str = str.replaceAll("%Status", booleanToName(p.isOnline(), true));
+			str = str.replaceAll("%status", getStatus(p, false));
+			str = str.replaceAll("%Status", getStatus(p, true));
+			str = str.replaceAll("%online", booleanToName(p.isOnline(), false));
+			str = str.replaceAll("%Online", booleanToName(p.isOnline(), true));
 			str = str.replaceAll("%banned", booleanToName(p.isBanned(), false));
 			str = str.replaceAll("%Banned", booleanToName(p.isBanned(), true));
 			str = str.replaceAll("%white", booleanToName(p.isWhitelisted(), false));
@@ -394,7 +435,7 @@ public class Message
 			if (p.isOnline()) {
 				trigger = plugin.getServer().getPlayerExact(p.getName());
 				str = onlineProcess(str, plugin.getServer().getPlayerExact(p.getName()), event, args);
-			} else {
+			} else if (!event.equals("list")) {
 				trigger = plugin.getServer().getPlayerExact(args.get("trigger"));
 				str = str.replaceAll("%dpnm", p.getName());
 				for (String code : onlineCodes) {
@@ -406,9 +447,7 @@ public class Message
 				str = str.replaceAll(code, "?");
 			}
 		}
-		if (args == null || !args.containsKey("listprocess")) {
-			// We don't want this method to keep calling itself, so we
-			// use arguments to check if the processLine method was called by it
+		if (!event.equals("list")) {
 			str = processOnlineList(str, trigger, event);
 		}
 		str = str.replaceAll("%size", Integer.toString(size));
@@ -422,6 +461,8 @@ public class Message
 	}
 
 	public String onlineProcess(String str, Player p, String event, Map<String, String> args) {
+		EconomyHandler economy = Main.getEconomy();
+		PermissionsHandler permissions = Main.getPermissions();
 		String ip = !isLocal(p) ? p.getAddress().getAddress().getHostAddress() : Main.getExternalIp().getHostAddress();
 		Long rawtime = p.getWorld().getTime();
 
@@ -446,6 +487,22 @@ public class Message
 		str = str.replaceAll("%exhaust", Float.toString(p.getExhaustion()));
 		str = str.replaceAll("%sat", Float.toString(p.getSaturation()));
 		str = str.replaceAll("%ip", ip);
+		
+		if (economy.isActive()) {
+			str = str.replaceAll("%bal", Double.toString(economy.getBalance(p.getName())));
+		}
+		
+		if (permissions.isActive()) {
+			String world = p.getWorld().getName();
+			String groupname = getFirst(permissions.getGroup(world, p.getName()));
+			str = str.replaceAll("%group", groupname);
+			if (getPrefix(groupname, world) != null) {
+				str = str.replaceAll("%prefix", getPrefix(groupname, world));
+			}
+			if (getSuffix(groupname, world) != null) {
+				str = str.replaceAll("%suffix", getSuffix(groupname, world));
+			}
+		}
 
 		return str;
 	}
@@ -483,7 +540,7 @@ public class Message
 			} else if (unsignedGroup.equalsIgnoreCase("pri")) {
 				entries.add(new Pri(positive, trigger));
 			} else {
-				entries.add(new Group(group, Main.getPermissions()));
+				entries.add(new Group(group, Main.getPermissions(), plugin));
 			}
 		}
 
@@ -492,7 +549,7 @@ public class Message
 		}
 
 		for (String perm : message.getStringList(permspath, null)) {
-			entries.add(new Permission(perm, Main.getPermissions()));
+			entries.add(new Permission(perm, Main.getPermissions(), plugin));
 		}
 		return entries;
 	}
@@ -535,7 +592,7 @@ public class Message
 		}
 	}
 
-	private static boolean matchEntries(Player player, Collection<Entry> entries) {
+	public static boolean matchEntries(OfflinePlayer player, Collection<Entry> entries) {
 		boolean match = false;
 		for (Entry entry : entries) {
 			if (entry.match(player)) {
