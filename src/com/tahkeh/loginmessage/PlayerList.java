@@ -16,23 +16,28 @@ import com.tahkeh.loginmessage.entries.Op;
 import com.tahkeh.loginmessage.entries.Permission;
 import com.tahkeh.loginmessage.entries.Pub;
 import com.tahkeh.loginmessage.entries.User;
+import com.tahkeh.loginmessage.entries.World;
 
 public class PlayerList {
 	private final Main plugin;
 	private final boolean online;
+	private final boolean formatted;
 	private final List<String> groups;
 	private final List<String> users;
 	private final List<String> permissions;
+	private final List<String> worlds;
 	private final String format;
 	private final String separator;
 	private final Player trigger;
 	
-	public PlayerList(Main plugin, boolean online, List<String> groups, List<String> users, List<String> permissions, String format, String separator, Player trigger) {
+	public PlayerList(Main plugin, boolean online, boolean formatted, List<String> groups, List<String> users, List<String> permissions, List<String> worlds, String format, String separator, Player trigger) {
 		this.plugin = plugin;
 		this.online = online;
+		this.formatted = formatted;
 		this.groups = groups;
 		this.users = users;
 		this.permissions = permissions;
+		this.worlds = worlds;
 		this.format = format;
 		this.separator = separator;
 		this.trigger = trigger;
@@ -40,6 +45,8 @@ public class PlayerList {
 	
 	public String getList() {
 		List<OfflinePlayer> players = getPlayers();
+		List<String> lines = new ArrayList<String>();
+		String s = "";
 		String list = "";
 		int on = 0;
 		int length = players.toArray().length - 1;
@@ -51,8 +58,17 @@ public class PlayerList {
 		for (OfflinePlayer p : players) {
 			String processedFormat = plugin.msg.processLine(format, p, "list", null);
 			String processedSeparator = plugin.msg.processLine(separator, p, "list", null);
-			list = list + (on >= length ? processedFormat : processedFormat + processedSeparator);
+			s = processedSeparator;
+			if (!formatted) {
+				list = list + (on >= length ? processedFormat : processedFormat + processedSeparator);
+			} else {
+				lines.add(processedFormat);
+			}
 			on++;
+		}
+		
+		if (formatted) {
+			list = Message.getFormattedString(s, lines.toArray());
 		}
 		
 		return list;
@@ -119,6 +135,10 @@ public class PlayerList {
 
 		for (String perm : permissions) {
 			entries.add(new Permission(perm, Main.getPermissions(), plugin));
+		}
+		
+		for (String world : worlds) {
+			entries.add(new World(world, plugin));
 		}
 		return entries;
 	}

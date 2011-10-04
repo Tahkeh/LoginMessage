@@ -18,6 +18,10 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -30,10 +34,10 @@ import com.tahkeh.loginmessage.store.Store;
 
 import de.xzise.XLogger;
 import de.xzise.wrappers.economy.EconomyHandler;
+import de.xzise.wrappers.permissions.BufferPermission;
 import de.xzise.wrappers.permissions.PermissionsHandler;
 
-public class Main extends JavaPlugin //Main class, 'nuff said
-{
+public class Main extends JavaPlugin {
 	public final static String BPU = "BukkitPluginUtilities";
 	public final static String BPU_NAME = "bukkitutil-1.2.0.jar";
 	public final static String BPU_PATH = "http://cloud.github.com/downloads/xZise/Bukkit-Plugin-Utilties/" + BPU_NAME;
@@ -50,6 +54,7 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 	private XLogger logger;
 	private static PermissionsHandler permissions;
 	private static EconomyHandler economy;
+	private final static BufferPermission<Boolean> reload = BufferPermission.create("loginmessage.reload", (Boolean) null);
 	
 	public void registerEvents() {
 		PluginManager pm = getServer().getPluginManager();
@@ -62,15 +67,13 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 		pm.registerEvent(Event.Type.PLUGIN_DISABLE, new SListener(), Event.Priority.Monitor, this);
 	}
 
-	public void onDisable()
-	{
+	public void onDisable() {
 		getServer().getScheduler().cancelTasks(this);
 		logger.disableMsg();
 	}
 	
 	
-	public void onEnable()
-	{
+	public void onEnable() {
 		if (downloadFile(BPU_PATH, BPU_DEST, BPU))
 		{
 			try {
@@ -105,6 +108,33 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 			Logger.getLogger("Minecraft").severe("[LoginMessage] Unable to install '" + BPU + "'! Disabling plugin.");
 			this.getPluginLoader().disablePlugin(this);
 		}
+	}
+	
+	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+		boolean player = false;
+		if (sender instanceof Player) {
+			player = true;
+		}
+		if (command.getName().equalsIgnoreCase("lmsg")) {
+			if (args.length == 1) {
+				if (args[0].equalsIgnoreCase("reload")) {
+					if (permissions.permission(sender, reload)) {
+						msg.unload();
+						msg.load("load");
+						sender.sendMessage(ChatColor.RED + "LoginMessage files reloaded.");
+						return true;
+					} else {
+						sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
+					}
+				}
+			} else if (permissions.permission(sender, reload)) { //TODO: Add OR statements when new permissions are added.
+				sender.sendMessage(ChatColor.RED + "Usage:");
+				if (permissions.permission(sender, reload)) {
+					sender.sendMessage(ChatColor.RED + String.format("%s", player ? "/" : "") + label.toLowerCase() + " reload - Reloads LoginMessage files.");
+				}
+			}
+		}
+		return false;
 	}
 	
 	public static boolean downloadFile(String urlpath, String dest, String file) {
@@ -146,52 +176,52 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 	  return permissions;
   }
   
-      public static InetAddress getExternalIp(){ //Method to get the IP of the local computer. Courtesy of NateLogan.
-    	  
-    	  InetAddress ip = null;
+  public static InetAddress getExternalIp(){ //Method to get the IP of the local computer. Courtesy of NateLogan.
+	  
+	  InetAddress ip = null;
 
-          //Primary site:
-          ip = parseExternalIP("http://automation.whatismyip.com/n09230945.asp");
-          //Alternative site:
-          if(ip == null) ip = parseExternalIP("http://checkip.dyndns.com/");
-          //local IP:
-          if(ip == null){
-              try {
-                  ip = Inet4Address.getLocalHost();
-              } catch (UnknownHostException ex) {
-                  //Unknown exception, will return null;
-              }
-          }
-
-          return ip;
-      }
-
-      private static InetAddress parseExternalIP(String url){ //If first IP check returns null, this method is used. Courtesy of NateLogan.
-          InputStream inputStream = null;
-          BufferedReader bufferedReader = null;
-          InetAddress ip = null;
-
+      //Primary site:
+      ip = parseExternalIP("http://automation.whatismyip.com/n09230945.asp");
+      //Alternative site:
+      if(ip == null) ip = parseExternalIP("http://checkip.dyndns.com/");
+      //local IP:
+      if(ip == null){
           try {
-              Pattern pattern = Pattern.compile("(([\\d]{1}){1,3}\\.){3}([\\d]{1}){1,3}");    //IP address regex
-              inputStream = (new URL(url)).openStream();
-              bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-              Matcher matcher = pattern.matcher(bufferedReader.readLine());
-
-              if (matcher.find()) {   //finds first IP address in first line of url stream
-                  ip = Inet4Address.getByName(matcher.group());
-                  //System.out.println(matcher.group());  //(TEST) print raw address
-              }
-          } catch (Exception ex) {
-             return null;
-          } finally {
-              try {
-                  inputStream.close();
-              } catch (Exception ex) {}
-              try {
-                  bufferedReader.close();
-              } catch (Exception ex) {}
+              ip = Inet4Address.getLocalHost();
+          } catch (UnknownHostException ex) {
+              //Unknown exception, will return null;
           }
-
-          return ip;
       }
+
+      return ip;
+  }
+
+  private static InetAddress parseExternalIP(String url){ //If first IP check returns null, this method is used. Courtesy of NateLogan.
+      InputStream inputStream = null;
+      BufferedReader bufferedReader = null;
+      InetAddress ip = null;
+
+      try {
+          Pattern pattern = Pattern.compile("(([\\d]{1}){1,3}\\.){3}([\\d]{1}){1,3}");    //IP address regex
+          inputStream = (new URL(url)).openStream();
+          bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+          Matcher matcher = pattern.matcher(bufferedReader.readLine());
+
+          if (matcher.find()) {   //finds first IP address in first line of url stream
+              ip = Inet4Address.getByName(matcher.group());
+              //System.out.println(matcher.group());  //(TEST) print raw address
+          }
+      } catch (Exception ex) {
+         return null;
+      } finally {
+          try {
+              inputStream.close();
+          } catch (Exception ex) {}
+          try {
+              bufferedReader.close();
+          } catch (Exception ex) {}
+      }
+
+      return ip;
+  }
 }

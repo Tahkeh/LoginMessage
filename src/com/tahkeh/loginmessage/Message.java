@@ -66,9 +66,8 @@ public class Message
 	
 	private final Cooldown cooldown;
 	
-	public Message(Main instance, Configuration config, Configuration message, Configuration list, XLogger logger, Store store)
-	{
-		this.plugin = instance;
+	public Message(Main plugin, Configuration config, Configuration message, Configuration list, XLogger logger, Store store) {
+		this.plugin = plugin;
 		this.config = config;
 		this.message = message;
 		this.list = list;
@@ -99,48 +98,81 @@ public class Message
 			for(String key : keys) {
 				if(!running.contains(key)) {
 					int interval = message.getInt("messages.interval." + key + ".interval", 300);
-					plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, new Interval(this, key), event.equals("load") ? interval * 20 : 0, interval * 20);
+					plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, new Interval(this, key), interval * 20, interval * 20);
 					running.add(key);
 				}
 			}
 		}
 	}
-
+	
 	public String getTimeDifference(long start) {
+		List<String> lines = new ArrayList<String>();
 		Date end = Calendar.getInstance().getTime();
 		long difference = (end.getTime() - start) / 1000;
 		long date[] = new long[] {0, 0, 0, 0};
-		StringBuilder sb = new StringBuilder();
 		
 		date[3] = (difference >= 60 ? difference % 60 : difference);
 		date[2] = (difference = (difference / 60)) >= 60 ? difference % 60 : difference;
 		date[1] = (difference = (difference / 60)) >= 24 ? difference % 24 : difference;
 		date[0] = (difference = (difference / 24));
 		
-		if (date[0] > 0) {
-			sb.append(String.format("%d day%s", date[0], date[0] != 1 ? "s" : ""));
+		long days = date[0];
+		long hours = date[1];
+		long minutes = date[2];
+		long seconds = date[3];
+		
+		if (days > 0) {
+			lines.add(String.format("%d day%s", days, days != 1 ? "s" : ""));
 		}
-		if (date[1] > 0) {
-			if (sb.length() > 0) {
-				sb.append(", ");
-			}
-			sb.append(String.format("%d hour%s", date[1], date[1] != 1 ? "s" : ""));
+		if (hours > 0) {
+			lines.add(String.format("%d hour%s", hours, hours != 1 ? "s" : ""));
 		}
-		if (date[2] > 0) {
-			if (sb.length() > 0) {
-				sb.append(", ");
-			}
-			sb.append(String.format("%d minute%s", date[2], date[2] != 1 ? "s" : ""));
+		if (minutes > 0) {
+			lines.add(String.format("%d minute%s", minutes, minutes != 1 ? "s" : ""));
 		}
-		if (date[3] > 0) {
-			if (sb.length() > 0) {
-				sb.append(", ");
-			}
-			sb.append(String.format("%d second%s", date[3], date[3] != 1 ? "s" : ""));
+		if (seconds > 0) {
+			lines.add(String.format("%d second%s", seconds, seconds != 1 ? "s" : ""));
 		} else if (difference == 0) {
-			sb.append("a moment");
+			lines.add("a moment");
 		}
-		return sb.toString();
+		
+		return getFormattedString("", lines.toArray());
+	}
+	
+	/**
+	 * Transform an array of objects into a readable string.
+	 * @param string
+	 * 		the array to transform
+	 * @return a readable string
+	 */
+	public static String getFormattedString(String s, Object... string) {
+		StringBuilder sb = new StringBuilder();
+		int length = string.length;
+		int count = 0;
+		String separator = s.equals("") ? ", " : s;
+		
+		for (Object item : string) {
+			count = count + 1;
+			if (length == 1) {
+				sb.append(item);
+			} else if (length == 2) {
+				if (count == 1) {
+					sb.append(item + " and ");
+				} else {
+					sb.append(item);
+				}
+			} else {
+				if (count == length - 1) {
+					sb.append(item + separator + "and ");
+				} else if (count == length) {
+					sb.append(item);
+				} else {
+					sb.append(item + separator);
+				}
+			}
+		}
+		
+		return sb.toString();	
 	}
 	
 	/**
@@ -265,6 +297,8 @@ public class Message
 			status = caps ? offline : offline.toLowerCase();
 		}
 		
+		status = status.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
+		
 		return status;
 	}
 	
@@ -343,13 +377,15 @@ public class Message
 					if (str.contains("%ol_" + key)) {
 						String path = "lists." + key;
 						boolean online = list.getBoolean(path + ".online", true);
+						boolean formatted = list.getBoolean(path + ".formatted", false);
 						List<String> groups = list.getStringList(path + ".players.groups", pub);
 						List<String> users = list.getStringList(path + ".players.users", null);
 						List<String> permissions = list.getStringList(path + ".players.permissions", null);
+						List<String> worlds = list.getStringList(path + ".players.worlds", null);
 						String format = list.getString(path + ".format", "%nm");
 						String separator = list.getString(path + ".separator", ", ");
 						Player trigger = isLeaveEvent(event) ? p : null;
-						PlayerList playerList = new PlayerList(plugin, online, groups, users, permissions, format, separator, trigger);
+						PlayerList playerList = new PlayerList(plugin, online, formatted, groups, users, permissions, worlds, format, separator, trigger);
 						str = str.replaceAll("%ol_" + key, playerList.getList());
 					}
 				}
@@ -529,6 +565,7 @@ public class Message
 		final String userpath = keypath + ".users";
 		final String grouppath = keypath + ".groups";
 		final String permspath = keypath + ".permissions";
+		final String worldpath = keypath + ".worlds";
 		for (String group : message.getStringList(grouppath, null)) {
 			boolean positive = DefaultEntry.isPositive(group);
 			String unsignedGroup = DefaultEntry.getUnsignedText(group);
@@ -549,6 +586,10 @@ public class Message
 
 		for (String perm : message.getStringList(permspath, null)) {
 			entries.add(new Permission(perm, Main.getPermissions(), plugin));
+		}
+		
+		for (String world : message.getStringList(worldpath, null)) {
+			entries.add(new com.tahkeh.loginmessage.entries.World(world, plugin));
 		}
 		return entries;
 	}
