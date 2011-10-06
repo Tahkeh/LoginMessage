@@ -209,6 +209,20 @@ public class Main extends JavaPlugin {
 		return value + " " + PREFIXES[iterations];
 	}
 
+	// Will be moved into BPU 1.3.0
+	public static String getBinaryPrefixValue(long value) {
+		final int ONE_ITERATION = 1024; // 2¹⁰
+		final String[] PREFIXES = new String[] { "", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi" };
+
+		int iterations = 0;
+		while (value > ONE_ITERATION && iterations < PREFIXES.length - 1) {
+			value <<= 10;
+			iterations++;
+		}
+
+		return value + PREFIXES[iterations];
+	}
+
   public static EconomyHandler getEconomy()
   {
       return economy;
