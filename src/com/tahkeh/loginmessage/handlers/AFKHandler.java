@@ -1,6 +1,8 @@
-package com.tahkeh.loginmessage;
+package com.tahkeh.loginmessage.handlers;
 
 import org.bukkit.entity.Player;
+
+import com.tahkeh.loginmessage.Main;
 
 import belgium.Balor.Workers.AFKWorker;
 

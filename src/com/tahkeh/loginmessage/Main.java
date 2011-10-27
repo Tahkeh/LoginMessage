@@ -175,6 +175,7 @@ public class Main extends JavaPlugin {
 		return true;
 	}
 	
+
 	// Will be moved into BPU 1.3.0
 	public static String getBinaryPrefixValue(long value) {
 		final int ONE_ITERATION = 1024; // 2¹⁰
