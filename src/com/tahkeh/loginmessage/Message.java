@@ -144,6 +144,14 @@ public class Message
 		return getFormattedString("", lines.toArray());
 	}
 	
+	public static String processColors(String string) {
+		return string.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
+	}
+
+	public static Player getPlayer(OfflinePlayer player) {
+		return player instanceof Player ? (Player) player : player.isOnline() ? Bukkit.getPlayerExact(player.getName()) : null;
+	}
+
 	/**
 	 * Transform an array of objects into a readable string.
 	 * @param string
@@ -178,14 +186,6 @@ public class Message
 		}
 		
 		return sb.toString();	
-	}
-	
-	public static String processColors(String string) {
-		return string.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
-	}
-	
-	public static Player getPlayer(OfflinePlayer player) {
-		return player instanceof Player ? (Player) player : player.isOnline() ? Bukkit.getPlayerExact(player.getName()) : null;
 	}
 	
 	/**

@@ -176,75 +176,75 @@ public class Main extends JavaPlugin {
 	}
 	
 	// Will be moved into BPU 1.3.0
-		public static String getBinaryPrefixValue(long value) {
-			final int ONE_ITERATION = 1024; // 2¹⁰
-			final String[] PREFIXES = new String[] { "", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi" };
+	public static String getBinaryPrefixValue(long value) {
+		final int ONE_ITERATION = 1024; // 2¹⁰
+		final String[] PREFIXES = new String[] { "", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi" };
 
-			int iterations = 0;
-			while (value > ONE_ITERATION && iterations < PREFIXES.length - 1) {
-				value <<= 10;
-				iterations++;
-			}
-
-			return value + PREFIXES[iterations];
+		int iterations = 0;
+		while (value > ONE_ITERATION && iterations < PREFIXES.length - 1) {
+			value <<= 10;
+			iterations++;
 		}
+
+		return value + PREFIXES[iterations];
+	}
+
+  public static EconomyHandler getEconomy()
+  {
+      return economy;
+  }
+  
+  public static PermissionsHandler getPermissions()
+  {
+	  return permissions;
+  }
 		
-		public static EconomyHandler getEconomy()
-		  {
-		      return economy;
-		  }
-		
-		public static PermissionsHandler getPermissions()
-		  {
-			  return permissions;
-		  }
-		
-		public static InetAddress getExternalIp(){ //Method to get the IP of the local computer. Courtesy of NateLogan.
-			  
-			  InetAddress ip = null;
+  public static InetAddress getExternalIp(){ //Method to get the IP of the local computer. Courtesy of NateLogan.
+	  
+	  InetAddress ip = null;
 
-		      //Primary site:
-		      ip = parseExternalIP("http://automation.whatismyip.com/n09230945.asp");
-		      //Alternative site:
-		      if(ip == null) ip = parseExternalIP("http://checkip.dyndns.com/");
-		      //local IP:
-		      if(ip == null){
-		          try {
-		              ip = Inet4Address.getLocalHost();
-		          } catch (UnknownHostException ex) {
-		              //Unknown exception, will return null;
-		          }
-		      }
+      //Primary site:
+      ip = parseExternalIP("http://automation.whatismyip.com/n09230945.asp");
+      //Alternative site:
+      if(ip == null) ip = parseExternalIP("http://checkip.dyndns.com/");
+      //local IP:
+      if(ip == null){
+          try {
+              ip = Inet4Address.getLocalHost();
+          } catch (UnknownHostException ex) {
+              //Unknown exception, will return null;
+          }
+      }
 
-		      return ip;
-		}
-		
-		private static InetAddress parseExternalIP(String url){ //If first IP check returns null, this method is used. Courtesy of NateLogan.
-		      InputStream inputStream = null;
-		      BufferedReader bufferedReader = null;
-		      InetAddress ip = null;
+      return ip;
+      }
 
-		      try {
-		          Pattern pattern = Pattern.compile("(([\\d]{1}){1,3}\\.){3}([\\d]{1}){1,3}");    //IP address regex
-		          inputStream = (new URL(url)).openStream();
-		          bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-		          Matcher matcher = pattern.matcher(bufferedReader.readLine());
+  private static InetAddress parseExternalIP(String url){ //If first IP check returns null, this method is used. Courtesy of NateLogan.
+      InputStream inputStream = null;
+      BufferedReader bufferedReader = null;
+      InetAddress ip = null;
 
-		          if (matcher.find()) {   //finds first IP address in first line of url stream
-		              ip = Inet4Address.getByName(matcher.group());
-		              //System.out.println(matcher.group());  //(TEST) print raw address
-		          }
-		      } catch (Exception ex) {
-		         return null;
-		      } finally {
-		          try {
-		              inputStream.close();
-		          } catch (Exception ex) {}
-		          try {
-		              bufferedReader.close();
-		          } catch (Exception ex) {}
-		      }
+      try {
+          Pattern pattern = Pattern.compile("(([\\d]{1}){1,3}\\.){3}([\\d]{1}){1,3}");    //IP address regex
+          inputStream = (new URL(url)).openStream();
+          bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+          Matcher matcher = pattern.matcher(bufferedReader.readLine());
 
-		      return ip;
-		  }
+          if (matcher.find()) {   //finds first IP address in first line of url stream
+              ip = Inet4Address.getByName(matcher.group());
+              //System.out.println(matcher.group());  //(TEST) print raw address
+          }
+      } catch (Exception ex) {
+         return null;
+      } finally {
+          try {
+              inputStream.close();
+          } catch (Exception ex) {}
+          try {
+              bufferedReader.close();
+          } catch (Exception ex) {}
+      }
+
+      return ip;
+  }
 }
