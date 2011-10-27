@@ -1,8 +1,5 @@
 package com.tahkeh.loginmessage.listeners;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityListener;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -17,10 +14,8 @@ public class EListener extends EntityListener {
 	
 	public void onEntityDeath(EntityDeathEvent event) {
 		if (!(event instanceof PlayerDeathEvent)) { return; }
-		Map<String, String> args = new HashMap<String, String>();
 		PlayerDeathEvent pde = (PlayerDeathEvent) event;
 		
-		
-		msg.onPlayerDeath(pde, args);
+		msg.onPlayerDeath(pde);
 	}
 }

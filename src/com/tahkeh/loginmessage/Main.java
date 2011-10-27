@@ -29,6 +29,7 @@ import org.bukkit.util.config.Configuration;
 
 import com.tahkeh.loginmessage.listeners.EListener;
 import com.tahkeh.loginmessage.listeners.PListener;
+import com.tahkeh.loginmessage.store.MaterialTable;
 import com.tahkeh.loginmessage.store.PropertiesFile;
 import com.tahkeh.loginmessage.store.Store;
 
@@ -47,14 +48,16 @@ public class Main extends JavaPlugin {
 	public Configuration message;
 	public Configuration list;
 	private Config cfg;
-	public PropertiesFile prop;
+	public PropertiesFile storeProperties;
+	public File tableFile;
 	public Message msg;
 	public Store store;
+	public MaterialTable table;
 	
 	private XLogger logger;
 	private static PermissionsHandler permissions;
 	private static EconomyHandler economy;
-	private final static BufferPermission<Boolean> reload = BufferPermission.create("loginmessage.reload", (Boolean) null);
+	private final static BufferPermission<Boolean> reload = BufferPermission.create("loginmessage.reload", false);
 	
 	public void registerEvents() {
 		PluginManager pm = getServer().getPluginManager();
@@ -74,6 +77,7 @@ public class Main extends JavaPlugin {
 	
 	
 	public void onEnable() {
+		File folder = getDataFolder(); 
 		if (downloadFile(BPU_PATH, BPU_DEST, BPU))
 		{
 			try {
@@ -83,16 +87,21 @@ public class Main extends JavaPlugin {
 				this.getPluginLoader().disablePlugin(this);
 				return;
 			}
-			prop = new PropertiesFile(new File(getDataFolder(), "store.txt"), logger);
-			config = new Configuration(new File(getDataFolder(), "config.yml"));
-			message = new Configuration(new File(getDataFolder(), "messages.yml"));
-			list = new Configuration(new File(getDataFolder(), "list.yml"));
-			cfg = new Config(getDataFolder(), this, logger);
+			storeProperties = new PropertiesFile(new File(folder, "store.txt"), logger);
+			tableFile = new File(folder, "items.txt");
+			config = new Configuration(new File(folder, "config.yml"));
+			message = new Configuration(new File(folder, "messages.yml"));
+			list = new Configuration(new File(folder, "list.yml"));
+			cfg = new Config(folder, this, logger);
 			cfg.setup();
 			config.load();
 			message.load();
-			store = new Store(this, prop);
-			msg = new Message(this, config, message, list, logger, store);
+			store = new Store(this, storeProperties);
+			if (!tableFile.exists()) {
+				MaterialTable.initialWrite(tableFile, logger);
+			}
+			table = new MaterialTable(tableFile, logger);
+			msg = new Message(this, config, message, list, logger, store, table);
 			msg.load("load");
 			cfg.setup();
 			config.load();
@@ -157,7 +166,7 @@ public class Main extends JavaPlugin {
 				}
 				o.flush();
 				o.close();
-				log.info("[LoginMessage] Successfully downloaded " + file + "!");
+				log.info("[LoginMessage] Successfully downloaded " + file + " (" + getBinaryPrefixValue(count) + "B) !");
 			} catch (IOException e) {
 				log.log(Level.SEVERE, "[LoginMessage] Something went wrong when downloading " + file + "!", e);
 				return false;
@@ -165,63 +174,77 @@ public class Main extends JavaPlugin {
 		}
 		return true;
 	}
+	
+	// Will be moved into BPU 1.3.0
+		public static String getBinaryPrefixValue(long value) {
+			final int ONE_ITERATION = 1024; // 2¹⁰
+			final String[] PREFIXES = new String[] { "", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi" };
 
-  public static EconomyHandler getEconomy()
-  {
-      return economy;
-  }
-  
-  public static PermissionsHandler getPermissions()
-  {
-	  return permissions;
-  }
-  
-  public static InetAddress getExternalIp(){ //Method to get the IP of the local computer. Courtesy of NateLogan.
-	  
-	  InetAddress ip = null;
+			int iterations = 0;
+			while (value > ONE_ITERATION && iterations < PREFIXES.length - 1) {
+				value <<= 10;
+				iterations++;
+			}
 
-      //Primary site:
-      ip = parseExternalIP("http://automation.whatismyip.com/n09230945.asp");
-      //Alternative site:
-      if(ip == null) ip = parseExternalIP("http://checkip.dyndns.com/");
-      //local IP:
-      if(ip == null){
-          try {
-              ip = Inet4Address.getLocalHost();
-          } catch (UnknownHostException ex) {
-              //Unknown exception, will return null;
-          }
-      }
+			return value + PREFIXES[iterations];
+		}
+		
+		public static EconomyHandler getEconomy()
+		  {
+		      return economy;
+		  }
+		
+		public static PermissionsHandler getPermissions()
+		  {
+			  return permissions;
+		  }
+		
+		public static InetAddress getExternalIp(){ //Method to get the IP of the local computer. Courtesy of NateLogan.
+			  
+			  InetAddress ip = null;
 
-      return ip;
-  }
+		      //Primary site:
+		      ip = parseExternalIP("http://automation.whatismyip.com/n09230945.asp");
+		      //Alternative site:
+		      if(ip == null) ip = parseExternalIP("http://checkip.dyndns.com/");
+		      //local IP:
+		      if(ip == null){
+		          try {
+		              ip = Inet4Address.getLocalHost();
+		          } catch (UnknownHostException ex) {
+		              //Unknown exception, will return null;
+		          }
+		      }
 
-  private static InetAddress parseExternalIP(String url){ //If first IP check returns null, this method is used. Courtesy of NateLogan.
-      InputStream inputStream = null;
-      BufferedReader bufferedReader = null;
-      InetAddress ip = null;
+		      return ip;
+		}
+		
+		private static InetAddress parseExternalIP(String url){ //If first IP check returns null, this method is used. Courtesy of NateLogan.
+		      InputStream inputStream = null;
+		      BufferedReader bufferedReader = null;
+		      InetAddress ip = null;
 
-      try {
-          Pattern pattern = Pattern.compile("(([\\d]{1}){1,3}\\.){3}([\\d]{1}){1,3}");    //IP address regex
-          inputStream = (new URL(url)).openStream();
-          bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-          Matcher matcher = pattern.matcher(bufferedReader.readLine());
+		      try {
+		          Pattern pattern = Pattern.compile("(([\\d]{1}){1,3}\\.){3}([\\d]{1}){1,3}");    //IP address regex
+		          inputStream = (new URL(url)).openStream();
+		          bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+		          Matcher matcher = pattern.matcher(bufferedReader.readLine());
 
-          if (matcher.find()) {   //finds first IP address in first line of url stream
-              ip = Inet4Address.getByName(matcher.group());
-              //System.out.println(matcher.group());  //(TEST) print raw address
-          }
-      } catch (Exception ex) {
-         return null;
-      } finally {
-          try {
-              inputStream.close();
-          } catch (Exception ex) {}
-          try {
-              bufferedReader.close();
-          } catch (Exception ex) {}
-      }
+		          if (matcher.find()) {   //finds first IP address in first line of url stream
+		              ip = Inet4Address.getByName(matcher.group());
+		              //System.out.println(matcher.group());  //(TEST) print raw address
+		          }
+		      } catch (Exception ex) {
+		         return null;
+		      } finally {
+		          try {
+		              inputStream.close();
+		          } catch (Exception ex) {}
+		          try {
+		              bufferedReader.close();
+		          } catch (Exception ex) {}
+		      }
 
-      return ip;
-  }
+		      return ip;
+		  }
 }

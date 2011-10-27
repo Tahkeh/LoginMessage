@@ -53,6 +53,7 @@ public class Config //For all your configuration needs
 				o.write("#separator: This is what will be used to separate advanced %ol codes.\n");
 				o.write("#Keep all text within the single quotes.\n");
 				o.write("separator: '%&%&'\n");
+				o.write("\n");
 				o.write("#format: This is the formatting used for the %srtime code.\n");
 				o.write("#Go to goo.gl/3nZ5y to learn how to properly format.\n");
 				o.write("format: K:mm a z\n");
@@ -65,11 +66,11 @@ public class Config //For all your configuration needs
 				o.write("rcodefail: TF\n");
 				o.write("rnamefail: Trollface\n");
 				o.write("\n");
-				o.write("#The following is what will display with the %time code depending on what time it actually is. Put in upper case or %Time will not work.\n");
-				o.write("day: Day\n");
-				o.write("sunset: Dusk\n");
-				o.write("night: Night\n");
-				o.write("sunrise: Dawn\n");
+				o.write("#The following is what will display with the %time code depending on what time it actually is.\n");
+				o.write("day: day\n");
+				o.write("sunset: dusk\n");
+				o.write("night: night\n");
+				o.write("sunrise: dawn\n");
 				o.write("\n");
 				o.write("#istrue/isfalse: What to return for true/false codes (keep capitalized).\n");
 				o.write("#Keep all text within the single quotes. You may use color codes here if you wish.\n");
@@ -93,7 +94,7 @@ public class Config //For all your configuration needs
 			}
 			catch (IOException e)
 			{
-				log.severe("[LoginMessage] Error creating config.yml file.");
+				log.severe("Error creating config.yml file.");
 			}
 		}
 		if(!msg.exists())
@@ -225,7 +226,7 @@ public class Config //For all your configuration needs
 			}
 			catch (IOException e)
 			{
-				log.severe("[LoginMessage] Error creating messages.yml file.");
+				log.severe("Error creating messages.yml file.");
 			}
 		}
 		if(!list.exists())
@@ -273,7 +274,7 @@ public class Config //For all your configuration needs
 			}
 			catch (IOException e)
 			{
-				log.severe("[LoginMessage] Error creating list.yml file.");
+				log.severe("Error creating list.yml file.");
 			}
 	}
 	}

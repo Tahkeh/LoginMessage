@@ -13,12 +13,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -35,6 +34,10 @@ import com.tahkeh.loginmessage.entries.Permission;
 import com.tahkeh.loginmessage.entries.Pri;
 import com.tahkeh.loginmessage.entries.Pub;
 import com.tahkeh.loginmessage.entries.User;
+import com.tahkeh.loginmessage.entries.causes.Cause;
+import com.tahkeh.loginmessage.handlers.AFKHandler;
+import com.tahkeh.loginmessage.handlers.DeathHandler;
+import com.tahkeh.loginmessage.store.MaterialTable;
 import com.tahkeh.loginmessage.store.Store;
 import com.tahkeh.loginmessage.timers.Cooldown;
 import com.tahkeh.loginmessage.timers.Delay;
@@ -59,14 +62,15 @@ public class Message
 	private final Configuration list;
 	private final XLogger logger;
 	private final Store store;
+	private final MaterialTable table;
 
 	String separator = "%&%&";
-	boolean cont = true;
+	Set<String> kicked = new HashSet<String>();
 	List<String> running = new ArrayList<String>();
 	
 	private final Cooldown cooldown;
 	
-	public Message(Main plugin, Configuration config, Configuration message, Configuration list, XLogger logger, Store store) {
+	public Message(Main plugin, Configuration config, Configuration message, Configuration list, XLogger logger, Store store, MaterialTable table) {
 		this.plugin = plugin;
 		this.config = config;
 		this.message = message;
@@ -74,6 +78,7 @@ public class Message
 		this.logger = logger;
 		this.cooldown = new Cooldown();
 		this.store = store;
+		this.table = table;
 		}
 	
 	public void load(String event) {
@@ -175,6 +180,14 @@ public class Message
 		return sb.toString();	
 	}
 	
+	public static String processColors(String string) {
+		return string.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
+	}
+	
+	public static Player getPlayer(OfflinePlayer player) {
+		return player instanceof Player ? (Player) player : player.isOnline() ? Bukkit.getPlayerExact(player.getName()) : null;
+	}
+	
 	/**
 	 * Check the .dat files in the default world folder. If the given player is 
 	 * found, return true.
@@ -224,7 +237,7 @@ public class Message
 		} else if (modTime == 23000 || modTime <= 23999) {
 			name = dawn;
 		}
-		return caps ? name : name.toLowerCase();
+		return caps ? toCapitalCase(name) : name.toLowerCase();
 	}
 	
 	public String getGameMode(GameMode mode, boolean caps) {
@@ -274,7 +287,7 @@ public class Message
 			name = f;
 		}
 		
-		name = name.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
+		name = processColors(name);
 
 		return caps ? name : name.toLowerCase();
 	}
@@ -287,17 +300,17 @@ public class Message
 		String afk = config.getString("status.afk", "&6AFK");
 		
 		if (p.isOnline()) {
-			status = caps ? online : online.toLowerCase();
+			status = caps ? toCapitalCase(online) : online.toLowerCase();
 			if (afkhandler.isActive()) {
 				if (afkhandler.isAFK(plugin.getServer().getPlayerExact(p.getName()))) {
 					status = afk;
 				}
 			}
 		} else {
-			status = caps ? offline : offline.toLowerCase();
+			status = caps ? toCapitalCase(offline) : offline.toLowerCase();
 		}
 		
-		status = status.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
+		status = processColors(status);
 		
 		return status;
 	}
@@ -360,8 +373,8 @@ public class Message
 		        		suffix = suffix.replaceAll("pr", getPrefix(group, world));
 		        		suffix = suffix.replaceAll("sf", getSuffix(group, world));
 		        	}
-		        	prefix = prefix.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
-		        	suffix = suffix.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
+		        	prefix = processColors(prefix);
+		        	suffix = processColors(suffix);
 		        	list = list + (on >= length ? prefix + name + suffix : prefix + name + suffix + ", ");
 		        	on++;
 		        }
@@ -489,7 +502,7 @@ public class Message
 		str = str.replaceAll("%max", Integer.toString(plugin.getServer().getMaxPlayers()));
 		str = str.replaceAll("%srtime", sdf.format(Calendar.getInstance().getTime()));
 		
-		str = str.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
+		str = processColors(str);
 		str = str.replaceAll("%sp", "");
 
 		return textProcess(str);
@@ -605,8 +618,9 @@ public class Message
 	 *            the name of the message (for the commands). Will be ignored if
 	 *            the event isn't <code>command</code>.
 	 */
-	public void preProcessMessage(OfflinePlayer trigger, String event, Map<String, String> args) {
+	public void preProcessMessage(OfflinePlayer trigger, String event, Map<String, String> args) {		
 		String[] messages;
+		boolean cont = true;
 		if (event.equals("command")) {
 			messages = new String[] { args.get("cmd") };
 		} else {
@@ -618,16 +632,19 @@ public class Message
 			}
 		}
 		for (String key : messages) {
-			List<String> msgargs = message.getStringList("messages." + event + "." + key + ".args", null);
-			Set<Entry> triggers = null;
-			if (msgargs == null || !msgargs.contains("player")) {
-				Player onlinetrigger = plugin.getServer().getPlayerExact(trigger.getName());
-				triggers = getEntries(onlinetrigger, key, event, "triggers");
-				if (matchEntries(onlinetrigger, triggers)) {
+			if (event.equals("death") && !key.equals(args.get("key"))) {
+				cont = false;
+			} else {
+				cont = true;
+			}
+			if (cont) {
+				Set<Entry> triggers = null;
+				String name = args != null && args.containsKey("trigger") ? args.get("trigger") : trigger.getName();
+				Player trueTrigger = plugin.getServer().getPlayerExact(name);
+				triggers = getEntries(trueTrigger, key, event, "triggers");
+				if (matchEntries(trueTrigger, triggers)) {
 					finishMessage(trigger, event, key, args);
 				}
-			} else {
-				finishMessage(trigger, event, key, args);
 			}
 		}
 	}
@@ -717,6 +734,13 @@ public class Message
 		} else {
 			return def;
 		}
+	}
+	
+	public static String toCapitalCase(String str) {
+		//TODO: Search for first instance of a letter in str instead of assuming index 1 is a letter.
+		String capital = str.substring(0, 1).toUpperCase();
+		String trim = str.substring(1).toLowerCase();
+		return capital + trim;
 	}
 
 	public void finishMessage(OfflinePlayer p, String event, String key, Map<String, String> args) // Final touches - delay and cooldown
@@ -810,23 +834,21 @@ public class Message
 	}
 
 	public void onPlayerQuit(PlayerQuitEvent event) {
-		if (cont) {
+		Player p = event.getPlayer();
+		if (!this.kicked.remove(p.getName())) {
 			load("quit");
-			Player p = event.getPlayer();
 			preProcessMessage(p, "quit", null);
 
 			if (config.getBoolean("clearquitmsg", true)) {
 				event.setQuitMessage(null);
 			}
-		} else {
-			cont = true;
 		}
 	}
 
 	public void onPlayerKick(PlayerKickEvent event) {
-		cont = false;
 		load("kick");
 		Player p = event.getPlayer();
+		this.kicked.add(p.getName());
 		Map<String, String> args = new HashMap<String, String>();
 
 		args.put("kickreason", event.getReason());
@@ -864,10 +886,10 @@ public class Message
 								args.put("trigger", sender.getName());
 								preProcessMessage(target, "command", args);
 							} else {
-								String noplayer = config.getString("noplayerfound", "&cPlayer \"%nm\" does not exist!");
-								noplayer = noplayer.replaceAll("%nm", cmdargs[1]);
-								noplayer = noplayer.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
-								sender.sendMessage(noplayer);
+								String noplayerfound = config.getString("noplayerfound", "&cPlayer \"%nm\" does not exist!");
+								noplayerfound = noplayerfound.replaceAll("%nm", cmdargs[1]);
+								noplayerfound = processColors(noplayerfound);
+								sender.sendMessage(noplayerfound);
 							}
 						} else {
 							preProcessMessage(sender, "command", args);
@@ -878,9 +900,32 @@ public class Message
 		}
 	}
 	
-	public void onPlayerDeath(PlayerDeathEvent event, Map<String, String> args) {
+	public void onPlayerDeath(PlayerDeathEvent event) {
 		load("death");
+		Map<String, String> args = new HashMap<String, String>();
+		Map<String, List<String>> keyCauses = new HashMap<String, List<String>>();
+		Player p = (Player) event.getEntity();
+		DeathHandler handler = new DeathHandler(p, table);
+		List<String> keys = message.getKeys("messages.death");
 		
+		if (keys != null) {
+			for (String key : keys) {
+				List<String> triggerCauses = message.getStringList("messages.death." + key + ".causes", null);
+				Set<Cause> possibleCauses = handler.getCauses();
+				if (triggerCauses != null) {
+					keyCauses.put(key, triggerCauses);
+				}
+				for (String triggerCause : keyCauses.get(key)) {
+					if (DeathHandler.matchCauses(toCapitalCase(triggerCause), possibleCauses)) {
+						args.put("key", key);
+						args.put("entity", handler.getKiller());
+						args.put("item", handler.isKillerPlayer() ? handler.getItem(plugin.getServer().getPlayerExact(handler.getKiller()).getItemInHand()) : "?");
+						preProcessMessage(p, "death", args);
+						break;
+					}
+				}
+			}
+		}
 		
 		if (config.getBoolean("cleardeathmsg", true)) {
 			event.setDeathMessage(null);
