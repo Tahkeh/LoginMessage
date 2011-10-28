@@ -66,6 +66,7 @@ public class Message
 	String separator = "%&%&";
 	Set<String> kicked = new HashSet<String>();
 	List<String> running = new ArrayList<String>();
+	Map<String, Integer> cycle = new HashMap<String, Integer>();
 	
 	private final Cooldown cooldown;
 	
@@ -94,6 +95,7 @@ public class Message
 	public void unload() {
 		plugin.getServer().getScheduler().cancelTasks(plugin);
 		running.clear();
+		cycle.clear();
 	}
 	
 	public void scheduleIntervals(String event) {
@@ -701,18 +703,27 @@ public class Message
 		if (messages != null && messages.size() > 0) {
 			// See: MinecraftUtil.getRandomFromChances
 			// Read chances
+			int length = messages.toArray().length;
 			double totalchance = 0;
 			double defChance = 1.0 / messages.size();
 			for (ConfigurationNode messageNode : messages) {
 				totalchance += messageNode.getDouble("chance", defChance);
 			}
-
+			
 			double value = Math.random() * totalchance;
-			for (ConfigurationNode messageNode : messages) {
-				value -= messageNode.getDouble("chance", defChance);
-				if (value < 0) {
-					lines = getStringList(messageNode, "message", EMPTY_STRING_ARRAY);
-					break;
+			if (messages.get(0).getProperty("order") != null) {
+				if (!cycle.containsKey(name)) {
+					cycle.put(name, 0);
+				}
+				lines = getStringList(messages.get(cycle.get(name)), "order", EMPTY_STRING_ARRAY);
+				cycle.put(name, cycle.get(name) >= length - 1 ? 0 : cycle.get(name) + 1);
+			} else {
+				for (ConfigurationNode messageNode : messages) {
+					value -= messageNode.getDouble("chance", defChance);
+					if (value < 0) {
+						lines = getStringList(messageNode, "random", EMPTY_STRING_ARRAY);
+						break;
+					}
 				}
 			}
 		} else {
