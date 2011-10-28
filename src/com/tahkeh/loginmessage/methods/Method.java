@@ -1,5 +1,8 @@
 package com.tahkeh.loginmessage.methods;
 
+
+import org.bukkit.entity.Player;
+
 public interface Method {
 
 	/**
@@ -7,7 +10,7 @@ public interface Method {
 	 * @param parameters the parameters.
 	 * @return the parsed string or null if invalid.
 	 */
-	String call(String... parameters);
+	String call(Player player, String event, String... parameters);
 
 	/**
 	 * Defines if this method has recursive calls.

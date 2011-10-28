@@ -1,23 +1,23 @@
 package com.tahkeh.loginmessage.methods;
 
+
 import java.util.HashMap;
 import java.util.Map;
+
+import org.bukkit.entity.Player;
 
 import de.xzise.MinecraftUtil;
 import de.xzise.XLogger;
 
 public class MethodParser {
 
-	public static final int WARNING_THRESHOLD = 1;
-	public static final int STOPPING_THRESHOLD = 2;
+	public static final int STOPPING_THRESHOLD = 100;
+	public static final int WARNING_THRESHOLD = STOPPING_THRESHOLD * 9 / 10;
 
-	private final Map<String, Method> methods = new HashMap<String, Method>();
+	private final Map<String, Map<Integer, Method>> methods = new HashMap<String, Map<Integer, Method>>();
 	private final XLogger logger;
 
 	public MethodParser(XLogger logger) {
-		this.registerMethod("onlist", new OnlistMethod(logger));
-		this.registerMethod("print", new Print());
-
 		this.logger = logger;
 	}
 
@@ -28,22 +28,72 @@ public class MethodParser {
 	 *            New name of the method. No spaces are allowed.
 	 * @param method
 	 *            New method.
-	 * @return If there wasn't a method registered with this name.
+	 * @param paramCount
+	 *            The number of parameters the method is registered to.
+	 * @return How many methods were already registered.
 	 */
-	public boolean registerMethod(String name, Method method) {
+	public int registerMethod(String name, Method method, int... paramCount) {
 		if (name.contains(" ")) {
 			throw new IllegalArgumentException("Name shouldn't contain spaces.");
 		} else {
+			if (paramCount.length == 0) {
+				paramCount = new int[] { -1, 0 };
+			}
 			// TODO: Case insensitive?
-			return this.methods.put(name, method) == null;
+			Map<Integer, Method> methods = this.methods.get(name);
+			if (methods == null) {
+				methods = new HashMap<Integer, Method>();
+				this.methods.put(name, methods);
+			}
+			int failCount = 0;
+			for (int i : paramCount) {
+				if (methods.put(i, method) != null) {
+					failCount++;
+				}
+			}
+			return failCount;
 		}
 	}
 
-	public String parseLine(String line) {
-		return this.parseLine(line, 0);
+	/**
+	 * Returns a method with the specified name and parameter count. If there is
+	 * no method with the specified parameter count it will select the method
+	 * with the parameter count of <code>-1</code> if the chosen parameter count
+	 * is positive. If the parameter count is lower equals zero and there is no
+	 * method registered with the parameter count it will return the method with
+	 * no parameters.
+	 * 
+	 * @param name
+	 *            name of the method.
+	 * @param paramCount
+	 *            Number of parameters. If <code>-1</code> the method allow all
+	 *            parameter counts.
+	 * @return a method with the name and parameter count. If there wasn't a
+	 *         method found it will return null.
+	 */
+	public Method getMethod(String name, int paramCount) {
+		// TODO: Case insensitive?
+		Map<Integer, Method> methods = this.methods.get(name);
+		if (methods != null) {
+			if (methods.containsKey(paramCount)) {
+				return methods.get(paramCount);
+			} else {
+				return methods.get(paramCount > 0 ? -1 : 0);
+			}
+		} else {
+			return null;
+		}
 	}
 
-	private String parseLine(String line, int depth) {
+	public void clearMethods() {
+		this.methods.clear();
+	}
+
+	public String parseLine(Player player, String event, String line) {
+		return this.parseLine(player, event, line, 0);
+	}
+
+	private String parseLine(Player player, String event, String line, final int depth) {
 		int index = 0;
 		int start = -1;
 		int delim = -1;
@@ -75,10 +125,12 @@ public class MethodParser {
 					break;
 				case ')':
 					if (!quoted) {
-						bracketLevel--;
-						if (bracketLevel == 0) {
-							end = index;
-							paramEnd = index - 1;
+						if (bracketLevel > 0) {
+							bracketLevel--;
+							if (bracketLevel == 0) {
+								end = index;
+								paramEnd = index - 1;
+							}
 						}
 					}
 					break;
@@ -100,14 +152,14 @@ public class MethodParser {
 				paramEnd = index - 1;
 			}
 
-			if (end > start) {
+			if (start >= 0 && end >= start) {
 				int nameEnd;
 				String[] parameters;
 				if (delim > start) {
 					nameEnd = delim - 1;
 					String parameterText = line.substring(delim + 1, paramEnd + 1);
 					if (parameterText.length() > 0) {
-						parameters = MinecraftUtil.parseLine(parameterText, ',');
+						parameters = MinecraftUtil.parseLine(parameterText, ',', '"', '\\', '(', ')', true);
 					} else {
 						parameters = new String[0];
 					}
@@ -117,16 +169,21 @@ public class MethodParser {
 				}
 				String name = line.substring(start, nameEnd + 1);
 
-				Method method = this.methods.get(name);
+				final Method method = this.getMethod(name, parameters.length);
 				if (method != null) {
 					if (depth < STOPPING_THRESHOLD) {
 						if (depth >= WARNING_THRESHOLD) {
 							this.logger.warning("Deep method call of '" + name + "' at depth " + depth);
 						}
-						String replacement = method.call(parameters);
+						if (method.recursive()) {
+							for (int i = 0; i < parameters.length; i++) {
+								parameters[i] = parseLine(player, event, parameters[i], depth + 1);
+							}
+						}
+						String replacement = method.call(player, event, parameters);
 						if (replacement != null) {
 							if (method.recursive()) {
-								replacement = parseLine(replacement, depth + 1);
+								replacement = parseLine(player, event, replacement, depth + 1);
 							}
 							line = line.substring(0, start) + replacement + substring(line, end + 1, line.length());
 							index += replacement.length() - (end - start) - 1;
@@ -146,11 +203,32 @@ public class MethodParser {
 		return line;
 	}
 
+	public void loadDefaults() {
+		this.registerMethod("onlist", new OnlistMethod(this.logger), 0, 2, 3);
+		this.registerMethod("call", new PrintMethod(true), -1);
+		this.registerMethod("print", new PrintMethod(false), -1);
+		this.registerMethod("ifequals", new IfEqualsMethod(false), 3, 4);
+		this.registerMethod("ifnotequals", new IfEqualsMethod(true), 3, 4);
+		this.registerMethod("ifset", new IfSetMethod(false), 2, 3);
+		this.registerMethod("ifnotset", new IfSetMethod(true), 2, 3);
+		this.registerMethod("ifequalsignorecase", new IfEqualsIgnoreCaseMethod(false), 3, 4);
+		this.registerMethod("ifnotequalsignorecase", new IfEqualsIgnoreCaseMethod(true), 3, 4);
+	}
+
 	private static String substring(String input, int start, int end) {
 		if (end < start) {
 			return "";
 		} else {
 			return input.substring(start, end);
 		}
+	}
+
+	public static void createRedirected(MethodParser parser, String name, String redirected, int... paramCounts) {
+		for (int paramCount : paramCounts) {
+			Method redirectedMethod = parser.getMethod(redirected, paramCount);
+			if (redirectedMethod != null) {
+				parser.registerMethod(name, new RedirectMethod(redirectedMethod), paramCount);
+			}
+        }
 	}
 }

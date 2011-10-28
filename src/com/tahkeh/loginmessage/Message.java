@@ -38,6 +38,11 @@ import com.tahkeh.loginmessage.entries.causes.Cause;
 import com.tahkeh.loginmessage.handlers.AFKHandler;
 import com.tahkeh.loginmessage.handlers.DeathHandler;
 import com.tahkeh.loginmessage.store.MaterialTable;
+import com.tahkeh.loginmessage.methods.IfEqualsMethod;
+import com.tahkeh.loginmessage.methods.IfSetMethod;
+import com.tahkeh.loginmessage.methods.MethodParser;
+import com.tahkeh.loginmessage.methods.OnlistMethod;
+import com.tahkeh.loginmessage.methods.PrintMethod;
 import com.tahkeh.loginmessage.store.Store;
 import com.tahkeh.loginmessage.timers.Cooldown;
 import com.tahkeh.loginmessage.timers.Delay;
@@ -63,6 +68,7 @@ public class Message
 	private final XLogger logger;
 	private final Store store;
 	private final MaterialTable table;
+	private final MethodParser methodParser;
 
 	String separator = "%&%&";
 	Set<String> kicked = new HashSet<String>();
@@ -80,8 +86,16 @@ public class Message
 		this.cooldown = new Cooldown();
 		this.store = store;
 		this.table = table;
+		this.methodParser = new MethodParser(logger);
+		// Register methods
+		this.loadDefaultMethods();
 		}
-	
+
+	private void loadDefaultMethods() {
+		this.methodParser.clearMethods();
+		this.methodParser.loadDefaults();
+	}
+
 	public void load(String event) {
 		if(config.getBoolean("autoload", true) || event.equals("load")) {
 			config.load();
@@ -273,7 +287,7 @@ public class Message
 		return Main.getPermissions().getString(world, group, SUFFIX_PERMISSION);
 	}
 
-	public boolean isLeaveEvent(String event) // For %ol and %size
+	public static boolean isLeaveEvent(String event) // For %ol and %size
 	{
 		return event.equals("kick") || event.equals("quit");
 	}

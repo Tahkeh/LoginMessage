@@ -1,5 +1,8 @@
 package com.tahkeh.loginmessage.methods;
 
+
+import org.bukkit.entity.Player;
+
 public class AliasMethod implements Method {
 
 	private final String result;
@@ -11,8 +14,8 @@ public class AliasMethod implements Method {
 	}
 
 	@Override
-	public String call(String... parameters) {
-		if (paramCount == parameters.length) {
+	public String call(Player player, String event, String... parameters) {
+		if (this.paramCount == parameters.length) {
 			String result = this.result;
 			for (int i = 0; i < parameters.length; i++) {
 				result = result.replaceAll("\\$" + i + ";", parameters[i]);

@@ -1,14 +1,18 @@
 package com.tahkeh.loginmessage.methods;
 
+
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
+import com.tahkeh.loginmessage.Message;
+
 import de.xzise.MinecraftUtil;
 import de.xzise.XLogger;
-import de.xzise.collections.ArrayIterator;
 
 /**
  * Simple online list method.
@@ -75,7 +79,7 @@ public class OnlistMethod implements Method {
 	}
 
 	@Override
-	public String call(String... parameters) {
+	public String call(Player player, String event, String... parameters) {
 		ChatColor nameColor = NAME_COLOR;
 		ChatColor commaColor = COMMA_COLOR;
 		ChatColor endColor = COMMA_COLOR;
@@ -97,15 +101,19 @@ public class OnlistMethod implements Method {
 			if (!endColorSet) {
 				endColor = commaColor;
 			}
-			return this.call(nameColor, commaColor, endColor);
+			return this.call(player, event, nameColor, commaColor, endColor);
 		} else {
 			return null;
 		}
 	}
 
-	private String call(ChatColor nameColor, ChatColor commaColor, ChatColor endColor) {
+	private String call(Player triggerPlayer, String event, ChatColor nameColor, ChatColor commaColor, ChatColor endColor) {
 		StringBuilder builder = new StringBuilder();
-		for (Iterator<Player> playerIt = new ArrayIterator<Player>(Bukkit.getServer().getOnlinePlayers()); playerIt.hasNext();) {
+		List<Player> allPlayers = Arrays.asList(Bukkit.getServer().getOnlinePlayers());
+		if (Message.isLeaveEvent(event)) {
+			allPlayers.remove(triggerPlayer);
+		}
+		for (Iterator<Player> playerIt = allPlayers.iterator(); playerIt.hasNext();) {
 			Player player = playerIt.next();
 			builder.append(nameColor).append(player.getName());
 			if (playerIt.hasNext()) {
