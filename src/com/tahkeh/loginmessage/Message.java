@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
-
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
@@ -317,17 +316,41 @@ public class Message
 	
 	public String textProcess(String str) {
 		boolean vowel = false;
-		if(str.contains("%an%")) {
+		if (str.contains("%an%")) {
 			String code = str.substring(str.indexOf("%an%"), str.indexOf("%an%") + 4);
 			String letter = str.substring(str.indexOf("%an%") + 5, str.indexOf("%an%") + 6);
-			if(letter.equalsIgnoreCase("a") || letter.equalsIgnoreCase("e") || letter.equalsIgnoreCase("i") || letter.equalsIgnoreCase("o") || letter.equalsIgnoreCase("u")) {
+			if (letter.equalsIgnoreCase("a") || letter.equalsIgnoreCase("e") || letter.equalsIgnoreCase("i") || letter.equalsIgnoreCase("o") || letter.equalsIgnoreCase("u")) {
 				vowel = true;
 			}
-			if(vowel) {
+			if (vowel) {
 				str = str.replace(code, "an");
 			} else {
 				str = str.replace(code, "a");
 			}
+		}
+		if (str.contains("%ifeq(")) {
+			int start = str.indexOf("%ifeq(") + 6;
+			int end = str.indexOf(")", start);
+			String trim = str.substring(start, end);
+			String regex = "%ifeq(" + trim + ")";
+			String replacement = "";
+			
+			String boolean1 = trim.substring(0, trim.indexOf(","));
+			String trim1 = trim.substring(trim.indexOf(",") + 2);
+			
+			String boolean2 = trim1.substring(0, trim1.indexOf(","));
+			String trim2 = trim1.substring(trim1.indexOf(",") + 2);
+			
+			String equal = trim2.substring(0, trim2.indexOf(","));
+			String unequal = trim2.substring(trim2.indexOf(",") + 2);
+			
+			if (boolean1.equals(boolean2)) {
+				replacement = equal;
+			} else {
+				replacement = unequal;
+			}
+			
+			str = str.replace(regex, replacement);
 		}
 		
 		return str;
@@ -814,7 +837,10 @@ public class Message
 	{
 		for (Player receiver : possibleReceivers) {
 			for (String str : lines) {
-				receiver.sendMessage(processLine(str, trigger, event, args));
+				if (!processLine(str, trigger, event, args).trim().equals("")) {
+					// Don't send an empty line
+					receiver.sendMessage(processLine(str, trigger, event, args));
+				}
 			}
 		}
 		if (task != null) {
