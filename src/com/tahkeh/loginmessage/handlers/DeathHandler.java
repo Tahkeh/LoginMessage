@@ -59,6 +59,9 @@ public class DeathHandler {
 		} else {
 			causes.add(new OtherCause(cause));
 		}
+		if (damageCause == DamageCause.PROJECTILE) {
+			killer = ((EntityDamageByEntityEvent)event).getDamager().toString().substring(5).toLowerCase();
+		}
 		
 		return causes;
 	}
