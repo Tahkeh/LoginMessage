@@ -38,11 +38,7 @@ import com.tahkeh.loginmessage.entries.causes.Cause;
 import com.tahkeh.loginmessage.handlers.AFKHandler;
 import com.tahkeh.loginmessage.handlers.DeathHandler;
 import com.tahkeh.loginmessage.store.MaterialTable;
-import com.tahkeh.loginmessage.methods.IfEqualsMethod;
-import com.tahkeh.loginmessage.methods.IfSetMethod;
 import com.tahkeh.loginmessage.methods.MethodParser;
-import com.tahkeh.loginmessage.methods.OnlistMethod;
-import com.tahkeh.loginmessage.methods.PrintMethod;
 import com.tahkeh.loginmessage.store.Store;
 import com.tahkeh.loginmessage.timers.Cooldown;
 import com.tahkeh.loginmessage.timers.Delay;
@@ -93,7 +89,7 @@ public class Message
 
 	private void loadDefaultMethods() {
 		this.methodParser.clearMethods();
-		this.methodParser.loadDefaults();
+		this.methodParser.loadDefaults("");
 	}
 
 	public void load(String event) {

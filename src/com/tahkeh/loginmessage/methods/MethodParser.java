@@ -1,11 +1,15 @@
 package com.tahkeh.loginmessage.methods;
 
-
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import org.bukkit.entity.Player;
 
+import de.xzise.EqualCheck;
 import de.xzise.MinecraftUtil;
 import de.xzise.XLogger;
 
@@ -29,8 +33,10 @@ public class MethodParser {
 	 * @param method
 	 *            New method.
 	 * @param paramCount
-	 *            The number of parameters the method is registered to.
-	 * @return How many methods were already registered.
+	 *            The number of parameters the method is registered to. There
+	 *            could be negative values which allows more than the specified
+	 *            absolute value.
+	 * @return How many methods were already registered and overwritten.
 	 */
 	public int registerMethod(String name, Method method, int... paramCount) {
 		if (name.contains(" ")) {
@@ -56,18 +62,25 @@ public class MethodParser {
 	}
 
 	/**
-	 * Returns a method with the specified name and parameter count. If there is
-	 * no method with the specified parameter count it will select the method
-	 * with the parameter count of <code>-1</code> if the chosen parameter count
-	 * is positive. If the parameter count is lower equals zero and there is no
-	 * method registered with the parameter count it will return the method with
-	 * no parameters.
+	 * <p>
+	 * Returns a method with the specified name and parameter count. Negative
+	 * parameter counts means the minimum of allowed parameters. If there is no
+	 * method with the specified parameter count it will select the method which
+	 * can handle the parameter count but they may can handle more or less than
+	 * specified.
+	 * </p>
+	 * <p>
+	 * Example: The {@code paramCount} parameter is {@code 3} and there is no
+	 * method registered with 3 parameters it will try {@code -3}, {@code -2}
+	 * and {@code -1} parameter and selects the first found. Here does the
+	 * {@code -3} means that the method can handle 3 or more parameters.
+	 * </p>
 	 * 
 	 * @param name
 	 *            name of the method.
 	 * @param paramCount
-	 *            Number of parameters. If <code>-1</code> the method allow all
-	 *            parameter counts.
+	 *            Number of parameters. Negative parameter count means that the
+	 *            method can also allow more than the specified value.
 	 * @return a method with the name and parameter count. If there wasn't a
 	 *         method found it will return null.
 	 */
@@ -75,13 +88,23 @@ public class MethodParser {
 		// TODO: Case insensitive?
 		Map<Integer, Method> methods = this.methods.get(name);
 		if (methods != null) {
-			if (methods.containsKey(paramCount)) {
-				return methods.get(paramCount);
-			} else {
-				return methods.get(paramCount > 0 ? -1 : 0);
-			}
+			return getMethod(methods, paramCount);
 		} else {
 			return null;
+		}
+	}
+
+	private static Method getMethod(Map<Integer, Method> methods, int paramCount) {
+		if (methods.containsKey(paramCount)) {
+			return methods.get(paramCount);
+		} else {
+			Method method = null;
+			paramCount = -Math.abs(paramCount);
+			while (paramCount < 0 && method == null) {
+				method = methods.get(paramCount);
+				paramCount++;
+			}
+			return method;
 		}
 	}
 
@@ -203,16 +226,16 @@ public class MethodParser {
 		return line;
 	}
 
-	public void loadDefaults() {
-		this.registerMethod("onlist", new OnlistMethod(this.logger), 0, 2, 3);
-		this.registerMethod("call", new PrintMethod(true), -1);
-		this.registerMethod("print", new PrintMethod(false), -1);
-		this.registerMethod("ifequals", new IfEqualsMethod(false), 3, 4);
-		this.registerMethod("ifnotequals", new IfEqualsMethod(true), 3, 4);
-		this.registerMethod("ifset", new IfSetMethod(false), 2, 3);
-		this.registerMethod("ifnotset", new IfSetMethod(true), 2, 3);
-		this.registerMethod("ifequalsignorecase", new IfEqualsIgnoreCaseMethod(false), 3, 4);
-		this.registerMethod("ifnotequalsignorecase", new IfEqualsIgnoreCaseMethod(true), 3, 4);
+	public void loadDefaults(final String prefix) {
+		this.registerMethod(prefix + "onlist", new OnlistMethod(this.logger), 0, 2, 3);
+		this.registerMethod(prefix + "call", new PrintMethod(true), -1);
+		this.registerMethod(prefix + "print", new PrintMethod(false), -1);
+		this.registerMethod(prefix + "ifequals", new IfCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER, false), 3, 4);
+		this.registerMethod(prefix + "ifnotequals", new IfCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER, true), 3, 4);
+		this.registerMethod(prefix + "ifset", new IfSetMethod(false), 2, 3);
+		this.registerMethod(prefix + "ifnotset", new IfSetMethod(true), 2, 3);
+		this.registerMethod(prefix + "ifequalsignorecase", new IfCheckerMethod(EqualCheck.STRING_IGNORE_CASE_EQUAL_CHECKER, false), 3, 4);
+		this.registerMethod(prefix + "ifnotequalsignorecase", new IfCheckerMethod(EqualCheck.STRING_IGNORE_CASE_EQUAL_CHECKER, true), 3, 4);
 	}
 
 	private static String substring(String input, int start, int end) {
@@ -223,12 +246,66 @@ public class MethodParser {
 		}
 	}
 
-	public static void createRedirected(MethodParser parser, String name, String redirected, int... paramCounts) {
-		for (int paramCount : paramCounts) {
-			Method redirectedMethod = parser.getMethod(redirected, paramCount);
-			if (redirectedMethod != null) {
-				parser.registerMethod(name, new RedirectMethod(redirectedMethod), paramCount);
+	public void createRedirected(String name, String redirected, int... paramCounts) {
+		final Collection<Integer> paramCountsSet;
+		Map<Integer, Method> methods = this.methods.get(redirected);
+		if (paramCounts.length == 0) {
+			if (methods != null) {
+				paramCountsSet = methods.keySet();
+			} else {
+				paramCountsSet = new HashSet<Integer>(0);
 			}
-        }
+		} else {
+			paramCountsSet = new HashSet<Integer>(paramCounts.length);
+			for (int paramCount : paramCounts) {
+				paramCountsSet.add(paramCount);
+			}
+		}
+		for (int paramCount : paramCounts) {
+			Method redirectedMethod = getMethod(methods, paramCount);
+			if (redirectedMethod != null) {
+				this.registerMethod(name, new RedirectMethod(redirectedMethod), paramCount);
+			}
+		}
+	}
+
+	public boolean createRedirected(String name, String redirected, int paramCount) {
+		Method redirectedMethod = this.getMethod(redirected, paramCount);
+		if (redirectedMethod != null) {
+			this.registerMethod(name, new RedirectMethod(redirectedMethod), paramCount);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public static class RedirectedElement {
+		public final int paramCount;
+		public final String name;
+		public final String redirected;
+
+		public RedirectedElement(String name, String redirected, int paramCount) {
+			this.name = name;
+			this.redirected = redirected;
+			this.paramCount = paramCount;
+		}
+	}
+
+	public void createRedirected(List<RedirectedElement> elements) {
+		List<RedirectedElement> buffer = null;
+		List<RedirectedElement> output = new ArrayList<RedirectedElement>(elements);
+		int startSize;
+		do {
+			startSize = output.size();
+			buffer = new ArrayList<RedirectedElement>(startSize);
+			for (RedirectedElement redirectedElement : output) {
+				if (!this.createRedirected(redirectedElement.name, redirectedElement.redirected, redirectedElement.paramCount)) {
+					buffer.add(redirectedElement);
+				}
+			}
+			output = buffer;
+		} while (startSize >= buffer.size());
+		elements.clear();
+		elements.addAll(output);
 	}
 }
