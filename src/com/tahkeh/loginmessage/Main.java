@@ -57,7 +57,7 @@ public class Main extends JavaPlugin {
 	private XLogger logger;
 	private static PermissionsHandler permissions;
 	private static EconomyHandler economy;
-	private final static BufferPermission<Boolean> reload = BufferPermission.create("loginmessage.reload", false);
+	private BufferPermission<Boolean> reload;
 	
 	public void registerEvents() {
 		PluginManager pm = getServer().getPluginManager();
@@ -74,8 +74,7 @@ public class Main extends JavaPlugin {
 		getServer().getScheduler().cancelTasks(this);
 		logger.disableMsg();
 	}
-	
-	
+
 	public void onEnable() {
 		File folder = getDataFolder(); 
 		if (downloadFile(BPU_PATH, BPU_DEST, BPU))
@@ -87,6 +86,7 @@ public class Main extends JavaPlugin {
 				this.getPluginLoader().disablePlugin(this);
 				return;
 			}
+			reload = BufferPermission.create("loginmessage.reload", false);
 			storeProperties = new PropertiesFile(new File(folder, "store.txt"), logger);
 			tableFile = new File(folder, "items.txt");
 			config = new Configuration(new File(folder, "config.yml"));
