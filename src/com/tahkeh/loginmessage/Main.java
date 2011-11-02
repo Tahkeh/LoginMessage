@@ -33,7 +33,7 @@ import de.xzise.wrappers.permissions.PermissionsHandler;
 public class Main extends JavaPlugin //Main class, 'nuff said
 {
 	public final static String BPU = "BukkitPluginUtilities";
-	public final static String BPU_NAME = "bukkitutil-1.2.0.jar";
+	public final static String BPU_NAME = "bukkitutil-1.2.1.jar";
 	public final static String BPU_PATH = "http://cloud.github.com/downloads/xZise/Bukkit-Plugin-Utilties/" + BPU_NAME;
 	public final static String BPU_DEST = "lib" + File.separator + "BukkitPluginUtilities.jar";
 
