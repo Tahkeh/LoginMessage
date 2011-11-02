@@ -60,7 +60,9 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 
 	public void onDisable()
 	{
-		logger.disableMsg();
+		if (logger != null) {
+			logger.disableMsg();
+		}
 	}
 
   
@@ -102,32 +104,63 @@ public class Main extends JavaPlugin //Main class, 'nuff said
 	}
 	
 	public static boolean downloadFile(String urlpath, String dest, String file) {
-		if(!new File(dest).exists()) {
-			Logger log = Logger.getLogger("Minecraft");
-			log.info("[LoginMessage] Downloading " + file + "...");
-			try {
-				URL url = new URL(urlpath);
-				URLConnection con = url.openConnection();
-				BufferedOutputStream o = new BufferedOutputStream(new FileOutputStream(dest));
-				BufferedInputStream in = new BufferedInputStream(con.getInputStream());
-				byte[] buffer = new byte[Integer.parseInt(url.openConnection().getHeaderField("Content-Length"))];
-				//TODO: Review this statement!
-				long count = 0;
-				int n = 0;
-				
-				while (-1 != (n = in.read(buffer))) {
-					o.write(buffer, 0, n);
-					count += n;
+		File destFile = new File(dest).getAbsoluteFile();
+		if(!destFile.exists()) {
+			final File parentDirectory = destFile.getParentFile();
+			final boolean directoryCreated;
+			if (parentDirectory != null) {
+				if (!parentDirectory.exists()) {
+					directoryCreated = parentDirectory.mkdirs();
+				} else {
+					directoryCreated = true;
 				}
-				o.flush();
-				o.close();
-				log.info("[LoginMessage] Successfully downloaded " + file + "!");
-			} catch (IOException e) {
-				log.log(Level.SEVERE, "[LoginMessage] Something went wrong when downloading " + file + "!", e);
+			} else {
+				directoryCreated = false;
+			}
+
+			Logger log = Logger.getLogger("Minecraft");
+			if (directoryCreated) {
+				log.info("[LoginMessage] Downloading " + file + "...");
+				try {
+					URL url = new URL(urlpath);
+					URLConnection con = url.openConnection();
+					BufferedOutputStream o = new BufferedOutputStream(new FileOutputStream(dest));
+					BufferedInputStream in = new BufferedInputStream(con.getInputStream());
+					byte[] buffer = new byte[Integer.parseInt(url.openConnection().getHeaderField("Content-Length"))];
+					long count = 0;
+					int n = 0;
+
+					while (-1 != (n = in.read(buffer))) {
+						o.write(buffer, 0, n);
+						count += n;
+					}
+					o.flush();
+					o.close();
+					log.info("[LoginMessage] Successfully downloaded " + file + " (" + getBinaryPrefixValue(count) + "B) !");
+				} catch (Throwable e) {
+					log.log(Level.SEVERE, "[LoginMessage] Something went wrong when downloading " + file + "!", e);
+					return false;
+				}
+			} else {
+				log.severe("[LoginMessage] Unable to create directory" + (parentDirectory != null ? ": " + parentDirectory.getAbsolutePath() : " (no parent directory)!"));
 				return false;
 			}
 		}
 		return true;
+	}
+
+	// Could be accessed also with BPU 1.3
+	private static String getBinaryPrefixValue(long value) {
+		final int ONE_ITERATION = 1024; // 2¹⁰
+		final String[] PREFIXES = new String[] { "", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi" };
+
+		int iterations = 0;
+		while (value > ONE_ITERATION && iterations < PREFIXES.length - 1) {
+			value >>= 10;
+			iterations++;
+		}
+
+		return value + " " + PREFIXES[iterations];
 	}
 
   public static EconomyHandler getEconomy()
