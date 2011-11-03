@@ -40,7 +40,7 @@ import de.xzise.wrappers.permissions.PermissionsHandler;
 
 public class Main extends JavaPlugin {
 	public final static String BPU = "BukkitPluginUtilities";
-	public final static String BPU_NAME = "bukkitutil-1.2.0.jar";
+	public final static String BPU_NAME = "bukkitutil-1.2.1.jar";
 	public final static String BPU_PATH = "http://cloud.github.com/downloads/xZise/Bukkit-Plugin-Utilties/" + BPU_NAME;
 	public final static String BPU_DEST = "lib" + File.separator + BPU + ".jar";
 
@@ -70,9 +70,12 @@ public class Main extends JavaPlugin {
 		pm.registerEvent(Event.Type.PLUGIN_DISABLE, new SListener(), Event.Priority.Monitor, this);
 	}
 
-	public void onDisable() {
+	public void onDisable()
+	{
 		getServer().getScheduler().cancelTasks(this);
-		logger.disableMsg();
+		if (logger != null) {
+			logger.disableMsg();
+		}
 	}
 
 	public void onEnable() {
@@ -147,47 +150,63 @@ public class Main extends JavaPlugin {
 	}
 	
 	public static boolean downloadFile(String urlpath, String dest, String file) {
-		if(!new File(dest).exists()) {
-			Logger log = Logger.getLogger("Minecraft");
-			log.info("[LoginMessage] Downloading " + file + "...");
-			try {
-				URL url = new URL(urlpath);
-				URLConnection con = url.openConnection();
-				BufferedOutputStream o = new BufferedOutputStream(new FileOutputStream(dest));
-				BufferedInputStream in = new BufferedInputStream(con.getInputStream());
-				byte[] buffer = new byte[Integer.parseInt(url.openConnection().getHeaderField("Content-Length"))];
-				//TODO: Review this statement!
-				long count = 0;
-				int n = 0;
-				
-				while (-1 != (n = in.read(buffer))) {
-					o.write(buffer, 0, n);
-					count += n;
+		File destFile = new File(dest).getAbsoluteFile();
+		if(!destFile.exists()) {
+			final File parentDirectory = destFile.getParentFile();
+			final boolean directoryCreated;
+			if (parentDirectory != null) {
+				if (!parentDirectory.exists()) {
+					directoryCreated = parentDirectory.mkdirs();
+				} else {
+					directoryCreated = true;
 				}
-				o.flush();
-				o.close();
-				log.info("[LoginMessage] Successfully downloaded " + file + " (" + getBinaryPrefixValue(count) + "B) !");
-			} catch (IOException e) {
-				log.log(Level.SEVERE, "[LoginMessage] Something went wrong when downloading " + file + "!", e);
+			} else {
+				directoryCreated = false;
+			}
+
+			Logger log = Logger.getLogger("Minecraft");
+			if (directoryCreated) {
+				log.info("[LoginMessage] Downloading " + file + "...");
+				try {
+					URL url = new URL(urlpath);
+					URLConnection con = url.openConnection();
+					BufferedOutputStream o = new BufferedOutputStream(new FileOutputStream(dest));
+					BufferedInputStream in = new BufferedInputStream(con.getInputStream());
+					byte[] buffer = new byte[Integer.parseInt(url.openConnection().getHeaderField("Content-Length"))];
+					long count = 0;
+					int n = 0;
+
+					while (-1 != (n = in.read(buffer))) {
+						o.write(buffer, 0, n);
+						count += n;
+					}
+					o.flush();
+					o.close();
+					log.info("[LoginMessage] Successfully downloaded " + file + " (" + getBinaryPrefixValue(count) + "B) !");
+				} catch (Throwable e) {
+					log.log(Level.SEVERE, "[LoginMessage] Something went wrong when downloading " + file + "!", e);
+					return false;
+				}
+			} else {
+				log.severe("[LoginMessage] Unable to create directory" + (parentDirectory != null ? ": " + parentDirectory.getAbsolutePath() : " (no parent directory)!"));
 				return false;
 			}
 		}
 		return true;
 	}
-	
 
-	// Will be moved into BPU 1.3.0
-	public static String getBinaryPrefixValue(long value) {
+	// Could be accessed also with BPU 1.3
+	private static String getBinaryPrefixValue(long value) {
 		final int ONE_ITERATION = 1024; // 2¹⁰
 		final String[] PREFIXES = new String[] { "", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi" };
 
 		int iterations = 0;
 		while (value > ONE_ITERATION && iterations < PREFIXES.length - 1) {
-			value <<= 10;
+			value >>= 10;
 			iterations++;
 		}
 
-		return value + PREFIXES[iterations];
+		return value + " " + PREFIXES[iterations];
 	}
 
   public static EconomyHandler getEconomy()
