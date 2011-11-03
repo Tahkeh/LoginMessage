@@ -33,6 +33,7 @@ import com.tahkeh.loginmessage.store.MaterialTable;
 import com.tahkeh.loginmessage.store.PropertiesFile;
 import com.tahkeh.loginmessage.store.Store;
 
+import de.xzise.MinecraftUtil;
 import de.xzise.XLogger;
 import de.xzise.wrappers.economy.EconomyHandler;
 import de.xzise.wrappers.permissions.BufferPermission;
@@ -40,7 +41,7 @@ import de.xzise.wrappers.permissions.PermissionsHandler;
 
 public class Main extends JavaPlugin {
 	public final static String BPU = "BukkitPluginUtilities";
-	public final static String BPU_NAME = "bukkitutil-1.2.1.jar";
+	public final static String BPU_NAME = "bukkitutil-1.3.0.jar";
 	public final static String BPU_PATH = "http://cloud.github.com/downloads/xZise/Bukkit-Plugin-Utilties/" + BPU_NAME;
 	public final static String BPU_DEST = "lib" + File.separator + BPU + ".jar";
 
@@ -78,48 +79,61 @@ public class Main extends JavaPlugin {
 		}
 	}
 
-	public void onEnable() {
-		File folder = getDataFolder(); 
+	private void update(String message) {
+		Logger logger = Logger.getLogger("Minecraft");
+		logger.info(message);
 		if (downloadFile(BPU_PATH, BPU_DEST, BPU))
 		{
-			try {
-				logger = new XLogger(this);
-			} catch(NoClassDefFoundError e) {
-				Logger.getLogger("Minecraft").info("[LoginMessage] Reload the server!");
-				this.getPluginLoader().disablePlugin(this);
+			logger.info("[LoginMessage] Installed '" + BPU + "'. You need to reload the server!");
+		} else {
+			logger.severe("[LoginMessage] Unable to install '" + BPU + "'! Disabling plugin.");
+		}
+		this.getPluginLoader().disablePlugin(this);
+	}
+
+	public void onEnable() {
+		try {
+			if (MinecraftUtil.needUpdate(1, 3)) {
+				this.update("Need to update Bukkit Plugin Utilities to at least 1.3.0! Downloading ...");
 				return;
 			}
-			reload = BufferPermission.create("loginmessage.reload", false);
-			storeProperties = new PropertiesFile(new File(folder, "store.txt"), logger);
-			tableFile = new File(folder, "items.txt");
-			config = new Configuration(new File(folder, "config.yml"));
-			message = new Configuration(new File(folder, "messages.yml"));
-			list = new Configuration(new File(folder, "list.yml"));
-			cfg = new Config(folder, this, logger);
-			cfg.setup();
-			config.load();
-			message.load();
-			store = new Store(this, storeProperties);
-			if (!tableFile.exists()) {
-				MaterialTable.initialWrite(tableFile, logger);
-			}
-			table = new MaterialTable(tableFile, logger);
-			msg = new Message(this, config, message, list, logger, store, table);
-			msg.load("load");
-			cfg.setup();
-			config.load();
-			PluginManager pm = getServer().getPluginManager();
-			// Init handlers
-			permissions = new PermissionsHandler(pm, config.getString("plugins.permissions"), this.logger);
-			permissions.load();
-			economy = new EconomyHandler(pm, config.getString("plugins.economy"), "", this.logger);
-			economy.load();
-			registerEvents();
-			this.logger.enableMsg();
-		} else {
-			Logger.getLogger("Minecraft").severe("[LoginMessage] Unable to install '" + BPU + "'! Disabling plugin.");
-			this.getPluginLoader().disablePlugin(this);
+		} catch (NoSuchMethodError e) {
+			this.update("Need to update Bukkit Plugin Utilities to at least 1.3.0! Downloading ...");
+			return;
+		} catch (NoClassDefFoundError e) {
+			this.update("No Bukkit Plugin Utilities found! Downloading ...");
+			return;
 		}
+
+		File folder = getDataFolder();
+		logger = new XLogger(this);
+		reload = BufferPermission.create("loginmessage.reload", false);
+		storeProperties = new PropertiesFile(new File(folder, "store.txt"), logger);
+		tableFile = new File(folder, "items.txt");
+		config = new Configuration(new File(folder, "config.yml"));
+		message = new Configuration(new File(folder, "messages.yml"));
+		list = new Configuration(new File(folder, "list.yml"));
+		cfg = new Config(folder, this, logger);
+		cfg.setup();
+		config.load();
+		message.load();
+		store = new Store(this, storeProperties);
+		if (!tableFile.exists()) {
+			MaterialTable.initialWrite(tableFile, logger);
+		}
+		table = new MaterialTable(tableFile, logger);
+		msg = new Message(this, config, message, list, logger, store, table);
+		msg.load("load");
+		cfg.setup();
+		config.load();
+		PluginManager pm = getServer().getPluginManager();
+		// Init handlers
+		permissions = new PermissionsHandler(pm, config.getString("plugins.permissions"), this.logger);
+		permissions.load();
+		economy = new EconomyHandler(pm, config.getString("plugins.economy"), "", this.logger);
+		economy.load();
+		registerEvents();
+		this.logger.enableMsg();
 	}
 	
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
