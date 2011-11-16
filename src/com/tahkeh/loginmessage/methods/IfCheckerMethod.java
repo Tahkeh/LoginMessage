@@ -2,7 +2,7 @@ package com.tahkeh.loginmessage.methods;
 
 import java.util.Comparator;
 
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 
 import de.xzise.EqualCheck;
 
@@ -20,7 +20,7 @@ public class IfCheckerMethod extends IfMethod {
 	}
 
 	@Override
-	protected boolean match(Player player, String event, String... preValues) {
+	protected Boolean match(OfflinePlayer player, String event, String... preValues) {
 		return this.checker.equals(preValues[0], preValues[1]);
 	}
 }

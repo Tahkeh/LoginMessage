@@ -1,6 +1,6 @@
 package com.tahkeh.loginmessage.methods;
 
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 
 public class IfSetMethod extends IfMethod {
 
@@ -9,7 +9,7 @@ public class IfSetMethod extends IfMethod {
 	}
 
 	@Override
-	protected boolean match(Player player, String event, String... preValues) {
-		return preValues != null;
+	protected Boolean match(OfflinePlayer player, String event, String... preValues) {
+		return preValues[0] != null;
 	}
 }

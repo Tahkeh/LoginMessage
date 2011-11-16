@@ -1,7 +1,7 @@
 package com.tahkeh.loginmessage.methods;
 
 
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 
 public interface Method {
 
@@ -10,7 +10,7 @@ public interface Method {
 	 * @param parameters the parameters.
 	 * @return the parsed string or null if invalid.
 	 */
-	String call(Player player, String event, String... parameters);
+	String call(OfflinePlayer p, String event, String... parameters);
 
 	/**
 	 * Defines if this method has recursive calls.

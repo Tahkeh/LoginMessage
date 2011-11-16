@@ -1,6 +1,6 @@
 package com.tahkeh.loginmessage.methods;
 
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 
 public class RedirectMethod implements Method {
 
@@ -11,7 +11,7 @@ public class RedirectMethod implements Method {
 	}
 
 	@Override
-	public String call(Player player, String event, String... parameters) {
+	public String call(OfflinePlayer player, String event, String... parameters) {
 		return this.redirected.call(player, event, parameters);
 	}
 

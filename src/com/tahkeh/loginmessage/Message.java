@@ -1,6 +1,10 @@
 package com.tahkeh.loginmessage;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -12,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
+
+import javax.script.ScriptEngineManager;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -38,7 +44,9 @@ import com.tahkeh.loginmessage.entries.causes.Cause;
 import com.tahkeh.loginmessage.handlers.AFKHandler;
 import com.tahkeh.loginmessage.handlers.DeathHandler;
 import com.tahkeh.loginmessage.store.MaterialTable;
+import com.tahkeh.loginmessage.methods.AliasMethod;
 import com.tahkeh.loginmessage.methods.MethodParser;
+import com.tahkeh.loginmessage.methods.ScriptMethod;
 import com.tahkeh.loginmessage.store.Store;
 import com.tahkeh.loginmessage.timers.Cooldown;
 import com.tahkeh.loginmessage.timers.Delay;
@@ -97,12 +105,88 @@ public class Message
 			config.load();
 			message.load();
 			list.load();
+
+			Configuration configuration = new Configuration(new File(this.plugin.getDataFolder(), "methods.yml"));
+			Map<String, ConfigurationNode> scriptNodes = configuration.getNodes("script");
+			ScriptEngineManager engineManager = new ScriptEngineManager();
+			for (Map.Entry<String, ConfigurationNode> scriptNode : scriptNodes.entrySet()) {
+				String name = scriptNode.getKey();
+				ConfigurationNode values = scriptNode.getValue();
+
+				String method = values.getString("method", "call");
+				boolean recursive = values.getBoolean("recursive", true);
+				String engine = values.getString("engine");
+				String fileName = values.getString("file");
+				int[] paramCountArray = getParamCounts(values, "parameters", 0, -1);
+				Reader reader = null;
+				if (fileName != null) {
+					try {
+						reader = new FileReader(fileName);
+					} catch (FileNotFoundException e) {
+						this.logger.warning("Script file not found: " + fileName);
+					}
+				} else {
+					String code = values.getString("code");
+					if (code != null) {
+						reader = new StringReader(code);
+					} else {
+						this.logger.warning("No script code available.");
+					}
+				}
+
+				if (engine == null) {
+					this.logger.warning("No engine defined.");
+				} else if (reader != null) {
+					ScriptMethod methodObj = ScriptMethod.create(engine, method, reader, engineManager, recursive, logger);
+					if (methodObj != null) {
+						this.methodParser.registerMethod(name, methodObj, paramCountArray);
+					}
+				}
+			}
+
+			Map<String, ConfigurationNode> aliasNodes = configuration.getNodes("alias");
+			for (Map.Entry<String, ConfigurationNode> aliasNode : aliasNodes.entrySet()) {
+				String name = aliasNode.getKey();
+				ConfigurationNode values = aliasNode.getValue();
+				String calls = values.getString("call");
+				int paramCount = values.getInt("parameters", 0);
+				this.methodParser.registerMethod(name, new AliasMethod(calls, paramCount), paramCount);
+			}
+
+			Map<String, ConfigurationNode> redirectedNodes = configuration.getNodes("alias");
+			List<MethodParser.RedirectedElement> redirectedElements = new ArrayList<MethodParser.RedirectedElement>(redirectedNodes.size() * 2);
+			for (Map.Entry<String, ConfigurationNode> redirectedNode : redirectedNodes.entrySet()) {
+				String name = redirectedNode.getKey();
+				ConfigurationNode values = redirectedNode.getValue();
+				String calls = values.getString("call");
+				int[] paramCountArray = getParamCounts(values, "parameters", 0, -1);
+				for (int paramCount : paramCountArray) {
+					redirectedElements.add(new MethodParser.RedirectedElement(name, calls, paramCount));
+				}
+			}
+			this.methodParser.createRedirected(redirectedElements);
 		}
 		separator = config.getString("separator", "%&%&");
 		store.load(event);
 		scheduleIntervals(event);
 	}
-	
+
+	private static int[] getParamCounts(final ConfigurationNode node, final String name, final int... counts) {
+		List<Integer> parameterCounts = node.getIntList(name, null);
+		if (parameterCounts.size() == 0) {
+			parameterCounts = new ArrayList<Integer>();
+			for (Integer integer : counts) {
+				parameterCounts.add(integer);
+			}
+		}
+		int[] paramCountArray = new int[parameterCounts.size()];
+		int idx = 0;
+		for (Integer integer : parameterCounts) {
+			paramCountArray[idx++] = integer;
+		}
+		return paramCountArray;
+	}
+
 	public void unload() {
 		plugin.getServer().getScheduler().cancelTasks(plugin);
 		running.clear();
@@ -482,7 +566,7 @@ public class Message
 		if (isLeaveEvent(event)) {
 			size = size - 1;
 		}
-		
+		str = this.methodParser.parseLine(p, event, str);
 		if(p != null) {
 			str = str.replaceAll("%laston", getTimeDifference(store.getLastLogin(p.getName())));		
 			str = str.replaceAll("%nm", p.getName());

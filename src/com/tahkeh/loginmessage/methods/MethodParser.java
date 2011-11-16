@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 
 import de.xzise.EqualCheck;
 import de.xzise.MinecraftUtil;
@@ -112,11 +112,11 @@ public class MethodParser {
 		this.methods.clear();
 	}
 
-	public String parseLine(Player player, String event, String line) {
-		return this.parseLine(player, event, line, 0);
+	public String parseLine(OfflinePlayer p, String event, String line) {
+		return this.parseLine(p, event, line, 0);
 	}
 
-	private String parseLine(Player player, String event, String line, final int depth) {
+	private String parseLine(OfflinePlayer p, String event, String line, final int depth) {
 		int index = 0;
 		int start = -1;
 		int delim = -1;
@@ -200,13 +200,13 @@ public class MethodParser {
 						}
 						if (method.recursive()) {
 							for (int i = 0; i < parameters.length; i++) {
-								parameters[i] = parseLine(player, event, parameters[i], depth + 1);
+								parameters[i] = parseLine(p, event, parameters[i], depth + 1);
 							}
 						}
-						String replacement = method.call(player, event, parameters);
+						String replacement = method.call(p, event, parameters);
 						if (replacement != null) {
 							if (method.recursive()) {
-								replacement = parseLine(player, event, replacement, depth + 1);
+								replacement = parseLine(p, event, replacement, depth + 1);
 							}
 							line = line.substring(0, start) + replacement + substring(line, end + 1, line.length());
 							index += replacement.length() - (end - start) - 1;
@@ -230,12 +230,23 @@ public class MethodParser {
 		this.registerMethod(prefix + "onlist", new OnlistMethod(this.logger), 0, 2, 3);
 		this.registerMethod(prefix + "call", new PrintMethod(true), -1);
 		this.registerMethod(prefix + "print", new PrintMethod(false), -1);
+
+		// IfChecker
 		this.registerMethod(prefix + "ifequals", new IfCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER, false), 3, 4);
 		this.registerMethod(prefix + "ifnotequals", new IfCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER, true), 3, 4);
-		this.registerMethod(prefix + "ifset", new IfSetMethod(false), 2, 3);
-		this.registerMethod(prefix + "ifnotset", new IfSetMethod(true), 2, 3);
 		this.registerMethod(prefix + "ifequalsignorecase", new IfCheckerMethod(EqualCheck.STRING_IGNORE_CASE_EQUAL_CHECKER, false), 3, 4);
 		this.registerMethod(prefix + "ifnotequalsignorecase", new IfCheckerMethod(EqualCheck.STRING_IGNORE_CASE_EQUAL_CHECKER, true), 3, 4);
+		this.registerMethod(prefix + "ifset", new IfSetMethod(false), 2, 3);
+		this.registerMethod(prefix + "ifnotset", new IfSetMethod(true), 2, 3);
+
+		this.registerMethod(prefix + "caseequals", new CaseCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER), -2);
+
+		this.registerMethod(prefix + "ifgreaterequals", new IfArithmeticMethod(EqualCheck.GREATER_EQUAL_CHECKER), 3, 4);
+		this.registerMethod(prefix + "ifgreater", new IfArithmeticMethod(EqualCheck.GREATER_CHECKER), 3, 4);
+		this.registerMethod(prefix + "iflower", new IfArithmeticMethod(EqualCheck.LOWER_CHECKER), 3, 4);
+		this.registerMethod(prefix + "iflowerequals", new IfArithmeticMethod(EqualCheck.LOWER_EQUAL_CHECKER), 3, 4);
+
+		this.registerMethod(prefix + "random", new RandomMethod(), -1);
 	}
 
 	private static String substring(String input, int start, int end) {

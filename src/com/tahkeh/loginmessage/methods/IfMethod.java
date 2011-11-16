@@ -2,7 +2,7 @@ package com.tahkeh.loginmessage.methods;
 
 import java.util.Arrays;
 
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 
 public abstract class IfMethod implements Method {
 
@@ -15,7 +15,7 @@ public abstract class IfMethod implements Method {
 	}
 
 	@Override
-	public final String call(Player player, String event, String... parameters) {
+	public final String call(OfflinePlayer player, String event, String... parameters) {
 		String match = "";
 		String noMatch = "";
 		switch (parameters.length - this.preValueCount) {
@@ -30,7 +30,7 @@ public abstract class IfMethod implements Method {
 		return this.match(player, event, Arrays.copyOf(parameters, this.preValueCount)) != this.inverted ? match : noMatch;
 	}
 
-	protected abstract boolean match(Player player, String event, String... preValues);
+	protected abstract Boolean match(OfflinePlayer player, String event, String... preValues);
 
 	@Override
 	public boolean recursive() {

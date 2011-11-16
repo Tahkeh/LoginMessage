@@ -3,7 +3,7 @@ package com.tahkeh.loginmessage.methods;
 
 import java.util.Iterator;
 
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 
 import de.xzise.MinecraftUtil;
 import de.xzise.collections.ArrayIterator;
@@ -20,7 +20,7 @@ public class PrintMethod implements Method {
 	}
 
 	@Override
-	public String call(Player player, String event, String... parameters) {
+	public String call(OfflinePlayer player, String event, String... parameters) {
 		StringBuilder builder = new StringBuilder();
 		for (Iterator<String> stringItr = new ArrayIterator<String>(parameters); stringItr.hasNext();) {
 			String next = stringItr.next();

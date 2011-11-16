@@ -1,7 +1,6 @@
 package com.tahkeh.loginmessage.methods;
 
-
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 
 public class AliasMethod implements Method {
 
@@ -14,7 +13,7 @@ public class AliasMethod implements Method {
 	}
 
 	@Override
-	public String call(Player player, String event, String... parameters) {
+	public String call(OfflinePlayer player, String event, String... parameters) {
 		if (this.paramCount == parameters.length) {
 			String result = this.result;
 			for (int i = 0; i < parameters.length; i++) {
