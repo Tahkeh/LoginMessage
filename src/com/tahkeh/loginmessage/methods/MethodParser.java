@@ -315,7 +315,7 @@ public class MethodParser {
 				}
 			}
 			output = buffer;
-		} while (startSize >= buffer.size());
+		} while (startSize > buffer.size());
 		elements.clear();
 		elements.addAll(output);
 	}

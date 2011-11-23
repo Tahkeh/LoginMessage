@@ -3,6 +3,7 @@ package com.tahkeh.loginmessage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
@@ -107,64 +108,86 @@ public class Message
 			list.load();
 
 			Configuration configuration = new Configuration(new File(this.plugin.getDataFolder(), "methods.yml"));
+			configuration.load();
 			Map<String, ConfigurationNode> scriptNodes = configuration.getNodes("script");
-			ScriptEngineManager engineManager = new ScriptEngineManager();
-			for (Map.Entry<String, ConfigurationNode> scriptNode : scriptNodes.entrySet()) {
-				String name = scriptNode.getKey();
-				ConfigurationNode values = scriptNode.getValue();
+			int scriptEnabled = 0;
+			if (scriptNodes != null) {
+				ScriptEngineManager engineManager = new ScriptEngineManager();
+				for (Map.Entry<String, ConfigurationNode> scriptNode : scriptNodes.entrySet()) {
+					String name = scriptNode.getKey();
+					ConfigurationNode values = scriptNode.getValue();
 
-				String method = values.getString("method", "call");
-				boolean recursive = values.getBoolean("recursive", true);
-				String engine = values.getString("engine");
-				String fileName = values.getString("file");
-				int[] paramCountArray = getParamCounts(values, "parameters", 0, -1);
-				Reader reader = null;
-				if (fileName != null) {
-					try {
-						reader = new FileReader(fileName);
-					} catch (FileNotFoundException e) {
-						this.logger.warning("Script file not found: " + fileName);
-					}
-				} else {
-					String code = values.getString("code");
-					if (code != null) {
-						reader = new StringReader(code);
+					String method = values.getString("method", "call");
+					boolean recursive = values.getBoolean("recursive", true);
+					String engine = values.getString("engine");
+					String fileName = values.getString("file");
+					int[] paramCountArray = getParamCounts(values, "parameters", 0, -1);
+					Reader reader = null;
+					if (fileName != null) {
+						try {
+							reader = new FileReader(fileName);
+						} catch (FileNotFoundException e) {
+							this.logger.warning("Script file not found: " + fileName);
+							reader = null;
+						}
 					} else {
-						this.logger.warning("No script code available.");
+						String code = values.getString("code");
+						if (code != null) {
+							reader = new StringReader(code);
+						} else {
+							this.logger.warning("No script code available.");
+						}
 					}
-				}
 
-				if (engine == null) {
-					this.logger.warning("No engine defined.");
-				} else if (reader != null) {
-					ScriptMethod methodObj = ScriptMethod.create(engine, method, reader, engineManager, recursive, logger);
-					if (methodObj != null) {
-						this.methodParser.registerMethod(name, methodObj, paramCountArray);
+					if (engine == null) {
+						this.logger.warning("No engine defined.");
+					} else if (reader != null) {
+						ScriptMethod methodObj = ScriptMethod.create(engine, method, reader, engineManager, recursive, logger);
+						if (methodObj != null) {
+							this.methodParser.registerMethod(name, methodObj, paramCountArray);
+							scriptEnabled++;
+						}
+						try {
+							reader.close();
+						} catch (IOException e) {
+							this.logger.warning("Unable to close the script reader.");
+						}
+					} else {
+						this.logger.warning("Unable to add script named '" + name + "'!");
 					}
 				}
 			}
 
 			Map<String, ConfigurationNode> aliasNodes = configuration.getNodes("alias");
-			for (Map.Entry<String, ConfigurationNode> aliasNode : aliasNodes.entrySet()) {
-				String name = aliasNode.getKey();
-				ConfigurationNode values = aliasNode.getValue();
-				String calls = values.getString("call");
-				int paramCount = values.getInt("parameters", 0);
-				this.methodParser.registerMethod(name, new AliasMethod(calls, paramCount), paramCount);
-			}
-
-			Map<String, ConfigurationNode> redirectedNodes = configuration.getNodes("alias");
-			List<MethodParser.RedirectedElement> redirectedElements = new ArrayList<MethodParser.RedirectedElement>(redirectedNodes.size() * 2);
-			for (Map.Entry<String, ConfigurationNode> redirectedNode : redirectedNodes.entrySet()) {
-				String name = redirectedNode.getKey();
-				ConfigurationNode values = redirectedNode.getValue();
-				String calls = values.getString("call");
-				int[] paramCountArray = getParamCounts(values, "parameters", 0, -1);
-				for (int paramCount : paramCountArray) {
-					redirectedElements.add(new MethodParser.RedirectedElement(name, calls, paramCount));
+			int aliasEnabled = 0;
+			if (aliasNodes != null) {
+				for (Map.Entry<String, ConfigurationNode> aliasNode : aliasNodes.entrySet()) {
+					String name = aliasNode.getKey();
+					ConfigurationNode values = aliasNode.getValue();
+					String calls = values.getString("call");
+					int paramCount = values.getInt("parameters", 0);
+					this.methodParser.registerMethod(name, new AliasMethod(calls, paramCount), paramCount);
+					aliasEnabled++;
 				}
 			}
-			this.methodParser.createRedirected(redirectedElements);
+
+			Map<String, ConfigurationNode> redirectedNodes = configuration.getNodes("redirect");
+			int redirectedEnabled = 0;
+			if (redirectedNodes != null) {
+				List<MethodParser.RedirectedElement> redirectedElements = new ArrayList<MethodParser.RedirectedElement>(redirectedNodes.size() * 2);
+				for (Map.Entry<String, ConfigurationNode> redirectedNode : redirectedNodes.entrySet()) {
+					String name = redirectedNode.getKey();
+					ConfigurationNode values = redirectedNode.getValue();
+					String calls = values.getString("call");
+					int[] paramCountArray = getParamCounts(values, "parameters", 0, -1);
+					for (int paramCount : paramCountArray) {
+						redirectedElements.add(new MethodParser.RedirectedElement(name, calls, paramCount));
+					}
+					redirectedEnabled++;
+				}
+				this.methodParser.createRedirected(redirectedElements);
+			}
+			this.logger.info("Registered " + (redirectedEnabled + aliasEnabled + scriptEnabled) + " user defined methods (" + scriptEnabled + " scripts, " + aliasEnabled + " aliases, " + redirectedEnabled + " redirects)!");
 		}
 		separator = config.getString("separator", "%&%&");
 		store.load(event);
