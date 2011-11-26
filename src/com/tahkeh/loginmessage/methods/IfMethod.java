@@ -4,6 +4,8 @@ import java.util.Arrays;
 
 import org.bukkit.OfflinePlayer;
 
+import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+
 public abstract class IfMethod implements Method {
 
 	private final int preValueCount;
@@ -15,7 +17,7 @@ public abstract class IfMethod implements Method {
 	}
 
 	@Override
-	public final String call(OfflinePlayer player, String event, String... parameters) {
+	public final String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
 		String match = "";
 		String noMatch = "";
 		switch (parameters.length - this.preValueCount) {
@@ -30,7 +32,7 @@ public abstract class IfMethod implements Method {
 		return this.match(player, event, Arrays.copyOf(parameters, this.preValueCount)) != this.inverted ? match : noMatch;
 	}
 
-	protected abstract Boolean match(OfflinePlayer player, String event, String... preValues);
+	protected abstract Boolean match(OfflinePlayer player, String event, String[] preValues);
 
 	@Override
 	public boolean recursive() {

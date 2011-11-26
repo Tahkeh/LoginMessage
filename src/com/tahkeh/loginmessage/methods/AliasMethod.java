@@ -2,19 +2,20 @@ package com.tahkeh.loginmessage.methods;
 
 import org.bukkit.OfflinePlayer;
 
-public class AliasMethod implements Method {
+import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+
+public class AliasMethod extends DefaultMethod {
 
 	private final String result;
-	private final int paramCount;
 
 	public AliasMethod(final String result, final int paramCount) {
+		super(true, paramCount);
 		this.result = result;
-		this.paramCount = paramCount;
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, String... parameters) {
-		if (this.paramCount == parameters.length) {
+	public String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
+		if (this.getParamCounts()[0] == parameters.length) {
 			String result = this.result;
 			for (int i = 0; i < parameters.length; i++) {
 				result = result.replaceAll("\\$" + i + ";", parameters[i]);
@@ -23,11 +24,6 @@ public class AliasMethod implements Method {
 		} else {
 			return null;
 		}
-	}
-
-	@Override
-	public boolean recursive() {
-		return true;
 	}
 
 }

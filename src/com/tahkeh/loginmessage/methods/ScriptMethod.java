@@ -9,6 +9,8 @@ import javax.script.ScriptException;
 
 import org.bukkit.OfflinePlayer;
 
+import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+
 import de.xzise.XLogger;
 
 public class ScriptMethod implements Method {
@@ -46,15 +48,22 @@ public class ScriptMethod implements Method {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, String... parameters) {
+	public String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
 		Object result = null;
-        try {
-	        result = this.invocable.invokeFunction(this.methodName, player, event, parameters);
-        } catch (ScriptException e) {
-	        this.logger.warning("Unable to call '" + this.methodName + "'!", e);
-        } catch (NoSuchMethodException e) {
-	        this.logger.warning("No such method named '" + this.methodName + "'!", e);
-        }
+		try {
+			result = this.invocable.invokeFunction(this.methodName, player, event, parameters, globalParameters);
+		} catch (ScriptException e) {
+			this.logger.warning("Unable to call '" + this.methodName + "'!", e);
+		} catch (NoSuchMethodException e) {
+			this.logger.warning("No such method named '" + this.methodName + "'! Try to call outdated method with this name.", e);
+			try {
+				result = this.invocable.invokeFunction(this.methodName, player, event, parameters);
+			} catch (ScriptException ex) {
+				this.logger.warning("Unable to call '" + this.methodName + "'!", e);
+			} catch (NoSuchMethodException ex) {
+				this.logger.warning("No such outdated method named '" + this.methodName + "'!", e);
+			}
+		}
 		return result == null ? null : result.toString();
 	}
 

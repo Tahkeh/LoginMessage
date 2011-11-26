@@ -20,7 +20,7 @@ public class IfCheckerMethod extends IfMethod {
 	}
 
 	@Override
-	protected Boolean match(OfflinePlayer player, String event, String... preValues) {
+	protected Boolean match(OfflinePlayer player, String event, String[] preValues) {
 		return this.checker.equals(preValues[0], preValues[1]);
 	}
 }

@@ -2,18 +2,21 @@ package com.tahkeh.loginmessage.methods;
 
 import org.bukkit.OfflinePlayer;
 
+import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+
 import de.xzise.EqualCheck;
 
-public class CaseCheckerMethod implements Method {
+public class CaseCheckerMethod extends DefaultMethod {
 
 	private final EqualCheck<? super String> checker;
 
 	public CaseCheckerMethod(final EqualCheck<? super String> checker) {
+		super(true, -2);
 		this.checker = checker;
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, String... parameters) {
+	public String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
 		//@formatter:off
 	    /*
 	     * %case(
@@ -49,11 +52,6 @@ public class CaseCheckerMethod implements Method {
 		} else {
 			return null;
 		}
-	}
-
-	@Override
-	public boolean recursive() {
-		return true;
 	}
 
 }

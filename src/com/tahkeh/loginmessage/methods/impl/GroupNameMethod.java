@@ -1,0 +1,50 @@
+package com.tahkeh.loginmessage.methods.impl;
+
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
+
+import com.tahkeh.loginmessage.methods.DefaultMethod;
+import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+
+import de.xzise.XLogger;
+import de.xzise.wrappers.permissions.PermissionsHandler;
+
+public class GroupNameMethod extends DefaultMethod {
+
+	private final PermissionsHandler permissions;
+	private final XLogger logger;
+
+	public GroupNameMethod(final PermissionsHandler permissions, final XLogger logger) {
+		super(true, 0, 1);
+		this.permissions = permissions;
+		this.logger = logger;
+	}
+
+	@Override
+	public String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
+		if (player instanceof Player && this.permissions.isActive()) {
+			Integer groupIdx = null;
+			if (parameters.length == 0) {
+				groupIdx = 0;
+			} else if (parameters.length == 1) {
+				groupIdx = DefaultMethod.parseAsInteger(parameters[0]);
+				if (groupIdx == null) {
+					this.logger.warning("Invalid group index parameter.");
+				}
+			}
+			if (groupIdx != null) {
+				String[] groups = this.permissions.getGroup(((Player) player).getWorld().getName(), player.getName());
+				if (groupIdx < 0 || groupIdx >= groups.length) {
+					return null;
+				} else {
+					return groups[groupIdx];
+				}
+			} else {
+				return null;
+			}
+		} else {
+			return "";
+		}
+	}
+
+}

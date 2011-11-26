@@ -48,6 +48,37 @@ import com.tahkeh.loginmessage.store.MaterialTable;
 import com.tahkeh.loginmessage.methods.AliasMethod;
 import com.tahkeh.loginmessage.methods.MethodParser;
 import com.tahkeh.loginmessage.methods.ScriptMethod;
+import com.tahkeh.loginmessage.methods.impl.AsleepMethod;
+import com.tahkeh.loginmessage.methods.impl.BannedMethod;
+import com.tahkeh.loginmessage.methods.impl.CurrentExperienceMethod;
+import com.tahkeh.loginmessage.methods.impl.DisplayNameMethod;
+import com.tahkeh.loginmessage.methods.impl.ExhaustMethod;
+import com.tahkeh.loginmessage.methods.impl.FoodLevelMethod;
+import com.tahkeh.loginmessage.methods.impl.GameModeMethod;
+import com.tahkeh.loginmessage.methods.impl.GroupNameMethod;
+import com.tahkeh.loginmessage.methods.impl.IPMethod;
+import com.tahkeh.loginmessage.methods.impl.IndefiniteArticleMethod;
+import com.tahkeh.loginmessage.methods.impl.LastLoginMethod;
+import com.tahkeh.loginmessage.methods.impl.LevelMethod;
+import com.tahkeh.loginmessage.methods.impl.LocationMethod;
+import com.tahkeh.loginmessage.methods.impl.MaximumPlayersMethod;
+import com.tahkeh.loginmessage.methods.impl.NameMethod;
+import com.tahkeh.loginmessage.methods.impl.OnlineMethod;
+import com.tahkeh.loginmessage.methods.impl.OpMethod;
+import com.tahkeh.loginmessage.methods.impl.PermissionMethod;
+import com.tahkeh.loginmessage.methods.impl.RawTimeMethod;
+import com.tahkeh.loginmessage.methods.impl.RealLocationMethod;
+import com.tahkeh.loginmessage.methods.impl.SaturationMethod;
+import com.tahkeh.loginmessage.methods.impl.ServerTimeMethod;
+import com.tahkeh.loginmessage.methods.impl.SizeMethod;
+import com.tahkeh.loginmessage.methods.impl.StatusMethod;
+import com.tahkeh.loginmessage.methods.impl.TimeMethod;
+import com.tahkeh.loginmessage.methods.impl.TotalExperienceMethod;
+import com.tahkeh.loginmessage.methods.impl.WhitelistedMethod;
+import com.tahkeh.loginmessage.methods.impl.WorldMethod;
+import com.tahkeh.loginmessage.methods.variables.DeathVariables;
+import com.tahkeh.loginmessage.methods.variables.KickVariables;
+import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
 import com.tahkeh.loginmessage.store.Store;
 import com.tahkeh.loginmessage.timers.Cooldown;
 import com.tahkeh.loginmessage.timers.Delay;
@@ -91,21 +122,66 @@ public class Message
 		this.cooldown = new Cooldown();
 		this.store = store;
 		this.table = table;
-		this.methodParser = new MethodParser(logger);
+		this.methodParser = new MethodParser(logger, "%");
 		// Register methods
-		this.loadDefaultMethods();
 		}
-
-	private void loadDefaultMethods() {
-		this.methodParser.clearMethods();
-		this.methodParser.loadDefaults("");
-	}
 
 	public void load(String event) {
 		if(config.getBoolean("autoload", true) || event.equals("load")) {
 			config.load();
 			message.load();
 			list.load();
+
+			this.methodParser.clearMethods();
+			this.methodParser.loadDefaults();
+
+			/*
+			 * Load original methods
+			 */
+			// OfflinePlayer methods
+			new LastLoginMethod(this).register("laston", this.methodParser);
+			new NameMethod().register("nm", this.methodParser);
+			new StatusMethod(this).register("status", this.methodParser);
+			new OnlineMethod(this).register("online", this.methodParser);
+			new BannedMethod(this).register("banned", this.methodParser);
+			new WhitelistedMethod(this).register("white", this.methodParser);
+			new OpMethod(this).register("op", this.methodParser);
+			new RealLocationMethod("city", this).register(this.methodParser);
+			new RealLocationMethod("ccode", this).register(this.methodParser);
+			new RealLocationMethod("cname", this).register(this.methodParser);
+			new RealLocationMethod("zip", this).register(this.methodParser);
+			new RealLocationMethod("rcode", this).register(this.methodParser);
+			new RealLocationMethod("rname", this).register(this.methodParser);
+
+			// Player methods
+			new DisplayNameMethod().register("dpnm", this.methodParser);
+			new WorldMethod().register("world", this.methodParser);
+			new RawTimeMethod().register("rtime", this.methodParser);
+			new TimeMethod(this).register("time", this.methodParser);
+			new GameModeMethod().register("mode", this.methodParser);
+			new AsleepMethod(this).register("asleep", this.methodParser);
+			new LocationMethod().register("location", this.methodParser);
+			/* Following methods are replaced by the location method:
+			 * str = str.replaceAll("%x", Integer.toString(p.getLocation().getBlockX()));
+			 * str = str.replaceAll("%y", Integer.toString(p.getLocation().getBlockY()));
+			 * str = str.replaceAll("%z", Integer.toString(p.getLocation().getBlockZ()));
+			 */
+			new LevelMethod().register("level", this.methodParser);
+			new CurrentExperienceMethod().register("curxp", this.methodParser);
+			new TotalExperienceMethod().register("totalxp", this.methodParser);
+			new FoodLevelMethod().register("food", this.methodParser);
+			new ExhaustMethod().register("exhaust", this.methodParser);
+			new SaturationMethod().register("sat", this.methodParser);
+			new IPMethod(this).register("ip", this.methodParser);
+			new GroupNameMethod(Main.getPermissions(), this.logger).register("group", this.methodParser);
+			new PermissionMethod<String>(Main.getPermissions(), PREFIX_PERMISSION, PermissionMethod.PLAYER_STRING_CALLBACK).register("prefix", this.methodParser);
+			new PermissionMethod<String>(Main.getPermissions(), SUFFIX_PERMISSION, PermissionMethod.PLAYER_STRING_CALLBACK).register("suffix", this.methodParser);
+
+			// Methods without any relation to players
+			new IndefiniteArticleMethod().register("an", this.methodParser);
+			new SizeMethod().register("size", this.methodParser);
+			new MaximumPlayersMethod().register("max", this.methodParser);
+			new ServerTimeMethod(this).register("srtime", this.methodParser);
 
 			Configuration configuration = new Configuration(new File(this.plugin.getDataFolder(), "methods.yml"));
 			configuration.load();
@@ -210,6 +286,10 @@ public class Message
 		return paramCountArray;
 	}
 
+	public SimpleDateFormat getDateFormat() {
+		return new SimpleDateFormat(config.getString("format", "K:mm a z"));
+	}
+
 	public void unload() {
 		plugin.getServer().getScheduler().cancelTasks(plugin);
 		running.clear();
@@ -235,29 +315,31 @@ public class Message
 		long difference = (end.getTime() - start) / 1000;
 		long date[] = new long[] {0, 0, 0, 0};
 		
-		date[3] = (difference >= 60 ? difference % 60 : difference);
-		date[2] = (difference = (difference / 60)) >= 60 ? difference % 60 : difference;
-		date[1] = (difference = (difference / 60)) >= 24 ? difference % 24 : difference;
-		date[0] = (difference = (difference / 24));
-		
-		long days = date[0];
-		long hours = date[1];
-		long minutes = date[2];
-		long seconds = date[3];
-		
-		if (days > 0) {
-			lines.add(String.format("%d day%s", days, days != 1 ? "s" : ""));
-		}
-		if (hours > 0) {
-			lines.add(String.format("%d hour%s", hours, hours != 1 ? "s" : ""));
-		}
-		if (minutes > 0) {
-			lines.add(String.format("%d minute%s", minutes, minutes != 1 ? "s" : ""));
-		}
-		if (seconds > 0) {
-			lines.add(String.format("%d second%s", seconds, seconds != 1 ? "s" : ""));
-		} else if (difference == 0) {
+		if (difference == 0) {
 			lines.add("a moment");
+		} else {
+			date[3] = (difference >= 60 ? difference % 60 : difference);
+			date[2] = (difference = (difference / 60)) >= 60 ? difference % 60 : difference;
+			date[1] = (difference = (difference / 60)) >= 24 ? difference % 24 : difference;
+			date[0] = (difference = (difference / 24));
+			
+			long days = date[0];
+			long hours = date[1];
+			long minutes = date[2];
+			long seconds = date[3];
+			
+			if (days > 0) {
+				lines.add(String.format("%d day%s", days, days != 1 ? "s" : ""));
+			}
+			if (hours > 0) {
+				lines.add(String.format("%d hour%s", hours, hours != 1 ? "s" : ""));
+			}
+			if (minutes > 0) {
+				lines.add(String.format("%d minute%s", minutes, minutes != 1 ? "s" : ""));
+			}
+			if (seconds > 0) {
+				lines.add(String.format("%d second%s", seconds, seconds != 1 ? "s" : ""));
+			}
 		}
 		
 		return getFormattedString("", lines.toArray());
@@ -339,24 +421,27 @@ public class Message
 	}
 	
 	public String getTime(Long rawtime, boolean caps) {
-		String day = config.getString("day");
-		String dusk = config.getString("sunset");
-		String dawn = config.getString("sunrise");
-		String night = config.getString("night");
-
-		int modTime = (int) (rawtime % 24000);
-
-		String name = "";
-		if (modTime == 24000 || modTime <= 11999) {
-			name = day;
-		} else if (modTime == 12000 || modTime <= 12999) {
-			name = dusk;
-		} else if (modTime == 13000 || modTime <= 22999) {
-			name = night;
-		} else if (modTime == 23000 || modTime <= 23999) {
-			name = dawn;
+		String name = getTime(rawtime);
+		if (name == null) {
+			name = "";
 		}
 		return caps ? toCapitalCase(name) : name.toLowerCase();
+	}
+
+	public String getTime(Long rawtime) {
+		int modTime = (int) (rawtime % 24000);
+
+		if (modTime == 24000 || modTime <= 11999) {
+			return config.getString("day");
+		} else if (modTime == 12000 || modTime <= 12999) {
+			return config.getString("sunset");
+		} else if (modTime == 13000 || modTime <= 22999) {
+			return config.getString("night");
+		} else if (modTime == 23000 || modTime <= 23999) {
+			return config.getString("sunrise");
+		} else {
+			return null;
+		}
 	}
 	
 	public String getGameMode(GameMode mode, boolean caps) {
@@ -382,11 +467,11 @@ public class Message
 		}
 	}
 
-	private static String getPrefix(String group, String world) {
+	public static String getPrefix(String group, String world) {
 		return Main.getPermissions().getString(world, group, PREFIX_PERMISSION);
 	}
 
-	private static String getSuffix(String group, String world) {
+	public static String getSuffix(String group, String world) {
 		return Main.getPermissions().getString(world, group, SUFFIX_PERMISSION);
 	}
 
@@ -396,14 +481,10 @@ public class Message
 	}
 
 	public String booleanToName(boolean bool, boolean caps) {
-		String t = config.getString("istrue", "&2Yes");
-		String f = config.getString("isfalse", "&4No");
-		String name = "";
+		String name = booleanToName(bool);
 
-		if (bool) {
-			name = t;
-		} else {
-			name = f;
+		if (name == null) {
+			name = "";
 		}
 		
 		name = processColors(name);
@@ -411,71 +492,32 @@ public class Message
 		return caps ? name : name.toLowerCase();
 	}
 	
+	public String booleanToName(boolean bool) {
+		return bool ? config.getString("istrue", "&2Yes") : config.getString("isfalse", "&4No");
+	}
+	
 	public String getStatus(OfflinePlayer p, boolean caps) {
+		String status = getStatus(p);
+		return processColors(caps ? toCapitalCase(status) : status.toLowerCase());
+	}
+
+	public String getStatus(OfflinePlayer p) {
 		AFKHandler afkhandler = new AFKHandler(plugin);
-		String status = "";
-		String online = config.getString("status.online", "&2Online");
-		String offline = config.getString("status.offline", "&7Offline");
-		String afk = config.getString("status.afk", "&6AFK");
-		
+		final String status;
+
 		if (p.isOnline()) {
-			status = caps ? toCapitalCase(online) : online.toLowerCase();
-			if (afkhandler.isActive()) {
-				if (afkhandler.isAFK(plugin.getServer().getPlayerExact(p.getName()))) {
-					status = afk;
-				}
+			if (afkhandler.isActive() && afkhandler.isAFK(plugin.getServer().getPlayerExact(p.getName()))) {
+				status = config.getString("status.afk", "&6AFK");
+			} else {
+				status = config.getString("status.online", "&2Online");
 			}
 		} else {
-			status = caps ? toCapitalCase(offline) : offline.toLowerCase();
+			status = config.getString("status.offline", "&7Offline");
 		}
-		
-		status = processColors(status);
 		
 		return status;
 	}
-	
-	public String textProcess(String str) {
-		boolean vowel = false;
-		if (str.contains("%an%")) {
-			String code = str.substring(str.indexOf("%an%"), str.indexOf("%an%") + 4);
-			String letter = str.substring(str.indexOf("%an%") + 5, str.indexOf("%an%") + 6);
-			if (letter.equalsIgnoreCase("a") || letter.equalsIgnoreCase("e") || letter.equalsIgnoreCase("i") || letter.equalsIgnoreCase("o") || letter.equalsIgnoreCase("u")) {
-				vowel = true;
-			}
-			if (vowel) {
-				str = str.replace(code, "an");
-			} else {
-				str = str.replace(code, "a");
-			}
-		}
-		if (str.contains("%ifeq(")) {
-			int start = str.indexOf("%ifeq(") + 6;
-			int end = str.indexOf(")", start);
-			String trim = str.substring(start, end);
-			String regex = "%ifeq(" + trim + ")";
-			String replacement = "";
-			
-			String boolean1 = trim.substring(0, trim.indexOf(","));
-			String trim1 = trim.substring(trim.indexOf(",") + 2);
-			
-			String boolean2 = trim1.substring(0, trim1.indexOf(","));
-			String trim2 = trim1.substring(trim1.indexOf(",") + 2);
-			
-			String equal = trim2.substring(0, trim2.indexOf(","));
-			String unequal = trim2.substring(trim2.indexOf(",") + 2);
-			
-			if (boolean1.equals(boolean2)) {
-				replacement = equal;
-			} else {
-				replacement = unequal;
-			}
-			
-			str = str.replace(regex, replacement);
-		}
-		
-		return str;
-	}
-	
+
 	public String processOnlineList(String str, Player p, String event) {
 		PermissionsHandler handler = Main.getPermissions();
 		if (str.contains("%ol" + separator)) {
@@ -572,142 +614,55 @@ public class Message
 		return str;
 	}
 
-	public String processLine(String str, OfflinePlayer p, String event, Map<String, String> args) {
+	private static DefaultVariables generateVariables(final OfflinePlayer player, final String event, final Map<String, String> args) {
+		DefaultVariables variables = null;
 		Player trigger = null;
-		int size = plugin.getServer().getOnlinePlayers().length;
-		SimpleDateFormat sdf = new SimpleDateFormat(config.getString("format", "K:mm a z"));
-		String[] onlineCodes = {
-				"%world", "%rtime", "%time", "%Time", "%Mode", "%mode",
-				"%asleep", "%Asleep", "%x", "%y", "%z", "%level",
-				"%curxp", "%totalxp", "%food", "%exhaust", "%sat", "%ip"
-				};
-		String[] playerCodes = {
-				"%laston", "%nm", "%online", "%Online", "%status", "%Status", "%banned", "%Banned",
-				"%white", "%White", "%op", "%Op", "%city", "%ccode", "%zip", "%rcode", "%rname"
-		};
-		
-		if (isLeaveEvent(event)) {
-			size = size - 1;
-		}
-		str = this.methodParser.parseLine(p, event, str);
-		if(p != null) {
-			str = str.replaceAll("%laston", getTimeDifference(store.getLastLogin(p.getName())));		
-			str = str.replaceAll("%nm", p.getName());
-			str = str.replaceAll("%status", getStatus(p, false));
-			str = str.replaceAll("%Status", getStatus(p, true));
-			str = str.replaceAll("%online", booleanToName(p.isOnline(), false));
-			str = str.replaceAll("%Online", booleanToName(p.isOnline(), true));
-			str = str.replaceAll("%banned", booleanToName(p.isBanned(), false));
-			str = str.replaceAll("%Banned", booleanToName(p.isBanned(), true));
-			str = str.replaceAll("%white", booleanToName(p.isWhitelisted(), false));
-			str = str.replaceAll("%White", booleanToName(p.isWhitelisted(), true));
-			str = str.replaceAll("%op", booleanToName(p.isOp(), false));
-			str = str.replaceAll("%Op", booleanToName(p.isOp(), true));
-
-			if (str.contains("%city")) {
-				str = str.replaceAll("%city", getLocation("city", p.getName(), event));
-			}
-			if (str.contains("%ccode")) {
-				str = str.replaceAll("%ccode", getLocation("ccode", p.getName(), event));
-			}
-			if (str.contains("%cname")) {
-				str = str.replaceAll("%cname", getLocation("cname", p.getName(), event));
-			}
-			if (str.contains("%zip")) {
-				str = str.replaceAll("%zip", getLocation("zip", p.getName(), event));
-			}
-			if (str.contains("%rcode")) {
-				str = str.replaceAll("%rcode", getLocation("rcode", p.getName(), event));
-			}
-			if (str.contains("%rname")) {
-				str = str.replaceAll("%rname", getLocation("rname", p.getName(), event));
-			}
-			
-			if (p.isOnline()) {
-				trigger = plugin.getServer().getPlayerExact(p.getName());
-				str = onlineProcess(str, plugin.getServer().getPlayerExact(p.getName()), event, args);
-			} else if (!event.equals("list")) {
-				trigger = plugin.getServer().getPlayerExact(args.get("trigger"));
-				str = str.replaceAll("%dpnm", p.getName());
-				for (String code : onlineCodes) {
-					str = str.replaceAll(code, "?"); // Return ? if an online code is used for an offline player (shouldn't happen anyways)
-				}
+		if (player != null) {
+			trigger = Bukkit.getServer().getPlayerExact(player.getName());
+			if (trigger == null && !event.equals("list") && args.containsKey("trigger")) {
+				trigger = Bukkit.getServer().getPlayerExact(args.get("trigger"));
 			}
 		} else {
-			for(String code : playerCodes) {
-				str = str.replaceAll(code, "?");
+			trigger = null;
+		}
+		if (event.equalsIgnoreCase("kick")) {
+			String reason = args.get("kickreason");
+			if (reason != null) {
+				variables = new KickVariables(reason, trigger);
+			}
+		} else if (event.equalsIgnoreCase("death")) {
+			String item = args.get("item");
+			String entity = args.get("entity");
+			if (item != null && entity != null) {
+				variables = new DeathVariables(item, entity, trigger);
+			}
+		}
+		return variables == null ? new DefaultVariables(trigger) : variables;
+	}
+
+	public String processLine(String str, OfflinePlayer p, String event, Map<String, String> args) {
+		Player trigger = null;
+
+		str = this.methodParser.parseLine(p, event, str, generateVariables(p, event, args));
+		if(p != null) {
+			if (p.isOnline()) {
+				trigger = plugin.getServer().getPlayerExact(p.getName());
+			} else if (!event.equals("list")) {
+				trigger = plugin.getServer().getPlayerExact(args.get("trigger"));
 			}
 		}
 		if (!event.equals("list")) {
 			str = processOnlineList(str, trigger, event);
 		}
-		str = str.replaceAll("%size", Integer.toString(size));
-		str = str.replaceAll("%max", Integer.toString(plugin.getServer().getMaxPlayers()));
-		str = str.replaceAll("%srtime", sdf.format(Calendar.getInstance().getTime()));
 		
 		str = processColors(str);
 		str = str.replaceAll("%sp", "");
 
-		return textProcess(str);
-	}
-
-	public String onlineProcess(String str, Player p, String event, Map<String, String> args) {
-		EconomyHandler economy = Main.getEconomy();
-		PermissionsHandler permissions = Main.getPermissions();
-		String ip = !isLocal(p) ? p.getAddress().getAddress().getHostAddress() : Main.getExternalIp().getHostAddress();
-		Long rawtime = p.getWorld().getTime();
-
-		str = eventProcess(str, p, event, args);
-
-		str = str.replaceAll("%dpnm", p.getDisplayName());
-		str = str.replaceAll("%world", p.getWorld().getName());
-		str = str.replaceAll("%rtime", rawtime.toString());
-		str = str.replaceAll("%time", getTime(rawtime, false));
-		str = str.replaceAll("%Time", getTime(rawtime, true));
-		str = str.replaceAll("%mode", getGameMode(p.getGameMode(), false));
-		str = str.replaceAll("%Mode", getGameMode(p.getGameMode(), true));
-		str = str.replaceAll("%asleep", booleanToName(p.isSleeping(), false));
-		str = str.replaceAll("%Asleep", booleanToName(p.isSleeping(), true));
-		str = str.replaceAll("%x", Integer.toString(p.getLocation().getBlockX()));
-		str = str.replaceAll("%y", Integer.toString(p.getLocation().getBlockY()));
-		str = str.replaceAll("%z", Integer.toString(p.getLocation().getBlockZ()));
-		str = str.replaceAll("%level", Integer.toString(p.getLevel()));
-		str = str.replaceAll("%curxp", Integer.toString(p.getExperience()));
-		str = str.replaceAll("%totalxp", Integer.toString(p.getTotalExperience()));
-		str = str.replaceAll("%food", Integer.toString(p.getFoodLevel()));
-		str = str.replaceAll("%exhaust", Float.toString(p.getExhaustion()));
-		str = str.replaceAll("%sat", Float.toString(p.getSaturation()));
-		str = str.replaceAll("%ip", ip);
-		
-		if (economy.isActive()) {
-			str = str.replaceAll("%bal", Double.toString(economy.getBalance(p.getName())));
-		}
-		
-		if (permissions.isActive()) {
-			String world = p.getWorld().getName();
-			String groupname = getFirst(permissions.getGroup(world, p.getName()));
-			str = str.replaceAll("%group", groupname);
-			if (getPrefix(groupname, world) != null) {
-				str = str.replaceAll("%prefix", getPrefix(groupname, world));
-			}
-			if (getSuffix(groupname, world) != null) {
-				str = str.replaceAll("%suffix", getSuffix(groupname, world));
-			}
-		}
-
 		return str;
 	}
 
-	public String eventProcess(String str, Player p, String event, Map<String, String> args) {
-		if (event.equals("kick")) {
-			str = str.replaceAll("%reason", args.get("kickreason"));
-		}
-		if (event.equals("death")) {
-			str = str.replaceAll("%ditem", args.get("item"));
-			str = str.replaceAll("%dentity", args.get("entity"));
-		}
-
-		return str;
+	public long getLastLogin(String name) {
+		return this.store.getLastLogin(name);
 	}
 
 	public boolean isLocal(Player p) {

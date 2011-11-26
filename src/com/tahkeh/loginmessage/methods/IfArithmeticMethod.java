@@ -15,7 +15,7 @@ public class IfArithmeticMethod extends IfMethod {
 	}
 
 	@Override
-	protected Boolean match(OfflinePlayer player, String event, String... preValues) {
+	protected Boolean match(OfflinePlayer player, String event, String[] preValues) {
 		Double a = MinecraftUtil.tryAndGetDouble(preValues[0]);
 		Double b = MinecraftUtil.tryAndGetDouble(preValues[1]);
 		if (a != null && b != null) {

@@ -9,7 +9,7 @@ public class IfSetMethod extends IfMethod {
 	}
 
 	@Override
-	protected Boolean match(OfflinePlayer player, String event, String... preValues) {
+	protected Boolean match(OfflinePlayer player, String event, String[] preValues) {
 		return preValues[0] != null;
 	}
 }

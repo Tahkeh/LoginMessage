@@ -2,18 +2,19 @@ package com.tahkeh.loginmessage.methods;
 
 import org.bukkit.OfflinePlayer;
 
+import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+
 import de.xzise.MinecraftUtil;
 
-public class RandomMethod implements Method {
+public class RandomMethod extends DefaultMethod {
 
-	@Override
-	public String call(OfflinePlayer player, String event, String... parameters) {
-		return MinecraftUtil.getRandom(parameters);
+	public RandomMethod() {
+		super(true, -1);
 	}
 
 	@Override
-	public boolean recursive() {
-		return true;
+	public String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
+		return MinecraftUtil.getRandom(parameters);
 	}
 
 }

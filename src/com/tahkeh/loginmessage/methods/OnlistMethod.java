@@ -10,62 +10,27 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.Message;
+import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
 
-import de.xzise.MinecraftUtil;
 import de.xzise.XLogger;
 
 /**
  * Simple online list method.
  */
-public class OnlistMethod implements Method {
+public class OnlistMethod extends DefaultMethod {
 
 	public final static ChatColor NAME_COLOR = ChatColor.WHITE;
 	public final static ChatColor COMMA_COLOR = ChatColor.WHITE;
 
-	/**
-	 * Tries to convert a string into an integer. If the string is invalid it
-	 * returns <code>null</code>.
-	 * 
-	 * @param string
-	 *            The string to be parsed.
-	 * @param radix
-	 *            The radix of the integer.
-	 * @return The value if the string is valid, otherwise <code>null</code>.
-	 * @since 1.3
-	 */
-	// TODO: Move to BPU 1.3
-	public static Integer tryAndGetInteger(String string, int radix) {
-		try {
-			return Integer.parseInt(string, radix);
-		} catch (NumberFormatException e) {
-			return null;
-		}
-	}
-
-	/**
-	 * Parses an integer between 0-16 or 0-F.
-	 * @param string the inputed string.
-	 * @return the integer or null, if it couldn't parsed.
-	 */
-	public static Integer parseInt(String string) {
-		string = string.trim();
-		if (string.length() == 2) {
-			return MinecraftUtil.tryAndGetInteger(string);
-		} else if (string.length() == 1) {
-			return tryAndGetInteger(string, 16);
-		} else {
-			return null;
-		}
-	}
-
 	private final XLogger logger;
 
 	public OnlistMethod(XLogger logger) {
+		super(false, 0, 2, 3);
 		this.logger = logger;
 	}
 
 	private ChatColor getColor(String parameter, String name) {
-		Integer colorValue = parseInt(parameter);
+		Integer colorValue = DefaultMethod.parseAsInteger(parameter);
 		if (colorValue == null || colorValue < 0 || colorValue > 15) {
 			this.logger.warning("OnList parameter '" + name + "' is not a valid integer ('" + parameter + "'). Valid integers are: 1-16 or 0-F");
 			return null;
@@ -79,7 +44,7 @@ public class OnlistMethod implements Method {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, String... parameters) {
+	public String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
 		ChatColor nameColor = NAME_COLOR;
 		ChatColor commaColor = COMMA_COLOR;
 		ChatColor endColor = COMMA_COLOR;
@@ -121,10 +86,5 @@ public class OnlistMethod implements Method {
 			}
 		}
 		return builder.append(endColor).toString();
-	}
-
-	@Override
-	public boolean recursive() {
-		return false;
 	}
 }

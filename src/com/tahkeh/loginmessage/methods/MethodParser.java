@@ -9,6 +9,8 @@ import java.util.Map;
 
 import org.bukkit.OfflinePlayer;
 
+import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+
 import de.xzise.EqualCheck;
 import de.xzise.MinecraftUtil;
 import de.xzise.XLogger;
@@ -20,9 +22,22 @@ public class MethodParser {
 
 	private final Map<String, Map<Integer, Method>> methods = new HashMap<String, Map<Integer, Method>>();
 	private final XLogger logger;
+	private String prefix = "";
 
-	public MethodParser(XLogger logger) {
+	public MethodParser(final XLogger logger, final String prefix) {
 		this.logger = logger;
+		this.setPrefix(prefix);
+	}
+
+	public String getPrefix() {
+		return this.prefix;
+	}
+
+	public void setPrefix(final String prefix) {
+		if (prefix.contains(" ")) {
+			throw new IllegalArgumentException("Name mustn't contain spaces.");
+		}
+		this.prefix = prefix;
 	}
 
 	/**
@@ -40,16 +55,17 @@ public class MethodParser {
 	 */
 	public int registerMethod(String name, Method method, int... paramCount) {
 		if (name.contains(" ")) {
-			throw new IllegalArgumentException("Name shouldn't contain spaces.");
+			throw new IllegalArgumentException("Name mustn't contain spaces.");
 		} else {
+			final String fullName = this.prefix + name;
 			if (paramCount.length == 0) {
 				paramCount = new int[] { -1, 0 };
 			}
 			// TODO: Case insensitive?
-			Map<Integer, Method> methods = this.methods.get(name);
+			Map<Integer, Method> methods = this.methods.get(fullName);
 			if (methods == null) {
 				methods = new HashMap<Integer, Method>();
-				this.methods.put(name, methods);
+				this.methods.put(fullName, methods);
 			}
 			int failCount = 0;
 			for (int i : paramCount) {
@@ -112,11 +128,11 @@ public class MethodParser {
 		this.methods.clear();
 	}
 
-	public String parseLine(OfflinePlayer p, String event, String line) {
-		return this.parseLine(p, event, line, 0);
+	public String parseLine(OfflinePlayer p, String event, String line, DefaultVariables globalParameters) {
+		return this.parseLine(p, event, line, globalParameters, 0);
 	}
 
-	private String parseLine(OfflinePlayer p, String event, String line, final int depth) {
+	private String parseLine(OfflinePlayer p, String event, String line, DefaultVariables globalParameters, final int depth) {
 		int index = 0;
 		int start = -1;
 		int delim = -1;
@@ -200,13 +216,13 @@ public class MethodParser {
 						}
 						if (method.recursive()) {
 							for (int i = 0; i < parameters.length; i++) {
-								parameters[i] = parseLine(p, event, parameters[i], depth + 1);
+								parameters[i] = parseLine(p, event, parameters[i], globalParameters, depth + 1);
 							}
 						}
-						String replacement = method.call(p, event, parameters);
+						String replacement = method.call(p, event, parameters, globalParameters);
 						if (replacement != null) {
 							if (method.recursive()) {
-								replacement = parseLine(p, event, replacement, depth + 1);
+								replacement = parseLine(p, event, replacement, globalParameters, depth + 1);
 							}
 							line = line.substring(0, start) + replacement + substring(line, end + 1, line.length());
 							index += replacement.length() - (end - start) - 1;
@@ -226,27 +242,27 @@ public class MethodParser {
 		return line;
 	}
 
-	public void loadDefaults(final String prefix) {
-		this.registerMethod(prefix + "onlist", new OnlistMethod(this.logger), 0, 2, 3);
-		this.registerMethod(prefix + "call", new PrintMethod(true), -1);
-		this.registerMethod(prefix + "print", new PrintMethod(false), -1);
+	public void loadDefaults() {
+		this.registerMethod("onlist", new OnlistMethod(this.logger), 0, 2, 3);
+		this.registerMethod("call", new PrintMethod(true), -1);
+		this.registerMethod("print", new PrintMethod(false), -1);
 
 		// IfChecker
-		this.registerMethod(prefix + "ifequals", new IfCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER, false), 3, 4);
-		this.registerMethod(prefix + "ifnotequals", new IfCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER, true), 3, 4);
-		this.registerMethod(prefix + "ifequalsignorecase", new IfCheckerMethod(EqualCheck.STRING_IGNORE_CASE_EQUAL_CHECKER, false), 3, 4);
-		this.registerMethod(prefix + "ifnotequalsignorecase", new IfCheckerMethod(EqualCheck.STRING_IGNORE_CASE_EQUAL_CHECKER, true), 3, 4);
-		this.registerMethod(prefix + "ifset", new IfSetMethod(false), 2, 3);
-		this.registerMethod(prefix + "ifnotset", new IfSetMethod(true), 2, 3);
+		this.registerMethod("ifequals", new IfCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER, false), 3, 4);
+		this.registerMethod("ifnotequals", new IfCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER, true), 3, 4);
+		this.registerMethod("ifequalsignorecase", new IfCheckerMethod(EqualCheck.STRING_IGNORE_CASE_EQUAL_CHECKER, false), 3, 4);
+		this.registerMethod("ifnotequalsignorecase", new IfCheckerMethod(EqualCheck.STRING_IGNORE_CASE_EQUAL_CHECKER, true), 3, 4);
+		this.registerMethod("ifset", new IfSetMethod(false), 2, 3);
+		this.registerMethod("ifnotset", new IfSetMethod(true), 2, 3);
 
-		this.registerMethod(prefix + "caseequals", new CaseCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER), -2);
+		this.registerMethod("caseequals", new CaseCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER), -2);
 
-		this.registerMethod(prefix + "ifgreaterequals", new IfArithmeticMethod(EqualCheck.GREATER_EQUAL_CHECKER), 3, 4);
-		this.registerMethod(prefix + "ifgreater", new IfArithmeticMethod(EqualCheck.GREATER_CHECKER), 3, 4);
-		this.registerMethod(prefix + "iflower", new IfArithmeticMethod(EqualCheck.LOWER_CHECKER), 3, 4);
-		this.registerMethod(prefix + "iflowerequals", new IfArithmeticMethod(EqualCheck.LOWER_EQUAL_CHECKER), 3, 4);
+		this.registerMethod("ifgreaterequals", new IfArithmeticMethod(EqualCheck.GREATER_EQUAL_CHECKER), 3, 4);
+		this.registerMethod("ifgreater", new IfArithmeticMethod(EqualCheck.GREATER_CHECKER), 3, 4);
+		this.registerMethod("iflower", new IfArithmeticMethod(EqualCheck.LOWER_CHECKER), 3, 4);
+		this.registerMethod("iflowerequals", new IfArithmeticMethod(EqualCheck.LOWER_EQUAL_CHECKER), 3, 4);
 
-		this.registerMethod(prefix + "random", new RandomMethod(), -1);
+		this.registerMethod("random", new RandomMethod(), -1);
 	}
 
 	private static String substring(String input, int start, int end) {
