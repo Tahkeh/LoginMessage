@@ -622,9 +622,13 @@ public class Message extends PlayerListener //Handles everything message-related
 	 */
 	public void sendMessage(Player trigger, Collection<Player> possibleReceivers, String[] lines, String event, CooldownTask task) //The grand finale - get the right message, and if the player is a receiver, send it!
 	{
+		String[] processedLines = new String[lines.length];
+		for (int i = 0; i < processedLines.length; i++) {
+			processedLines[i] = process(lines[i], trigger, event);
+		}
 		for (Player receiver : possibleReceivers) {
-			for (String str : lines) {
-				receiver.sendMessage(process(str, trigger, event));
+			for (String processedLine : processedLines) {
+				receiver.sendMessage(processedLine);
 			}
 		}
 		if (task != null) {
