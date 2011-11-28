@@ -9,6 +9,9 @@ import java.util.Map;
 
 import org.bukkit.OfflinePlayer;
 
+import com.tahkeh.loginmessage.methods.parameter.FinalParameter;
+import com.tahkeh.loginmessage.methods.parameter.OnceParsedParameter;
+import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
 
 import de.xzise.EqualCheck;
@@ -132,7 +135,7 @@ public class MethodParser {
 		return this.parseLine(p, event, line, globalParameters, 0);
 	}
 
-	private String parseLine(OfflinePlayer p, String event, String line, DefaultVariables globalParameters, final int depth) {
+	public String parseLine(OfflinePlayer p, String event, String line, DefaultVariables globalParameters, final int depth) {
 		int index = 0;
 		int start = -1;
 		int delim = -1;
@@ -214,12 +217,15 @@ public class MethodParser {
 						if (depth >= WARNING_THRESHOLD) {
 							this.logger.warning("Deep method call of '" + name + "' at depth " + depth);
 						}
-						if (method.recursive()) {
-							for (int i = 0; i < parameters.length; i++) {
-								parameters[i] = parseLine(p, event, parameters[i], globalParameters, depth + 1);
+						Parameter[] parameterObjects = new Parameter[parameters.length];
+						for (int i = 0; i < parameters.length; i++) {
+							if (method.recursive()) {
+								parameterObjects[i] = new OnceParsedParameter(this, p, event, parameters[i], globalParameters, depth + 1);
+							} else {
+								parameterObjects[i] = new FinalParameter(parameters[i]);
 							}
 						}
-						String replacement = method.call(p, event, parameters, globalParameters);
+						String replacement = method.call(p, event, parameterObjects, globalParameters);
 						if (replacement != null) {
 							if (method.recursive()) {
 								replacement = parseLine(p, event, replacement, globalParameters, depth + 1);

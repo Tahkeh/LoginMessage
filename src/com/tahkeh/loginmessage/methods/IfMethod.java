@@ -4,6 +4,8 @@ import java.util.Arrays;
 
 import org.bukkit.OfflinePlayer;
 
+import com.tahkeh.loginmessage.methods.parameter.FinalParameter;
+import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
 
 public abstract class IfMethod implements Method {
@@ -17,9 +19,9 @@ public abstract class IfMethod implements Method {
 	}
 
 	@Override
-	public final String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
-		String match = "";
-		String noMatch = "";
+	public final String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
+		Parameter match = FinalParameter.EMPTY_PARAMETER;
+		Parameter noMatch = FinalParameter.EMPTY_PARAMETER;
 		switch (parameters.length - this.preValueCount) {
 		case 2:
 			noMatch = parameters[this.preValueCount + 1];
@@ -29,10 +31,10 @@ public abstract class IfMethod implements Method {
 		default:
 			return null;
 		}
-		return this.match(player, event, Arrays.copyOf(parameters, this.preValueCount)) != this.inverted ? match : noMatch;
+		return this.match(player, event, Arrays.copyOf(parameters, this.preValueCount)) != this.inverted ? match.parse() : noMatch.parse();
 	}
 
-	protected abstract Boolean match(OfflinePlayer player, String event, String[] preValues);
+	protected abstract Boolean match(OfflinePlayer player, String event, Parameter[] preValues);
 
 	@Override
 	public boolean recursive() {

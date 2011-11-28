@@ -4,6 +4,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.methods.DefaultMethod;
+import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
 
 import de.xzise.XLogger;
@@ -21,13 +22,13 @@ public class GroupNameMethod extends DefaultMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
+	public String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
 		if (player instanceof Player && this.permissions.isActive()) {
 			Integer groupIdx = null;
 			if (parameters.length == 0) {
 				groupIdx = 0;
 			} else if (parameters.length == 1) {
-				groupIdx = DefaultMethod.parseAsInteger(parameters[0]);
+				groupIdx = DefaultMethod.parseAsInteger(parameters[0].parse());
 				if (groupIdx == null) {
 					this.logger.warning("Invalid group index parameter.");
 				}

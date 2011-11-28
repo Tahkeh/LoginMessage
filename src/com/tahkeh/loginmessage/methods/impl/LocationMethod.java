@@ -7,6 +7,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.methods.DefaultMethod;
+import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
 
 public class LocationMethod extends DefaultMethod {
@@ -16,7 +17,7 @@ public class LocationMethod extends DefaultMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
+	public String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
 		if (player instanceof Player) {
 			Location location = ((Player) player).getLocation();
 			String format = null;
@@ -26,7 +27,7 @@ public class LocationMethod extends DefaultMethod {
 				Arrays.fill(set, true);
 				break;
 			case 3 :
-				Boolean boolZ = DefaultMethod.parseAsBoolean(parameters[2]);
+				Boolean boolZ = DefaultMethod.parseAsBoolean(parameters[2].parse());
 				if (boolZ == null) {
 					set = null;
 					break;
@@ -34,7 +35,7 @@ public class LocationMethod extends DefaultMethod {
 					set[2] = boolZ;
 				}
 			case 2 :
-				Boolean boolY = DefaultMethod.parseAsBoolean(parameters[1]);
+				Boolean boolY = DefaultMethod.parseAsBoolean(parameters[1].parse());
 				if (boolY == null) {
 					set = null;
 					break;
@@ -42,9 +43,9 @@ public class LocationMethod extends DefaultMethod {
 					set[2] = boolY;
 				}
 			case 1 :
-				Boolean boolX = DefaultMethod.parseAsBoolean(parameters[0]);
+				Boolean boolX = DefaultMethod.parseAsBoolean(parameters[0].parse());
 				if (boolX == null && parameters.length == 1) {
-					format = parameters[0];
+					format = parameters[0].parse();
 					set = null;
 					break;
 				} else if (set != null) {

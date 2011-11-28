@@ -2,6 +2,7 @@ package com.tahkeh.loginmessage.methods;
 
 import org.bukkit.OfflinePlayer;
 
+import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
 
 public class AliasMethod extends DefaultMethod {
@@ -14,11 +15,11 @@ public class AliasMethod extends DefaultMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
+	public String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
 		if (this.getParamCounts()[0] == parameters.length) {
 			String result = this.result;
 			for (int i = 0; i < parameters.length; i++) {
-				result = result.replaceAll("\\$" + i + ";", parameters[i]);
+				result = result.replaceAll("\\$" + i + ";", parameters[i].parse());
 			}
 			return result;
 		} else {

@@ -2,6 +2,7 @@ package com.tahkeh.loginmessage.methods;
 
 import org.bukkit.OfflinePlayer;
 
+import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
 
 /**
@@ -15,7 +16,7 @@ public abstract class OriginalMethod extends DefaultMethod {
 	}
 
 	@Override
-	public final String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
+	public final String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
 		if (parameters.length == 0) {
 			return call(player, event, globalParameters);
 		} else {

@@ -2,6 +2,7 @@ package com.tahkeh.loginmessage.methods;
 
 import org.bukkit.OfflinePlayer;
 
+import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
 
 
@@ -14,7 +15,7 @@ public abstract class FloatMethod extends DefaultMethod {
 	}
 
 	@Override
-	public final String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
+	public final String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
 		if (parameters.length > 2) {
 			return null;
 		} else {
@@ -24,9 +25,9 @@ public abstract class FloatMethod extends DefaultMethod {
 				int maxDecimals = 0;
 				switch (parameters.length) {
 				case 2:
-					minDecimals = DefaultMethod.parseAsInteger(parameters[1]);
+					minDecimals = DefaultMethod.parseAsInteger(parameters[1].parse());
 				case 1:
-					maxDecimals = DefaultMethod.parseAsInteger(parameters[0]);
+					maxDecimals = DefaultMethod.parseAsInteger(parameters[0].parse());
 					break;
 				}
 				return MinecraftUtil.getFormatWithMinimumDecimals(minDecimals, maxDecimals).format(value);

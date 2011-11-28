@@ -9,6 +9,7 @@ import javax.script.ScriptException;
 
 import org.bukkit.OfflinePlayer;
 
+import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
 
 import de.xzise.XLogger;
@@ -48,7 +49,7 @@ public class ScriptMethod implements Method {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
+	public String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
 		Object result = null;
 		try {
 			result = this.invocable.invokeFunction(this.methodName, player, event, parameters, globalParameters);

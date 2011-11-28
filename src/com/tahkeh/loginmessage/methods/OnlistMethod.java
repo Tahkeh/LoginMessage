@@ -10,6 +10,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.Message;
+import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
 
 import de.xzise.XLogger;
@@ -44,18 +45,18 @@ public class OnlistMethod extends DefaultMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
+	public String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
 		ChatColor nameColor = NAME_COLOR;
 		ChatColor commaColor = COMMA_COLOR;
 		ChatColor endColor = COMMA_COLOR;
 		boolean endColorSet = false;
 		switch (parameters.length) {
 		case 3:
-			endColor = getColor(parameters[2], "end color");
+			endColor = getColor(parameters[2].parse(), "end color");
 			endColorSet = true;
 		case 2:
-			nameColor = getColor(parameters[0], "name color");
-			commaColor = getColor(parameters[1], "comma color");
+			nameColor = getColor(parameters[0].parse(), "name color");
+			commaColor = getColor(parameters[1].parse(), "comma color");
 			break;
 		case 0:
 			break;

@@ -2,6 +2,7 @@ package com.tahkeh.loginmessage.methods;
 
 import org.bukkit.OfflinePlayer;
 
+import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
 
 import de.xzise.EqualCheck;
@@ -16,7 +17,7 @@ public class CaseCheckerMethod extends DefaultMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, String[] parameters, DefaultVariables globalParameters) {
+	public String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
 		//@formatter:off
 	    /*
 	     * %case(
@@ -37,15 +38,14 @@ public class CaseCheckerMethod extends DefaultMethod {
 	     * section count = (parameter count - 2) / 2
 	     */
 		//@formatter:on
-		System.out.println("case checker w/ " + parameters[0]);
 		if (parameters.length >= 2) {
 			for (int i = 0; i < (parameters.length - 2) / 2; i++) {
-				if (this.checker.equals(parameters[0], parameters[i * 2 + 1])) {
-					return parameters[i * 2 + 2];
+				if (this.checker.equals(parameters[0].parse(), parameters[i * 2 + 1].parse())) {
+					return parameters[i * 2 + 2].parse();
 				}
 			}
 			if (parameters.length % 2 == 0) {
-				return parameters[parameters.length - 1];
+				return parameters[parameters.length - 1].parse();
 			} else {
 				return null;
 			}

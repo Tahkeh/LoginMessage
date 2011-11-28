@@ -640,17 +640,10 @@ public class Message
 		return variables == null ? new DefaultVariables(trigger) : variables;
 	}
 
-	public String processLine(String str, OfflinePlayer p, String event, Map<String, String> args) {
-		Player trigger = null;
+	public String processLine(String str, OfflinePlayer p, String event, DefaultVariables variables) {
+		Player trigger = variables.trigger;
 
-		str = this.methodParser.parseLine(p, event, str, generateVariables(p, event, args));
-		if(p != null) {
-			if (p.isOnline()) {
-				trigger = plugin.getServer().getPlayerExact(p.getName());
-			} else if (!event.equals("list")) {
-				trigger = plugin.getServer().getPlayerExact(args.get("trigger"));
-			}
-		}
+		str = this.methodParser.parseLine(p, event, str, variables);
 		if (!event.equals("list")) {
 			str = processOnlineList(str, trigger, event);
 		}
@@ -919,11 +912,12 @@ public class Message
 	 */
 	public void sendMessage(OfflinePlayer trigger, Collection<Player> possibleReceivers, String[] lines, String event, CooldownTask task, Map<String, String> args)
 	{
+		DefaultVariables variables = generateVariables(trigger, event, args);
 		for (Player receiver : possibleReceivers) {
 			for (String str : lines) {
-				if (!processLine(str, trigger, event, args).trim().equals("")) {
+				if (!processLine(str, trigger, event, variables).trim().equals("")) {
 					// Don't send an empty line
-					receiver.sendMessage(processLine(str, trigger, event, args));
+					receiver.sendMessage(processLine(str, trigger, event, variables));
 				}
 			}
 		}
