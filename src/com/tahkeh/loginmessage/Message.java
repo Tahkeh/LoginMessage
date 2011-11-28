@@ -846,12 +846,16 @@ public class Message
 	 */
 	public void sendMessage(OfflinePlayer trigger, Collection<Player> possibleReceivers, String[] lines, String event, CooldownTask task, Map<String, String> args)
 	{
+		ArrayList<String> processedLines = new ArrayList<String>(lines.length);
+		for (int i = 0; i < lines.length; i++) {
+			String processedLine = processLine(lines[i], trigger, event, args);
+			if (processedLine != null && !processedLine.trim().isEmpty()) {
+				processedLines.add(processedLine);
+			}
+		}
 		for (Player receiver : possibleReceivers) {
-			for (String str : lines) {
-				if (!processLine(str, trigger, event, args).trim().equals("")) {
-					// Don't send an empty line
-					receiver.sendMessage(processLine(str, trigger, event, args));
-				}
+			for (String processedLine : processedLines) {
+				receiver.sendMessage(processedLine);
 			}
 		}
 		if (task != null) {
