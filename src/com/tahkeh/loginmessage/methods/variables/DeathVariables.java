@@ -2,7 +2,7 @@ package com.tahkeh.loginmessage.methods.variables;
 
 import org.bukkit.entity.Player;
 
-public class DeathVariables extends DefaultVariables {
+public class DeathVariables extends Variables {
 
 	public final String item;
 	public final String entity;

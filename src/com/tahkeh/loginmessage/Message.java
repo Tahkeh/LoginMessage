@@ -8,6 +8,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -47,10 +48,13 @@ import com.tahkeh.loginmessage.handlers.DeathHandler;
 import com.tahkeh.loginmessage.store.MaterialTable;
 import com.tahkeh.loginmessage.methods.AliasMethod;
 import com.tahkeh.loginmessage.methods.MethodParser;
+import com.tahkeh.loginmessage.methods.OnlistMethod;
 import com.tahkeh.loginmessage.methods.ScriptMethod;
 import com.tahkeh.loginmessage.methods.impl.AsleepMethod;
 import com.tahkeh.loginmessage.methods.impl.BannedMethod;
+import com.tahkeh.loginmessage.methods.impl.ConstantMethod;
 import com.tahkeh.loginmessage.methods.impl.CurrentExperienceMethod;
+import com.tahkeh.loginmessage.methods.impl.DecimalTimeMethod;
 import com.tahkeh.loginmessage.methods.impl.DisplayNameMethod;
 import com.tahkeh.loginmessage.methods.impl.ExhaustMethod;
 import com.tahkeh.loginmessage.methods.impl.FoodLevelMethod;
@@ -61,7 +65,9 @@ import com.tahkeh.loginmessage.methods.impl.IndefiniteArticleMethod;
 import com.tahkeh.loginmessage.methods.impl.LastLoginMethod;
 import com.tahkeh.loginmessage.methods.impl.LevelMethod;
 import com.tahkeh.loginmessage.methods.impl.LocationMethod;
+import com.tahkeh.loginmessage.methods.impl.MaximumMethod;
 import com.tahkeh.loginmessage.methods.impl.MaximumPlayersMethod;
+import com.tahkeh.loginmessage.methods.impl.MinimumMethod;
 import com.tahkeh.loginmessage.methods.impl.NameMethod;
 import com.tahkeh.loginmessage.methods.impl.OnlineMethod;
 import com.tahkeh.loginmessage.methods.impl.OpMethod;
@@ -78,7 +84,7 @@ import com.tahkeh.loginmessage.methods.impl.WhitelistedMethod;
 import com.tahkeh.loginmessage.methods.impl.WorldMethod;
 import com.tahkeh.loginmessage.methods.variables.DeathVariables;
 import com.tahkeh.loginmessage.methods.variables.KickVariables;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 import com.tahkeh.loginmessage.store.Store;
 import com.tahkeh.loginmessage.timers.Cooldown;
 import com.tahkeh.loginmessage.timers.Delay;
@@ -152,13 +158,15 @@ public class Message
 			new RealLocationMethod("zip", this).register(this.methodParser);
 			new RealLocationMethod("rcode", this).register(this.methodParser);
 			new RealLocationMethod("rname", this).register(this.methodParser);
+			new OnlistMethod(this).register("onlist", this.methodParser);
 
 			// Player methods
 			new DisplayNameMethod().register("dpnm", this.methodParser);
 			new WorldMethod().register("world", this.methodParser);
 			new RawTimeMethod().register("rtime", this.methodParser);
 			new TimeMethod(this).register("time", this.methodParser);
-			new GameModeMethod().register("mode", this.methodParser);
+			new DecimalTimeMethod(this).register("dtime", this.methodParser);
+			new GameModeMethod(this).register("mode", this.methodParser);
 			new AsleepMethod(this).register("asleep", this.methodParser);
 			new LocationMethod().register("location", this.methodParser);
 			/* Following methods are replaced by the location method:
@@ -182,6 +190,11 @@ public class Message
 			new SizeMethod().register("size", this.methodParser);
 			new MaximumPlayersMethod().register("max", this.methodParser);
 			new ServerTimeMethod(this).register("srtime", this.methodParser);
+			new ConstantMethod("").register("sp", this.methodParser);
+			new MaximumMethod(true).register("max", this.methodParser);
+			new MaximumMethod(false).register("nmax", this.methodParser);
+			new MinimumMethod(true).register("min", this.methodParser);
+			new MinimumMethod(false).register("nmin", this.methodParser);
 
 			Configuration configuration = new Configuration(new File(this.plugin.getDataFolder(), "methods.yml"));
 			configuration.load();
@@ -242,8 +255,12 @@ public class Message
 					ConfigurationNode values = aliasNode.getValue();
 					String calls = values.getString("call");
 					int paramCount = values.getInt("parameters", 0);
-					this.methodParser.registerMethod(name, new AliasMethod(calls, paramCount), paramCount);
-					aliasEnabled++;
+					if (calls != null) {
+						this.methodParser.registerMethod(name, new AliasMethod(calls, paramCount), paramCount);
+						aliasEnabled++;
+					} else {
+						this.logger.warning("No call definition for alias method '" + name + "'!");
+					}
 				}
 			}
 
@@ -256,10 +273,14 @@ public class Message
 					ConfigurationNode values = redirectedNode.getValue();
 					String calls = values.getString("call");
 					int[] paramCountArray = getParamCounts(values, "parameters", 0, -1);
-					for (int paramCount : paramCountArray) {
-						redirectedElements.add(new MethodParser.RedirectedElement(name, calls, paramCount));
+					if (calls != null) {
+						for (int paramCount : paramCountArray) {
+							redirectedElements.add(new MethodParser.RedirectedElement(name, calls, paramCount));
+						}
+						redirectedEnabled++;
+					} else {
+						this.logger.warning("No call definition for redirected method '" + name + "'!");
 					}
-					redirectedEnabled++;
 				}
 				this.methodParser.createRedirected(redirectedElements);
 			}
@@ -286,8 +307,8 @@ public class Message
 		return paramCountArray;
 	}
 
-	public SimpleDateFormat getDateFormat() {
-		return new SimpleDateFormat(config.getString("format", "K:mm a z"));
+	public SimpleDateFormat getDateFormat(final String name, final String defaultFormat) {
+		return new SimpleDateFormat(this.config.getString("format." + name, defaultFormat));
 	}
 
 	public void unload() {
@@ -443,18 +464,22 @@ public class Message
 			return null;
 		}
 	}
-	
-	public String getGameMode(GameMode mode, boolean caps) {
-		String name = "";
-		
-		if(mode == GameMode.CREATIVE) {
-			name = "Creative";
-		} else if (mode == GameMode.SURVIVAL) {
-			name = "Survival";
+
+	public static String getDefaultGameModeText(final GameMode mode) {
+		switch (mode) {
+		case CREATIVE :
+			return "Creative";
+		case SURVIVAL :
+			return "Survival";
+		default :
+			return null;
 		}
-		return caps ? name : name.toLowerCase();
 	}
-	
+
+	public String getGameModeText(final GameMode mode) {
+		return this.config.getString("mode." + mode.getValue(), getDefaultGameModeText(mode));
+	}
+
 	private static <T> T getFirst(T[] array) {
 		return getFirst(array, null);
 	}
@@ -567,55 +592,32 @@ public class Message
 		        str = str.replaceAll(ol, list);
 			}
 		}
-		if (str.contains("%ol_")) {
-			List<String> pub = new ArrayList<String>();
-			pub.add("pub");
-			if (list.getKeys("lists") != null) {
-				for (String key : list.getKeys("lists")) {
-					if (str.contains("%ol_" + key)) {
-						String path = "lists." + key;
-						boolean online = list.getBoolean(path + ".online", true);
-						boolean formatted = list.getBoolean(path + ".formatted", false);
-						List<String> groups = list.getStringList(path + ".players.groups", pub);
-						List<String> users = list.getStringList(path + ".players.users", null);
-						List<String> permissions = list.getStringList(path + ".players.permissions", null);
-						List<String> worlds = list.getStringList(path + ".players.worlds", null);
-						String format = list.getString(path + ".format", "%nm");
-						String separator = list.getString(path + ".separator", ", ");
-						Player trigger = isLeaveEvent(event) ? p : null;
-						PlayerList playerList = new PlayerList(plugin, online, formatted, groups, users, permissions, worlds, format, separator, trigger);
-						str = str.replaceAll("%ol_" + key, playerList.getList());
-					}
-				}
-			}
-		}
-		if (str.contains("%ol")) {
-			String list = "";
-			int on = 0;
-			Player[] players = plugin.getServer().getOnlinePlayers();
-			int length = players.length - 1;
-			List<Player> online = new ArrayList<Player>();
-			for(Player all : players) {
-				while(!online.contains(all)) {
-					online.add(all);
-				}
-				if(isLeaveEvent(event)) {
-					online.remove(p);
-					length = length - 1;
-				}
-			}
-			for(Player all : online) {
-				list = list + (on >= length ? all.getName() : all.getName() + ", ");
-				on++;
-			}
-			str = str.replaceAll("%ol", list);
-		}
 		
 		return str;
 	}
 
-	private static DefaultVariables generateVariables(final OfflinePlayer player, final String event, final Map<String, String> args) {
-		DefaultVariables variables = null;
+	public String processOnlineList(final String name, final Player trigger) {
+		List<String> pub = new ArrayList<String>();
+		pub.add("pub");
+		ConfigurationNode node = this.list.getNode("lists." + name);
+		if (node != null) {
+			boolean online = node.getBoolean("online", true);
+			boolean formatted = node.getBoolean("formatted", false);
+			List<String> groups = node.getStringList("players.groups", pub);
+			List<String> users = node.getStringList("players.users", null);
+			List<String> permissions = node.getStringList("players.permissions", null);
+			List<String> worlds = node.getStringList("players.worlds", null);
+			String format = node.getString("format", "%nm");
+			String separator = node.getString("separator", ", ");
+			PlayerList playerList = new PlayerList(plugin, online, formatted, groups, users, permissions, worlds, format, separator, trigger);
+			return playerList.getList();
+		} else {
+			return null;
+		}
+	}
+
+	private static Variables generateVariables(final OfflinePlayer player, final String event, final Map<String, String> args) {
+		Variables variables = null;
 		Player trigger = null;
 		if (player != null) {
 			trigger = Bukkit.getServer().getPlayerExact(player.getName());
@@ -637,21 +639,18 @@ public class Message
 				variables = new DeathVariables(item, entity, trigger);
 			}
 		}
-		return variables == null ? new DefaultVariables(trigger) : variables;
+		return variables == null ? new Variables(trigger) : variables;
 	}
 
-	public String processLine(String str, OfflinePlayer p, String event, DefaultVariables variables) {
+	public String processLine(String str, OfflinePlayer p, String event, Variables variables) {
 		Player trigger = variables.trigger;
 
 		str = this.methodParser.parseLine(p, event, str, variables);
 		if (!event.equals("list")) {
 			str = processOnlineList(str, trigger, event);
 		}
-		
-		str = processColors(str);
-		str = str.replaceAll("%sp", "");
 
-		return str;
+		return processColors(str);
 	}
 
 	public long getLastLogin(String name) {
@@ -912,7 +911,7 @@ public class Message
 	 */
 	public void sendMessage(OfflinePlayer trigger, Collection<Player> possibleReceivers, String[] lines, String event, CooldownTask task, Map<String, String> args)
 	{
-		DefaultVariables variables = generateVariables(trigger, event, args);
+		Variables variables = generateVariables(trigger, event, args);
 		ArrayList<String> processedLines = new ArrayList<String>(lines.length);
 		for (int i = 0; i < lines.length; i++) {
 			String processedLine = processLine(lines[i], trigger, event, variables);
@@ -931,14 +930,14 @@ public class Message
 		}
 	}
 
-	public void onPlayerJoin(PlayerJoinEvent event) {
-		Player p = event.getPlayer();
-		String e = existingPlayer(p.getName()) ? "login" : "firstlogin";
-		load(e);
-		preProcessMessage(p, e, null);
+	public void onPlayerJoin(PlayerJoinEvent eventObject) {
+		final Player p = eventObject.getPlayer();
+		final String event = existingPlayer(p.getName()) ? "login" : "firstlogin";
+		load(event);
+		preProcessMessage(p, event, null);
 
 		if (config.getBoolean("clearjoinmsg", true)) {
-			event.setJoinMessage(null);
+			eventObject.setJoinMessage(null);
 		}
 	}
 

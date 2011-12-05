@@ -3,7 +3,7 @@ package com.tahkeh.loginmessage.methods;
 import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 
 import de.xzise.MinecraftUtil;
@@ -15,7 +15,7 @@ public abstract class FloatMethod extends DefaultMethod {
 	}
 
 	@Override
-	public final String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
+	public final String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
 		if (parameters.length > 2) {
 			return null;
 		} else {

@@ -3,7 +3,7 @@ package com.tahkeh.loginmessage.methods;
 import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.EqualCheck;
 
@@ -17,7 +17,7 @@ public class CaseCheckerMethod extends DefaultMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
+	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
 		//@formatter:off
 	    /*
 	     * %case(

@@ -6,9 +6,14 @@ import com.tahkeh.loginmessage.methods.OriginalPlayerMethod;
 
 public class CurrentExperienceMethod extends OriginalPlayerMethod {
 
+	@SuppressWarnings("deprecation")
 	@Override
 	protected String call(Player player, String event) {
-		return Integer.toString(player.getExperience());
+		try {
+			return Float.toString(player.getExp());
+		} catch (NoSuchMethodError e) {
+			return Integer.toString(player.getExperience());
+		}
 	}
 
 }

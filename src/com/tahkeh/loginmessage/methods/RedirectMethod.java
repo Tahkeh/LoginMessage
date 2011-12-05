@@ -3,7 +3,7 @@ package com.tahkeh.loginmessage.methods;
 import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class RedirectMethod implements Method {
 
@@ -14,7 +14,7 @@ public class RedirectMethod implements Method {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
+	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
 		return this.redirected.call(player, event, parameters, globalParameters);
 	}
 

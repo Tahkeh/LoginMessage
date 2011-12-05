@@ -11,69 +11,59 @@ import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.Message;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
-import de.xzise.XLogger;
+import de.xzise.MinecraftUtil;
 
 /**
  * Simple online list method.
  */
 public class OnlistMethod extends DefaultMethod {
 
-	public final static ChatColor NAME_COLOR = ChatColor.WHITE;
-	public final static ChatColor COMMA_COLOR = ChatColor.WHITE;
+	public final static String PREFIX = "&" + ChatColor.WHITE;
+	public final static String SUFFIX = "&" + ChatColor.WHITE;
+	public final static String DELIMITER = ", ";
 
-	private final XLogger logger;
+	private final Message message;
 
-	public OnlistMethod(XLogger logger) {
-		super(false, 0, 2, 3);
-		this.logger = logger;
+	public OnlistMethod(final Message message) {
+		super(false, 0, 1, 2, 3, 4);
+		this.message = message;
 	}
 
-	private ChatColor getColor(String parameter, String name) {
-		Integer colorValue = DefaultMethod.parseAsInteger(parameter);
-		if (colorValue == null || colorValue < 0 || colorValue > 15) {
-			this.logger.warning("OnList parameter '" + name + "' is not a valid integer ('" + parameter + "'). Valid integers are: 1-16 or 0-F");
-			return null;
+	private static String maybeColored(final String string) {
+		if (string.matches("[0-9a-fA-F]{1}")) {
+			return "&" + string;
 		} else {
-			ChatColor color = ChatColor.getByCode(colorValue);
-			if (color == null) {
-				this.logger.warning("OnList parameter '" + name + "' is not a valid chat color (" + colorValue + ").");
-			}
-			return color;
+			return string;
 		}
 	}
-
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
-		ChatColor nameColor = NAME_COLOR;
-		ChatColor commaColor = COMMA_COLOR;
-		ChatColor endColor = COMMA_COLOR;
-		boolean endColorSet = false;
+	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+		String prefix = PREFIX;
+		String suffix = SUFFIX;
+		String delimiter = DELIMITER;
+		boolean useDisplayNames = false;
 		switch (parameters.length) {
+		case 4:
+			delimiter = parameters[3].parse();
 		case 3:
-			endColor = getColor(parameters[2].parse(), "end color");
-			endColorSet = true;
+			useDisplayNames = DefaultMethod.parseAsBoolean(parameters[2].parse());
 		case 2:
-			nameColor = getColor(parameters[0].parse(), "name color");
-			commaColor = getColor(parameters[1].parse(), "comma color");
+			prefix = maybeColored(parameters[0].parse());
+			suffix = maybeColored(parameters[1].parse());
 			break;
+		case 1:
+			return this.message.processOnlineList(parameters[0].parse(), Message.isLeaveEvent(event) ? MinecraftUtil.cast(Player.class, player) : null);
 		case 0:
 			break;
 		default:
 			return null;
 		}
-		if (nameColor != null && commaColor != null && endColor != null) {
-			if (!endColorSet) {
-				endColor = commaColor;
-			}
-			return this.call(player, event, nameColor, commaColor, endColor);
-		} else {
-			return null;
-		}
+		return this.call(player, event, prefix, suffix, useDisplayNames, delimiter);
 	}
 
-	private String call(OfflinePlayer triggerPlayer, String event, ChatColor nameColor, ChatColor commaColor, ChatColor endColor) {
+	private String call(final OfflinePlayer triggerPlayer, final String event, final String prefix, final String suffix, final boolean useDisplayNames, final String delimiter) {
 		StringBuilder builder = new StringBuilder();
 		List<Player> allPlayers = Arrays.asList(Bukkit.getServer().getOnlinePlayers());
 		if (Message.isLeaveEvent(event)) {
@@ -81,11 +71,16 @@ public class OnlistMethod extends DefaultMethod {
 		}
 		for (Iterator<Player> playerIt = allPlayers.iterator(); playerIt.hasNext();) {
 			Player player = playerIt.next();
-			builder.append(nameColor).append(player.getName());
+			builder.append(prefix);
+			if (useDisplayNames) {
+				builder.append(player.getDisplayName());
+			} else {
+				builder.append(player.getName());
+			}
 			if (playerIt.hasNext()) {
-				builder.append(commaColor).append(", ");
+				builder.append(suffix).append(delimiter);
 			}
 		}
-		return builder.append(endColor).toString();
+		return builder.toString();
 	}
 }

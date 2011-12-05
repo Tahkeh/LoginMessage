@@ -2,22 +2,26 @@ package com.tahkeh.loginmessage.methods.impl;
 
 import org.bukkit.OfflinePlayer;
 
+import com.tahkeh.loginmessage.Message;
 import com.tahkeh.loginmessage.methods.DefaultMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
-public class IndefiniteArticleMethod extends DefaultMethod {
+public class ColorMethod extends DefaultMethod {
 
-	public IndefiniteArticleMethod() {
+	public ColorMethod() {
 		super(true, 1);
 	}
 
 	@Override
 	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
 		if (parameters.length == 1) {
-			char letter = parameters[0].parse().trim().charAt(0);
-			final boolean vowel = (letter == 'a' || letter == 'e' || letter == 'i' || letter == 'o' || letter == 'u');
-			return (vowel ? "an " : "a ") + parameters[0];
+			Integer i = DefaultMethod.parseAsInteger(parameters[0].parse());
+			if (i != null) {
+				return Message.SECTION_SIGN + Integer.toHexString(i);
+			} else {
+				return null;
+			}
 		} else {
 			return null;
 		}

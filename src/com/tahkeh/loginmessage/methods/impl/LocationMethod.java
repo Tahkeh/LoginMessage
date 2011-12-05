@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.methods.DefaultMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class LocationMethod extends DefaultMethod {
 
@@ -17,7 +17,7 @@ public class LocationMethod extends DefaultMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
+	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
 		if (player instanceof Player) {
 			Location location = ((Player) player).getLocation();
 			String format = null;

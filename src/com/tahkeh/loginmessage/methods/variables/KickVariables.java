@@ -2,7 +2,7 @@ package com.tahkeh.loginmessage.methods.variables;
 
 import org.bukkit.entity.Player;
 
-public class KickVariables extends DefaultVariables {
+public class KickVariables extends Variables {
 
 	public final String reason;
 

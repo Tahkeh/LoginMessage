@@ -1,9 +1,8 @@
 name: LoginMessage
 main: com.tahkeh.loginmessage.Main
-version: 0.8 methods b3
+version: 0.8 methods b7
 author: Tahkeh
 authors: [xZise]
-
 commands:
     lmsg:
         aliases: [loginmessage, loginmsg, lmessage]

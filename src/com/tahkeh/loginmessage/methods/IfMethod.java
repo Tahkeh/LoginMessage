@@ -6,7 +6,7 @@ import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.methods.parameter.FinalParameter;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public abstract class IfMethod implements Method {
 
@@ -19,7 +19,7 @@ public abstract class IfMethod implements Method {
 	}
 
 	@Override
-	public final String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
+	public final String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
 		Parameter match = FinalParameter.EMPTY_PARAMETER;
 		Parameter noMatch = FinalParameter.EMPTY_PARAMETER;
 		switch (parameters.length - this.preValueCount) {

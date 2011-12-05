@@ -56,7 +56,9 @@ public class Config //For all your configuration needs
 				o.write("\n");
 				o.write("#format: This is the formatting used for the %srtime code.\n");
 				o.write("#Go to goo.gl/3nZ5y to learn how to properly format.\n");
-				o.write("format: K:mm a z\n");
+				o.write("format:\n");
+				o.write("    real: K:mm a z\n");
+				o.write("    virtual: kk:mm\n");
 				o.write("\n");
 				o.write("#These fields are what will be displayed if a GeoIP lookup fails.\n");
 				o.write("cityfail: Ragetown\n");
@@ -87,7 +89,10 @@ public class Config //For all your configuration needs
 				o.write("#noplayerfound: What to return when a player types in a player name that does not exist (as a command argument).\n");
 				o.write("#Keep all text within the single quotes. You may use color codes and the %nm code to return the non-existant player.\n");
 				o.write("noplayerfound: '&cPlayer \"%nm\" does not exist!'"); // Add \n if more text is added past this point
-				
+				o.write("\n");
+				o.write("mode:\n");
+				o.write("    '0': 'Survival'");
+				o.write("    '1': 'Creative'");
 				o.close();
 				fw.close();
 				

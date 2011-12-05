@@ -4,7 +4,7 @@ package com.tahkeh.loginmessage.methods;
 import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public interface Method {
 
@@ -13,7 +13,7 @@ public interface Method {
 	 * @param parameters the parameters.
 	 * @return the parsed string or null if invalid.
 	 */
-	String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters);
+	String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters);
 
 	/**
 	 * Defines if this method has recursive calls.

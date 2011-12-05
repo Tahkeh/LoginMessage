@@ -6,7 +6,7 @@ import com.tahkeh.loginmessage.Message;
 import com.tahkeh.loginmessage.methods.DefaultMethod;
 import com.tahkeh.loginmessage.methods.MethodParser;
 import com.tahkeh.loginmessage.methods.OriginalMethod;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class RealLocationMethod extends OriginalMethod {
 
@@ -19,7 +19,7 @@ public class RealLocationMethod extends OriginalMethod {
 	}
 
 	@Override
-	protected String call(OfflinePlayer player, String event, DefaultVariables globalParameters) {
+	protected String call(OfflinePlayer player, String event, Variables globalParameters) {
 		return this.message.getLocation(this.type, player.getName(), event);
 	}
 

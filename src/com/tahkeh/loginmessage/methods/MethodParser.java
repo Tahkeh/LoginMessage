@@ -12,7 +12,7 @@ import org.bukkit.OfflinePlayer;
 import com.tahkeh.loginmessage.methods.parameter.FinalParameter;
 import com.tahkeh.loginmessage.methods.parameter.OnceParsedParameter;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.EqualCheck;
 import de.xzise.MinecraftUtil;
@@ -37,17 +37,38 @@ public class MethodParser {
 	}
 
 	public void setPrefix(final String prefix) {
-		if (prefix.contains(" ")) {
-			throw new IllegalArgumentException("Name mustn't contain spaces.");
+		if (prefix == null) {
+			throw new IllegalArgumentException("Prefix has to be not null.");
+		} else if (prefix.contains(" ")) {
+			throw new IllegalArgumentException("Prefix mustn't contain spaces.");
+		} else if (prefix.contains("(") || prefix.contains(")")) {
+			throw new IllegalArgumentException("Prefix mustn't contain brackets.");
 		}
 		this.prefix = prefix;
+	}
+
+	private int[] testParameters(final String name, final int[] paramCount) {
+		if (!MinecraftUtil.isSet(name)) {
+			throw new IllegalArgumentException("Name has to be set (not null and not empty)!");
+		} else if (name.contains(" ")) {
+			throw new IllegalArgumentException("Name mustn't contain spaces.");
+		} else if (name.contains("(") || name.contains(")")) {
+			throw new IllegalArgumentException("Name mustn't contain brackets.");
+		} else {
+			if (paramCount.length == 0) {
+				return new int[] { -1, 0 };
+			} else {
+				return paramCount;
+			}
+		}
 	}
 
 	/**
 	 * Registers a new method.
 	 * 
 	 * @param name
-	 *            New name of the method. No spaces are allowed.
+	 *            New name of the method. No spaces are allowed and without the
+	 *            prefix.
 	 * @param method
 	 *            New method.
 	 * @param paramCount
@@ -56,28 +77,39 @@ public class MethodParser {
 	 *            absolute value.
 	 * @return How many methods were already registered and overwritten.
 	 */
-	public int registerMethod(String name, Method method, int... paramCount) {
-		if (name.contains(" ")) {
-			throw new IllegalArgumentException("Name mustn't contain spaces.");
-		} else {
-			final String fullName = this.prefix + name;
-			if (paramCount.length == 0) {
-				paramCount = new int[] { -1, 0 };
+	public int registerMethod(final String name, Method method, int... paramCount) {
+		paramCount = testParameters(name, paramCount);
+		// TODO: Case insensitive?
+		Map<Integer, Method> methods = this.methods.get(name);
+		if (methods == null) {
+			methods = new HashMap<Integer, Method>();
+			this.methods.put(name, methods);
+		}
+		int failCount = 0;
+		for (int i : paramCount) {
+			if (methods.put(i, method) != null) {
+				failCount++;
 			}
-			// TODO: Case insensitive?
-			Map<Integer, Method> methods = this.methods.get(fullName);
-			if (methods == null) {
-				methods = new HashMap<Integer, Method>();
-				this.methods.put(fullName, methods);
-			}
-			int failCount = 0;
+		}
+		return failCount;
+	}
+
+	public int unregisterMethod(final String name, int... paramCount) {
+		paramCount = testParameters(name, paramCount);
+		// TODO: Case insensitive?
+		Map<Integer, Method> methods = this.methods.get(name);
+		int failCount = 0;
+		if (methods != null) {
 			for (int i : paramCount) {
-				if (methods.put(i, method) != null) {
+				if (methods.remove(i) != null) {
 					failCount++;
 				}
 			}
-			return failCount;
+			if (methods.isEmpty()) {
+				this.methods.remove(name);
+			}
 		}
+		return failCount;
 	}
 
 	/**
@@ -103,11 +135,15 @@ public class MethodParser {
 	 * @return a method with the name and parameter count. If there wasn't a
 	 *         method found it will return null.
 	 */
-	public Method getMethod(String name, int paramCount) {
+	public Method getMethod(final String name, final int paramCount) {
 		// TODO: Case insensitive?
-		Map<Integer, Method> methods = this.methods.get(name);
-		if (methods != null) {
-			return getMethod(methods, paramCount);
+		if (name != null) {
+			Map<Integer, Method> methods = this.methods.get(name.substring(this.prefix.length()));
+			if (methods != null) {
+				return getMethod(methods, paramCount);
+			} else {
+				return null;
+			}
 		} else {
 			return null;
 		}
@@ -131,11 +167,11 @@ public class MethodParser {
 		this.methods.clear();
 	}
 
-	public String parseLine(OfflinePlayer p, String event, String line, DefaultVariables globalParameters) {
-		return this.parseLine(p, event, line, globalParameters, 0);
+	public String parseLine(OfflinePlayer player, String event, String line, Variables globalParameters) {
+		return this.parseLine(player, event, line, globalParameters, 0);
 	}
 
-	public String parseLine(OfflinePlayer p, String event, String line, DefaultVariables globalParameters, final int depth) {
+	public String parseLine(OfflinePlayer player, String event, String line, Variables globalParameters, final int depth) {
 		int index = 0;
 		int start = -1;
 		int delim = -1;
@@ -199,7 +235,7 @@ public class MethodParser {
 				String[] parameters;
 				if (delim > start) {
 					nameEnd = delim - 1;
-					String parameterText = line.substring(delim + 1, paramEnd + 1);
+					final String parameterText = line.substring(delim + 1, paramEnd + 1);
 					if (parameterText.length() > 0) {
 						parameters = MinecraftUtil.parseLine(parameterText, ',', '"', '\\', '(', ')', true);
 					} else {
@@ -209,9 +245,28 @@ public class MethodParser {
 					nameEnd = end;
 					parameters = new String[0];
 				}
-				String name = line.substring(start, nameEnd + 1);
+				final String name = line.substring(start, nameEnd + 1);
 
-				final Method method = this.getMethod(name, parameters.length);
+				final Method method;
+				final String methodName;
+				if (MinecraftUtil.isSet(this.prefix)) {
+					final int idx = name.indexOf(this.prefix);
+					if (idx > 0) {
+						start += idx;
+						methodName = name.substring(idx);
+					} else if (idx == 0) {
+						methodName = name;
+					} else {
+						methodName = null;
+					}
+				} else {
+					methodName = name;
+				}
+				if (methodName != null) {
+					method = this.getMethod(methodName, parameters.length);
+				} else {
+					method = null;
+				}
 				if (method != null) {
 					if (depth < STOPPING_THRESHOLD) {
 						if (depth >= WARNING_THRESHOLD) {
@@ -220,15 +275,20 @@ public class MethodParser {
 						Parameter[] parameterObjects = new Parameter[parameters.length];
 						for (int i = 0; i < parameters.length; i++) {
 							if (method.recursive()) {
-								parameterObjects[i] = new OnceParsedParameter(this, p, event, parameters[i], globalParameters, depth + 1);
+								parameterObjects[i] = new OnceParsedParameter(this, player, event, parameters[i], globalParameters, depth + 1);
 							} else {
 								parameterObjects[i] = new FinalParameter(parameters[i]);
 							}
 						}
-						String replacement = method.call(p, event, parameterObjects, globalParameters);
+						String replacement = null;
+						try {
+							replacement = method.call(player, event, parameterObjects, globalParameters);
+						} catch (Exception e) {
+							this.logger.warning("Exception by calling '" + name + "'!", e);
+						}
 						if (replacement != null) {
 							if (method.recursive()) {
-								replacement = parseLine(p, event, replacement, globalParameters, depth + 1);
+								replacement = parseLine(player, event, replacement, globalParameters, depth + 1);
 							}
 							line = line.substring(0, start) + replacement + substring(line, end + 1, line.length());
 							index += replacement.length() - (end - start) - 1;
@@ -240,6 +300,7 @@ public class MethodParser {
 				index++;
 				end = -1;
 				start = -1;
+				delim = -1;
 			} else {
 				index++;
 			}
@@ -249,7 +310,6 @@ public class MethodParser {
 	}
 
 	public void loadDefaults() {
-		this.registerMethod("onlist", new OnlistMethod(this.logger), 0, 2, 3);
 		this.registerMethod("call", new PrintMethod(true), -1);
 		this.registerMethod("print", new PrintMethod(false), -1);
 

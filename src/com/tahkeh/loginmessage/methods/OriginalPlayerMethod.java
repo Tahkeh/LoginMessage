@@ -3,12 +3,12 @@ package com.tahkeh.loginmessage.methods;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public abstract class OriginalPlayerMethod extends OriginalMethod {
 
 	@Override
-	protected final String call(OfflinePlayer player, String event, DefaultVariables globalParameters) {
+	protected final String call(OfflinePlayer player, String event, Variables globalParameters) {
 		if (player instanceof Player) {
 			return this.call((Player) player, event);
 		} else {

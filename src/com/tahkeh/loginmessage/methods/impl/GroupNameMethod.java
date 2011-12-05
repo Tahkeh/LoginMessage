@@ -5,7 +5,7 @@ import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.methods.DefaultMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.XLogger;
 import de.xzise.wrappers.permissions.PermissionsHandler;
@@ -22,7 +22,7 @@ public class GroupNameMethod extends DefaultMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
+	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
 		if (player instanceof Player && this.permissions.isActive()) {
 			Integer groupIdx = null;
 			if (parameters.length == 0) {

@@ -3,7 +3,7 @@ package com.tahkeh.loginmessage.methods.parameter;
 import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.methods.MethodParser;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class ParsedParameter implements Parameter {
 
@@ -11,10 +11,10 @@ public class ParsedParameter implements Parameter {
 	private final OfflinePlayer player;
 	private final String event;
 	private final String parameterValue;
-	private final DefaultVariables variable;
+	private final Variables variable;
 	private final int depth;
 
-	public ParsedParameter(final MethodParser parser, final OfflinePlayer player, final String event, final String parameterValue, final DefaultVariables variable, final int depth) {
+	public ParsedParameter(final MethodParser parser, final OfflinePlayer player, final String event, final String parameterValue, final Variables variable, final int depth) {
 		this.parser = parser;
 		this.player = player;
 		this.event = event;

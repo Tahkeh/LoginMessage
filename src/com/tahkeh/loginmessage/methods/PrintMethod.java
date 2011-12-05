@@ -6,7 +6,7 @@ import java.util.Iterator;
 import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.MinecraftUtil;
 import de.xzise.collections.ArrayIterator;
@@ -21,7 +21,7 @@ public class PrintMethod extends DefaultMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, DefaultVariables globalParameters) {
+	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
 		StringBuilder builder = new StringBuilder();
 		for (Iterator<Parameter> parameterItr = new ArrayIterator<Parameter>(parameters); parameterItr.hasNext();) {
 			String next = parameterItr.next().parse();

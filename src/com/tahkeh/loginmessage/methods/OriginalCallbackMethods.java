@@ -3,9 +3,9 @@ package com.tahkeh.loginmessage.methods;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
-import de.xzise.Callback;
+import de.xzise.bukkit.util.callback.Callback;
 
 public final class OriginalCallbackMethods {
 
@@ -22,7 +22,7 @@ public final class OriginalCallbackMethods {
 		}
 
 		@Override
-		protected String call(OfflinePlayer p, String event, DefaultVariables globalParameters) {
+		protected String call(OfflinePlayer p, String event, Variables globalParameters) {
 			return this.callback.call(p, event);
 		}
 	}
@@ -35,7 +35,7 @@ public final class OriginalCallbackMethods {
 		}
 
 		@Override
-		protected String call(OfflinePlayer p, String event, DefaultVariables globalParameters) {
+		protected String call(OfflinePlayer p, String event, Variables globalParameters) {
 			if (p instanceof Player) {
 				return this.callback.call((Player) p, event);
 			} else {

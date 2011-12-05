@@ -4,7 +4,7 @@ import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.Message;
 import com.tahkeh.loginmessage.methods.OriginalMethod;
-import com.tahkeh.loginmessage.methods.variables.DefaultVariables;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class LastLoginMethod extends OriginalMethod {
 
@@ -15,7 +15,7 @@ public class LastLoginMethod extends OriginalMethod {
 	}
 
 	@Override
-	protected String call(OfflinePlayer player, String event, DefaultVariables globalParameters) {
+	protected String call(OfflinePlayer player, String event, Variables globalParameters) {
 		return this.message.getTimeDifference(this.message.getLastLogin(player.getName()));
 	}
 
