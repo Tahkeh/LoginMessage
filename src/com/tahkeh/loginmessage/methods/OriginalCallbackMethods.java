@@ -17,7 +17,8 @@ public final class OriginalCallbackMethods {
 
 		private final OriginalCallback<OfflinePlayer> callback;
 
-		public OriginalCallbackMethod(OriginalCallback<OfflinePlayer> callback) {
+		public OriginalCallbackMethod(final OriginalCallback<OfflinePlayer> callback, final String defaultName) {
+			super(defaultName);
 			this.callback = callback;
 		}
 
@@ -30,7 +31,8 @@ public final class OriginalCallbackMethods {
 	public static class OriginalPlayerCallbackMethod extends OriginalMethod {
 		private final OriginalCallback<Player> callback;
 
-		public OriginalPlayerCallbackMethod(OriginalCallback<Player> callback) {
+		public OriginalPlayerCallbackMethod(OriginalCallback<Player> callback, final String defaultName) {
+			super(defaultName);
 			this.callback = callback;
 		}
 

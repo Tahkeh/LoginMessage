@@ -22,7 +22,8 @@ public class PermissionMethod<T extends Object> extends OriginalPlayerMethod {
 		}
 	}
 
-	public PermissionMethod(final PermissionsHandler handler, final Permission<T> permission, CallbackTriple<String, PermissionsHandler, Permission<T>, Player> valueCallback) {
+	public PermissionMethod(final PermissionsHandler handler, final Permission<T> permission, final CallbackTriple<String, PermissionsHandler, Permission<T>, Player> valueCallback, final String defaultName) {
+		super(defaultName);
 		this.handler = handler;
 		this.permission = permission;
 		this.valueCallback = valueCallback;

@@ -10,6 +10,7 @@ public class AsleepMethod extends CasePlayerMethod {
 	private final Message message;
 	
 	public AsleepMethod(final Message message) {
+		super("asleep");
 		this.message = message;
 	}
 

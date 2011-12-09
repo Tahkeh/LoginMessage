@@ -274,7 +274,7 @@ public class MethodParser {
 						}
 						Parameter[] parameterObjects = new Parameter[parameters.length];
 						for (int i = 0; i < parameters.length; i++) {
-							if (method.recursive()) {
+							if (method.isRecursive()) {
 								parameterObjects[i] = new OnceParsedParameter(this, player, event, parameters[i], globalParameters, depth + 1);
 							} else {
 								parameterObjects[i] = new FinalParameter(parameters[i]);
@@ -287,7 +287,7 @@ public class MethodParser {
 							this.logger.warning("Exception by calling '" + name + "'!", e);
 						}
 						if (replacement != null) {
-							if (method.recursive()) {
+							if (method.isRecursive()) {
 								replacement = parseLine(player, event, replacement, globalParameters, depth + 1);
 							}
 							line = line.substring(0, start) + replacement + substring(line, end + 1, line.length());
@@ -310,8 +310,8 @@ public class MethodParser {
 	}
 
 	public void loadDefaults() {
-		this.registerMethod("call", new PrintMethod(true), -1);
-		this.registerMethod("print", new PrintMethod(false), -1);
+		new PrintMethod(true, "call").register(this);
+		new PrintMethod(false, "print").register(this);
 
 		// IfChecker
 		this.registerMethod("ifequals", new IfCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER, false), 3, 4);
@@ -321,7 +321,7 @@ public class MethodParser {
 		this.registerMethod("ifset", new IfSetMethod(false), 2, 3);
 		this.registerMethod("ifnotset", new IfSetMethod(true), 2, 3);
 
-		this.registerMethod("caseequals", new CaseCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER), -2);
+		new CaseCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER, "caseequals").register(this);
 
 		this.registerMethod("ifgreaterequals", new IfArithmeticMethod(EqualCheck.GREATER_EQUAL_CHECKER), 3, 4);
 		this.registerMethod("ifgreater", new IfArithmeticMethod(EqualCheck.GREATER_CHECKER), 3, 4);

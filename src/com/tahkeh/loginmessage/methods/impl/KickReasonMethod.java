@@ -8,6 +8,10 @@ import com.tahkeh.loginmessage.methods.variables.KickVariables;
 
 public class KickReasonMethod extends OriginalMethod {
 
+	public KickReasonMethod() {
+		super("reason");
+	}
+
 	@Override
 	protected String call(OfflinePlayer player, String event, Variables globalParameters) {
 		if (globalParameters instanceof KickVariables) {

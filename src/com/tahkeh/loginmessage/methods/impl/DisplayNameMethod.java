@@ -6,6 +6,10 @@ import com.tahkeh.loginmessage.methods.OriginalPlayerMethod;
 
 public class DisplayNameMethod extends OriginalPlayerMethod {
 
+	public DisplayNameMethod() {
+		super("dpnm");
+	}
+
 	@Override
 	protected String call(Player p, String event) {
 		return p.getDisplayName();

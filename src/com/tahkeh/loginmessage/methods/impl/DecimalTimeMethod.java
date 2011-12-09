@@ -7,16 +7,16 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.Message;
-import com.tahkeh.loginmessage.methods.DefaultMethod;
+import com.tahkeh.loginmessage.methods.DefaultNamedMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
-public class DecimalTimeMethod extends DefaultMethod {
+public class DecimalTimeMethod extends DefaultNamedMethod {
 
 	private final Message message;
 
 	public DecimalTimeMethod(final Message message) {
-		super(true, 0, 1);
+		super(true, "dtime", 0, 1);
 		this.message = message;
 	}
 
@@ -33,10 +33,13 @@ public class DecimalTimeMethod extends DefaultMethod {
 			}
 			if (dateformat != null) {
 				// Worldtime has an offset of 6 hours (00000 means 06:00)!
-				int rawtime = (int) ((((Player) player).getWorld().getTime() + 6000) % 24000);
+				final int rawtime = (int) ((((Player) player).getWorld().getTime() + 6000) % 24000);
 				Calendar calendar = Calendar.getInstance();
 				calendar.set(Calendar.HOUR_OF_DAY, rawtime / 1000);
-				calendar.set(Calendar.MINUTE, (int) Math.floor((rawtime % 1000) * 0.06));
+				final double minute = (rawtime % 1000) * 0.06;
+				calendar.set(Calendar.MINUTE, (int) Math.floor(minute));
+				calendar.set(Calendar.SECOND, (int) Math.floor((minute * 60) % 60));
+				calendar.set(Calendar.MILLISECOND, (int) Math.floor((minute * 60000) % 1000));
 				return dateformat.format(calendar.getTime());
 			} else {
 				return null;

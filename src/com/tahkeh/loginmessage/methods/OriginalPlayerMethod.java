@@ -7,6 +7,10 @@ import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public abstract class OriginalPlayerMethod extends OriginalMethod {
 
+	public OriginalPlayerMethod(final String defaultName) {
+		super(defaultName);
+	}
+
 	@Override
 	protected final String call(OfflinePlayer player, String event, Variables globalParameters) {
 		if (player instanceof Player) {

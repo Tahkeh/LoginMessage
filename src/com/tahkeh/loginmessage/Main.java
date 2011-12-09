@@ -35,6 +35,7 @@ import com.tahkeh.loginmessage.store.Store;
 
 import de.xzise.MinecraftUtil;
 import de.xzise.XLogger;
+import de.xzise.wrappers.WrapperServerListener;
 import de.xzise.wrappers.economy.EconomyHandler;
 import de.xzise.wrappers.permissions.BufferPermission;
 import de.xzise.wrappers.permissions.PermissionsHandler;
@@ -67,8 +68,7 @@ public class Main extends JavaPlugin {
 		pm.registerEvent(Event.Type.PLAYER_KICK, new PListener(msg), Event.Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_COMMAND_PREPROCESS, new PListener(msg), Event.Priority.Normal, this);
 		pm.registerEvent(Event.Type.ENTITY_DEATH, new EListener(msg), Event.Priority.Normal, this);
-		pm.registerEvent(Event.Type.PLUGIN_ENABLE, new SListener(), Event.Priority.Monitor, this);
-		pm.registerEvent(Event.Type.PLUGIN_DISABLE, new SListener(), Event.Priority.Monitor, this);
+		WrapperServerListener.createAndRegisterEvents(this, permissions, economy);
 	}
 
 	public void onDisable()

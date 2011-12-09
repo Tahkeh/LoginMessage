@@ -4,13 +4,14 @@ import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.Message;
 import com.tahkeh.loginmessage.methods.DefaultMethod;
+import com.tahkeh.loginmessage.methods.DefaultNamedMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
-public class ColorMethod extends DefaultMethod {
+public class ColorMethod extends DefaultNamedMethod {
 
 	public ColorMethod() {
-		super(true, 1);
+		super(true, "color", 1);
 	}
 
 	@Override

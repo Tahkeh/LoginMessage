@@ -8,6 +8,10 @@ import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class DeathItemMethod extends OriginalMethod {
 
+	public DeathItemMethod() {
+		super("ditem");
+	}
+
 	@Override
 	protected String call(OfflinePlayer player, String event, Variables globalParameters) {
 		if (globalParameters instanceof DeathVariables) {

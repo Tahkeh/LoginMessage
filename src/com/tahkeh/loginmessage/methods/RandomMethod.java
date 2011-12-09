@@ -7,10 +7,10 @@ import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.MinecraftUtil;
 
-public class RandomMethod extends DefaultMethod {
+public class RandomMethod extends DefaultNamedMethod {
 
 	public RandomMethod() {
-		super(true, -1);
+		super(true, "random", -1);
 	}
 
 	@Override

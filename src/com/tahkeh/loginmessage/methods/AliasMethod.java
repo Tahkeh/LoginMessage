@@ -5,12 +5,12 @@ import org.bukkit.OfflinePlayer;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
-public class AliasMethod extends DefaultMethod {
+public class AliasMethod extends DefaultNamedMethod {
 
 	private final String result;
 
-	public AliasMethod(final String result, final int paramCount) {
-		super(true, paramCount);
+	public AliasMethod(final String result, final int paramCount, final String name) {
+		super(true, name, paramCount);
 		this.result = result;
 	}
 

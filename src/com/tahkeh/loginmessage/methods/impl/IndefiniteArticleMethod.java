@@ -2,14 +2,14 @@ package com.tahkeh.loginmessage.methods.impl;
 
 import org.bukkit.OfflinePlayer;
 
-import com.tahkeh.loginmessage.methods.DefaultMethod;
+import com.tahkeh.loginmessage.methods.DefaultNamedMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
-public class IndefiniteArticleMethod extends DefaultMethod {
+public class IndefiniteArticleMethod extends DefaultNamedMethod {
 
 	public IndefiniteArticleMethod() {
-		super(true, 1);
+		super(true, "an", 1);
 	}
 
 	@Override

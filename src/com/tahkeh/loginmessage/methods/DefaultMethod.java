@@ -3,7 +3,7 @@ package com.tahkeh.loginmessage.methods;
 import de.xzise.MinecraftUtil;
 
 /**
- * Default method implementation which implements {@link Method#recursive()}.
+ * Default method implementation which implements {@link Method#isRecursive()}.
  */
 public abstract class DefaultMethod implements Method {
 
@@ -20,7 +20,7 @@ public abstract class DefaultMethod implements Method {
 	}
 
 	@Override
-	public final boolean recursive() {
+	public final boolean isRecursive() {
 		return this.recursive;
 	}
 
@@ -57,6 +57,15 @@ public abstract class DefaultMethod implements Method {
 			return null;
 		}
 	}
+
+	// Maybe future parameter type: { first, second, "third" }
+	// public static String[] parseAsArray(String parameter) {
+	// if (MinecraftUtil.isSet(parameter)) {
+	//
+	// } else {
+	// return null;
+	// }
+	// }
 
 	/**
 	 * Try to read the parameter as an integer. This methods uses all features

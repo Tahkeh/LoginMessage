@@ -6,16 +6,16 @@ import java.util.Calendar;
 import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.Message;
-import com.tahkeh.loginmessage.methods.DefaultMethod;
+import com.tahkeh.loginmessage.methods.DefaultNamedMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
-public class ServerTimeMethod extends DefaultMethod {
+public class ServerTimeMethod extends DefaultNamedMethod {
 
 	private final Message message;
 	
 	public ServerTimeMethod(final Message message) {
-		super(true, 0, 1);
+		super(true, "srtime", 0, 1);
 		this.message = message;
 	}
 

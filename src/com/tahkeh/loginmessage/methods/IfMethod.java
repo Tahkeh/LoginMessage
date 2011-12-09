@@ -37,7 +37,7 @@ public abstract class IfMethod implements Method {
 	protected abstract Boolean match(OfflinePlayer player, String event, Parameter[] preValues);
 
 	@Override
-	public boolean recursive() {
+	public boolean isRecursive() {
 		return true;
 	}
 

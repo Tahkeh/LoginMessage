@@ -8,7 +8,7 @@ import com.tahkeh.loginmessage.methods.BooleanMethod;
 public class BannedMethod extends BooleanMethod {
 
 	public BannedMethod(Message message) {
-		super(message);
+		super(message, "banned");
 	}
 
 	@Override

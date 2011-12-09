@@ -8,7 +8,7 @@ import com.tahkeh.loginmessage.methods.BooleanMethod;
 public class OpMethod extends BooleanMethod {
 
 	public OpMethod(Message message) {
-		super(message);
+		super(message, "op");
 	}
 
 	@Override

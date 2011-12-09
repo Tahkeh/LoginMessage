@@ -4,19 +4,20 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.methods.DefaultMethod;
+import com.tahkeh.loginmessage.methods.DefaultNamedMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.XLogger;
 import de.xzise.wrappers.permissions.PermissionsHandler;
 
-public class GroupNameMethod extends DefaultMethod {
+public class GroupNameMethod extends DefaultNamedMethod {
 
 	private final PermissionsHandler permissions;
 	private final XLogger logger;
 
 	public GroupNameMethod(final PermissionsHandler permissions, final XLogger logger) {
-		super(true, 0, 1);
+		super(true, "group", 0, 1);
 		this.permissions = permissions;
 		this.logger = logger;
 	}

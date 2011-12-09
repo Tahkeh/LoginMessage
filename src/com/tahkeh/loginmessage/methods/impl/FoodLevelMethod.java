@@ -6,6 +6,10 @@ import com.tahkeh.loginmessage.methods.OriginalPlayerMethod;
 
 public class FoodLevelMethod extends OriginalPlayerMethod {
 
+	public FoodLevelMethod() {
+		super("food");
+	}
+
 	@Override
 	protected String call(Player player, String event) {
 		return Integer.toString(player.getFoodLevel());

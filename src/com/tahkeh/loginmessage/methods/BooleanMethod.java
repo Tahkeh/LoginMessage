@@ -8,7 +8,8 @@ public abstract class BooleanMethod extends CaseMethod {
 
 	private final Message message;
 
-	public BooleanMethod(final Message message) {
+	public BooleanMethod(final Message message, final String defaultName) {
+		super(defaultName);
 		this.message = message;
 	}
 

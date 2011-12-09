@@ -14,10 +14,10 @@ import de.xzise.collections.ArrayIterator;
 /**
  * Returns all parameters.
  */
-public class PrintMethod extends DefaultMethod {
+public class PrintMethod extends DefaultNamedMethod {
 
-	public PrintMethod(final boolean isRecursive) {
-		super(isRecursive, -1);
+	public PrintMethod(final boolean isRecursive, final String defaultName) {
+		super(isRecursive, defaultName, -1);
 	}
 
 	@Override

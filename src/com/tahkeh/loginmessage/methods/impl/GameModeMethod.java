@@ -10,6 +10,7 @@ public class GameModeMethod extends CasePlayerMethod {
 	private final Message message;
 
 	public GameModeMethod(final Message message) {
+		super("mode");
 		this.message = message;
 	}
 

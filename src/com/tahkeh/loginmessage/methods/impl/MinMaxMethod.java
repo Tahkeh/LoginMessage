@@ -5,15 +5,16 @@ import java.util.ArrayList;
 import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.methods.DefaultMethod;
+import com.tahkeh.loginmessage.methods.DefaultNamedMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
-public abstract class MinMaxMethod extends DefaultMethod {
+public abstract class MinMaxMethod extends DefaultNamedMethod {
 
 	private final boolean first;
 
-	protected MinMaxMethod(final boolean first) {
-		super(true, first ? -1 : -2);
+	protected MinMaxMethod(final boolean first, final String defaultName) {
+		super(true, first ? defaultName : "n" + defaultName, first ? -1 : -2);
 		this.first = first;
 	}
 

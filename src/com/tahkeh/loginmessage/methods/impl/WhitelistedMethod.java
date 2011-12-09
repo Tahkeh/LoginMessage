@@ -8,7 +8,7 @@ import com.tahkeh.loginmessage.methods.BooleanMethod;
 public class WhitelistedMethod extends BooleanMethod {
 
 	public WhitelistedMethod(Message message) {
-		super(message);
+		super(message, "white");
 	}
 
 	@Override

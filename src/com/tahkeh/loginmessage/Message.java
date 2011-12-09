@@ -54,6 +54,8 @@ import com.tahkeh.loginmessage.methods.impl.AsleepMethod;
 import com.tahkeh.loginmessage.methods.impl.BannedMethod;
 import com.tahkeh.loginmessage.methods.impl.ConstantMethod;
 import com.tahkeh.loginmessage.methods.impl.CurrentExperienceMethod;
+import com.tahkeh.loginmessage.methods.impl.DeathEntityMethod;
+import com.tahkeh.loginmessage.methods.impl.DeathItemMethod;
 import com.tahkeh.loginmessage.methods.impl.DecimalTimeMethod;
 import com.tahkeh.loginmessage.methods.impl.DisplayNameMethod;
 import com.tahkeh.loginmessage.methods.impl.ExhaustMethod;
@@ -72,6 +74,7 @@ import com.tahkeh.loginmessage.methods.impl.NameMethod;
 import com.tahkeh.loginmessage.methods.impl.OnlineMethod;
 import com.tahkeh.loginmessage.methods.impl.OpMethod;
 import com.tahkeh.loginmessage.methods.impl.PermissionMethod;
+import com.tahkeh.loginmessage.methods.impl.PrintPrefixMethod;
 import com.tahkeh.loginmessage.methods.impl.RawTimeMethod;
 import com.tahkeh.loginmessage.methods.impl.RealLocationMethod;
 import com.tahkeh.loginmessage.methods.impl.SaturationMethod;
@@ -145,56 +148,60 @@ public class Message
 			 * Load original methods
 			 */
 			// OfflinePlayer methods
-			new LastLoginMethod(this).register("laston", this.methodParser);
-			new NameMethod().register("nm", this.methodParser);
-			new StatusMethod(this).register("status", this.methodParser);
-			new OnlineMethod(this).register("online", this.methodParser);
-			new BannedMethod(this).register("banned", this.methodParser);
-			new WhitelistedMethod(this).register("white", this.methodParser);
-			new OpMethod(this).register("op", this.methodParser);
+			new LastLoginMethod(this).register(this.methodParser);
+			new NameMethod().register(this.methodParser);
+			new StatusMethod(this).register(this.methodParser);
+			new OnlineMethod(this).register(this.methodParser);
+			new BannedMethod(this).register(this.methodParser);
+			new WhitelistedMethod(this).register(this.methodParser);
+			new OpMethod(this).register(this.methodParser);
 			new RealLocationMethod("city", this).register(this.methodParser);
 			new RealLocationMethod("ccode", this).register(this.methodParser);
 			new RealLocationMethod("cname", this).register(this.methodParser);
 			new RealLocationMethod("zip", this).register(this.methodParser);
 			new RealLocationMethod("rcode", this).register(this.methodParser);
 			new RealLocationMethod("rname", this).register(this.methodParser);
-			new OnlistMethod(this).register("onlist", this.methodParser);
+			new OnlistMethod(this).register(this.methodParser);
 
 			// Player methods
-			new DisplayNameMethod().register("dpnm", this.methodParser);
-			new WorldMethod().register("world", this.methodParser);
-			new RawTimeMethod().register("rtime", this.methodParser);
-			new TimeMethod(this).register("time", this.methodParser);
-			new DecimalTimeMethod(this).register("dtime", this.methodParser);
-			new GameModeMethod(this).register("mode", this.methodParser);
-			new AsleepMethod(this).register("asleep", this.methodParser);
-			new LocationMethod().register("location", this.methodParser);
+			new DisplayNameMethod().register(this.methodParser);
+			new WorldMethod().register(this.methodParser);
+			new RawTimeMethod().register(this.methodParser);
+			new TimeMethod(this).register(this.methodParser);
+			new DecimalTimeMethod(this).register(this.methodParser);
+			new GameModeMethod(this).register(this.methodParser);
+			new AsleepMethod(this).register(this.methodParser);
+			new LocationMethod().register(this.methodParser);
 			/* Following methods are replaced by the location method:
 			 * str = str.replaceAll("%x", Integer.toString(p.getLocation().getBlockX()));
 			 * str = str.replaceAll("%y", Integer.toString(p.getLocation().getBlockY()));
 			 * str = str.replaceAll("%z", Integer.toString(p.getLocation().getBlockZ()));
 			 */
-			new LevelMethod().register("level", this.methodParser);
-			new CurrentExperienceMethod().register("curxp", this.methodParser);
-			new TotalExperienceMethod().register("totalxp", this.methodParser);
-			new FoodLevelMethod().register("food", this.methodParser);
-			new ExhaustMethod().register("exhaust", this.methodParser);
-			new SaturationMethod().register("sat", this.methodParser);
-			new IPMethod(this).register("ip", this.methodParser);
-			new GroupNameMethod(Main.getPermissions(), this.logger).register("group", this.methodParser);
-			new PermissionMethod<String>(Main.getPermissions(), PREFIX_PERMISSION, PermissionMethod.PLAYER_STRING_CALLBACK).register("prefix", this.methodParser);
-			new PermissionMethod<String>(Main.getPermissions(), SUFFIX_PERMISSION, PermissionMethod.PLAYER_STRING_CALLBACK).register("suffix", this.methodParser);
+			new LevelMethod().register(this.methodParser);
+			new CurrentExperienceMethod().register(this.methodParser);
+			new TotalExperienceMethod().register(this.methodParser);
+			new FoodLevelMethod().register(this.methodParser);
+			new ExhaustMethod().register(this.methodParser);
+			new SaturationMethod().register(this.methodParser);
+			new IPMethod(this).register(this.methodParser);
+			new GroupNameMethod(Main.getPermissions(), this.logger).register(this.methodParser);
+			new PermissionMethod<String>(Main.getPermissions(), PREFIX_PERMISSION, PermissionMethod.PLAYER_STRING_CALLBACK, "prefix").register(this.methodParser);
+			new PermissionMethod<String>(Main.getPermissions(), SUFFIX_PERMISSION, PermissionMethod.PLAYER_STRING_CALLBACK, "suffix").register(this.methodParser);
+			new DeathEntityMethod().register(this.methodParser);
+			new DeathItemMethod().register(this.methodParser);
 
 			// Methods without any relation to players
-			new IndefiniteArticleMethod().register("an", this.methodParser);
-			new SizeMethod().register("size", this.methodParser);
-			new MaximumPlayersMethod().register("max", this.methodParser);
-			new ServerTimeMethod(this).register("srtime", this.methodParser);
-			new ConstantMethod("").register("sp", this.methodParser);
-			new MaximumMethod(true).register("max", this.methodParser);
-			new MaximumMethod(false).register("nmax", this.methodParser);
-			new MinimumMethod(true).register("min", this.methodParser);
-			new MinimumMethod(false).register("nmin", this.methodParser);
+			new IndefiniteArticleMethod().register(this.methodParser);
+			new SizeMethod().register(this.methodParser);
+			// This doesn't collide with the maximum method, as this requests no parameters!
+			new MaximumPlayersMethod().register(this.methodParser);
+			new ServerTimeMethod(this).register(this.methodParser);
+			new ConstantMethod("", "sp").register(this.methodParser);
+			new MaximumMethod(true).register(this.methodParser);
+			new MaximumMethod(false).register(this.methodParser);
+			new MinimumMethod(true).register(this.methodParser);
+			new MinimumMethod(false).register(this.methodParser);
+			new PrintPrefixMethod(this.methodParser).register();
 
 			Configuration configuration = new Configuration(new File(this.plugin.getDataFolder(), "methods.yml"));
 			configuration.load();
@@ -256,7 +263,7 @@ public class Message
 					String calls = values.getString("call");
 					int paramCount = values.getInt("parameters", 0);
 					if (calls != null) {
-						this.methodParser.registerMethod(name, new AliasMethod(calls, paramCount), paramCount);
+						new AliasMethod(calls, paramCount, name).register(this.methodParser);
 						aliasEnabled++;
 					} else {
 						this.logger.warning("No call definition for alias method '" + name + "'!");
@@ -543,59 +550,6 @@ public class Message
 		return status;
 	}
 
-	public String processOnlineList(String str, Player p, String event) {
-		PermissionsHandler handler = Main.getPermissions();
-		if (str.contains("%ol" + separator)) {
-			String list = "";
-			int on = 0;
-			Player[] players = plugin.getServer().getOnlinePlayers();
-			int length = players.length - 1;
-			List<Player> online = new ArrayList<Player>();
-			String s = str;
-			String code = "%ol" + separator;
-			while(s.indexOf(code) >= 0) {
-				s = s.substring(s.indexOf(code) + 1);
-			}
-			for (Player all : players) {
-				while(!online.contains(all)) {
-					online.add(all);
-				}
-				if(isLeaveEvent(event)) {
-					online.remove(p);
-					length = length - 1;
-				}
-			}
-			if (s.substring(code.length() - 1, s.indexOf(":")).length() == 1 || s.substring(code.length() - 1, s.indexOf(":")).length() == 0) {
-				String a = s.substring(code.length() - 1, s.indexOf(":"));
-		        s = s.substring(s.indexOf(":") + 1);
-		        String b = s.substring(0, s.indexOf(":"));
-		        s = s.substring(s.indexOf(":") + 1);
-		        String c = s.substring(0, 2);
-		        for(Player all : online) {
-		        	String prefix = b;
-		        	String suffix = c;
-		        	String name = a.equalsIgnoreCase("d") ? all.getDisplayName() : all.getName();
-		        	if(handler.isActive()) {
-		        		String world = all.getWorld().getName();
-		        		String group = getFirst(handler.getGroup(world, all.getName()));
-		        		prefix = prefix.replaceAll("pr", getPrefix(group, world));
-		        		prefix = prefix.replaceAll("sf", getSuffix(group, world));
-		        		suffix = suffix.replaceAll("pr", getPrefix(group, world));
-		        		suffix = suffix.replaceAll("sf", getSuffix(group, world));
-		        	}
-		        	prefix = processColors(prefix);
-		        	suffix = processColors(suffix);
-		        	list = list + (on >= length ? prefix + name + suffix : prefix + name + suffix + ", ");
-		        	on++;
-		        }
-		        String ol = code + a + ":" + b + ":" + c;
-		        str = str.replaceAll(ol, list);
-			}
-		}
-		
-		return str;
-	}
-
 	public String processOnlineList(final String name, final Player trigger) {
 		List<String> pub = new ArrayList<String>();
 		pub.add("pub");
@@ -643,14 +597,7 @@ public class Message
 	}
 
 	public String processLine(String str, OfflinePlayer p, String event, Variables variables) {
-		Player trigger = variables.trigger;
-
-		str = this.methodParser.parseLine(p, event, str, variables);
-		if (!event.equals("list")) {
-			str = processOnlineList(str, trigger, event);
-		}
-
-		return processColors(str);
+		return processColors(this.methodParser.parseLine(p, event, str, variables));
 	}
 
 	public long getLastLogin(String name) {
@@ -710,7 +657,6 @@ public class Message
 	 */
 	public void preProcessMessage(OfflinePlayer trigger, String event, Map<String, String> args) {		
 		String[] messages;
-		boolean cont = true;
 		if (event.equals("command")) {
 			messages = new String[] { args.get("cmd") };
 		} else {
@@ -723,18 +669,14 @@ public class Message
 		}
 		for (String key : messages) {
 			if (event.equals("death") && !key.equals(args.get("key"))) {
-				cont = false;
-			} else {
-				cont = true;
+				break;
 			}
-			if (cont) {
-				Set<Entry> triggers = null;
-				String name = args != null && args.containsKey("trigger") ? args.get("trigger") : trigger.getName();
-				Player trueTrigger = plugin.getServer().getPlayerExact(name);
-				triggers = getEntries(trueTrigger, key, event, "triggers");
-				if (matchEntries(trueTrigger, triggers)) {
-					finishMessage(trigger, event, key, args);
-				}
+			Set<Entry> triggers = null;
+			String name = args != null && args.containsKey("trigger") ? args.get("trigger") : trigger.getName();
+			Player trueTrigger = plugin.getServer().getPlayerExact(name);
+			triggers = getEntries(trueTrigger, key, event, "triggers");
+			if (matchEntries(trueTrigger, triggers)) {
+				finishMessage(trigger, event, key, args);
 			}
 		}
 	}

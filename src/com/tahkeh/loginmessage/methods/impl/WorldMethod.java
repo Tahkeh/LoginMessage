@@ -6,6 +6,10 @@ import com.tahkeh.loginmessage.methods.OriginalPlayerMethod;
 
 public class WorldMethod extends OriginalPlayerMethod {
 
+	public WorldMethod() {
+	    super("world");
+    }
+
 	@Override
 	protected String call(Player player, String event) {
 		return player.getWorld().getName();

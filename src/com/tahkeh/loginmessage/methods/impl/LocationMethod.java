@@ -7,13 +7,14 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.methods.DefaultMethod;
+import com.tahkeh.loginmessage.methods.DefaultNamedMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
-public class LocationMethod extends DefaultMethod {
+public class LocationMethod extends DefaultNamedMethod {
 
 	public LocationMethod() {
-		super(true, 0, 1, 2, 3);
+		super(true, "location", 0, 1, 2, 3);
 	}
 
 	@Override

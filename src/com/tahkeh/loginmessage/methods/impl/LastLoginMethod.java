@@ -11,6 +11,7 @@ public class LastLoginMethod extends OriginalMethod {
 	private final Message message;
 
 	public LastLoginMethod(final Message message) {
+		super("laston");
 		this.message = message;
 	}
 

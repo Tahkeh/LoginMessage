@@ -8,6 +8,10 @@ import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class SizeMethod extends OriginalMethod {
 
+	public SizeMethod() {
+		super("size");
+	}
+
 	@Override
 	protected String call(OfflinePlayer player, String event, Variables globalParameters) {
 		return Integer.toString(Bukkit.getServer().getOnlinePlayers().length);

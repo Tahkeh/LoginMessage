@@ -8,10 +8,10 @@ import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.MinecraftUtil;
 
-public abstract class FloatMethod extends DefaultMethod {
+public abstract class DoubleMethod extends DefaultNamedMethod {
 
-	public FloatMethod() {
-		super(true, 0, 1, 2);
+	public DoubleMethod(final String defaultName) {
+		super(true, defaultName, 0, 1, 2);
 	}
 
 	@Override
@@ -19,7 +19,7 @@ public abstract class FloatMethod extends DefaultMethod {
 		if (parameters.length > 2) {
 			return null;
 		} else {
-			Float value = getValue(player, event);
+			Double value = getValue(player, event);
 			if (value != null) {
 				int minDecimals = 0;
 				int maxDecimals = 0;
@@ -37,5 +37,5 @@ public abstract class FloatMethod extends DefaultMethod {
 		}
 	}
 
-	public abstract Float getValue(OfflinePlayer player, String event);
+	public abstract Double getValue(OfflinePlayer player, String event);
 }

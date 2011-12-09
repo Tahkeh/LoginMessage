@@ -6,6 +6,10 @@ import com.tahkeh.loginmessage.methods.OriginalPlayerMethod;
 
 public class CurrentExperienceMethod extends OriginalPlayerMethod {
 
+	public CurrentExperienceMethod() {
+		super("curxp");
+	}
+
 	@SuppressWarnings("deprecation")
 	@Override
 	protected String call(Player player, String event) {

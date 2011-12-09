@@ -10,6 +10,7 @@ public class StatusMethod extends CaseMethod {
 	private final Message message;
 
 	public StatusMethod(final Message message) {
+		super("status");
 		this.message = message;
 	}
 

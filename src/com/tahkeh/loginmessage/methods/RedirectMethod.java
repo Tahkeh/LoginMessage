@@ -19,7 +19,7 @@ public class RedirectMethod implements Method {
 	}
 
 	@Override
-	public boolean recursive() {
-		return this.redirected.recursive();
+	public boolean isRecursive() {
+		return this.redirected.isRecursive();
 	}
 }

@@ -69,7 +69,7 @@ public class ScriptMethod implements Method {
 	}
 
 	@Override
-	public boolean recursive() {
+	public boolean isRecursive() {
 		return this.recursive;
 	}
 

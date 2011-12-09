@@ -5,6 +5,10 @@ import org.bukkit.entity.Player;
 
 public abstract class CasePlayerMethod extends CaseMethod {
 
+	public CasePlayerMethod(String defaultName) {
+		super(defaultName);
+	}
+
 	@Override
 	protected String call(OfflinePlayer player, String event) {
 		if (player instanceof Player) {

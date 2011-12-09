@@ -8,7 +8,7 @@ import com.tahkeh.loginmessage.methods.BooleanMethod;
 public class OnlineMethod extends BooleanMethod {
 
 	public OnlineMethod(final Message message) {
-		super(message);
+		super(message, "online");
 	}
 
 	@Override

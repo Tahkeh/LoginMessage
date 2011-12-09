@@ -9,7 +9,8 @@ public final class ConstantMethod extends OriginalMethod {
 
 	private final String value;
 
-	public ConstantMethod(final String value) {
+	public ConstantMethod(final String value, final String defaultName) {
+		super(defaultName);
 		this.value = value;
 	}
 

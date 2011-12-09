@@ -9,10 +9,10 @@ import com.tahkeh.loginmessage.methods.variables.Variables;
  * Simple class for all original methods (without any arguments). Redirect
  * all calls to {@link OriginalMethod#call(OfflinePlayer, String, Variables)}.
  */
-public abstract class OriginalMethod extends DefaultMethod {
+public abstract class OriginalMethod extends DefaultNamedMethod {
 
-	public OriginalMethod() {
-		super(false, 0);
+	public OriginalMethod(final String defaultName) {
+		super(false, defaultName, 0);
 	}
 
 	@Override

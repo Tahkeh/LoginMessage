@@ -19,5 +19,5 @@ public interface Method {
 	 * Defines if this method has recursive calls.
 	 * @return if this method has recursive calls.
 	 */
-	boolean recursive();
+	boolean isRecursive();
 }

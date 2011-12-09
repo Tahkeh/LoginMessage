@@ -18,7 +18,7 @@ import de.xzise.MinecraftUtil;
 /**
  * Simple online list method.
  */
-public class OnlistMethod extends DefaultMethod {
+public class OnlistMethod extends DefaultNamedMethod {
 
 	public final static String PREFIX = "&" + ChatColor.WHITE;
 	public final static String SUFFIX = "&" + ChatColor.WHITE;
@@ -27,7 +27,7 @@ public class OnlistMethod extends DefaultMethod {
 	private final Message message;
 
 	public OnlistMethod(final Message message) {
-		super(false, 0, 1, 2, 3, 4);
+		super(false, "onlist", 0, 1, 2, 3, 4);
 		this.message = message;
 	}
 

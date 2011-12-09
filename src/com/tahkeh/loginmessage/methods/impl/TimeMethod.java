@@ -10,6 +10,7 @@ public class TimeMethod extends CasePlayerMethod {
 	private final Message message;
 
 	public TimeMethod(final Message message) {
+		super("time");
 		this.message = message;
 	}
 

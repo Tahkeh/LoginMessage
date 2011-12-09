@@ -7,12 +7,12 @@ import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.EqualCheck;
 
-public class CaseCheckerMethod extends DefaultMethod {
+public class CaseCheckerMethod extends DefaultNamedMethod {
 
 	private final EqualCheck<? super String> checker;
 
-	public CaseCheckerMethod(final EqualCheck<? super String> checker) {
-		super(true, -2);
+	public CaseCheckerMethod(final EqualCheck<? super String> checker, final String name) {
+		super(true, name, -2);
 		this.checker = checker;
 	}
 
