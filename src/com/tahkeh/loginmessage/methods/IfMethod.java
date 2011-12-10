@@ -19,7 +19,7 @@ public abstract class IfMethod implements Method {
 	}
 
 	@Override
-	public final String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public final String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		Parameter match = FinalParameter.EMPTY_PARAMETER;
 		Parameter noMatch = FinalParameter.EMPTY_PARAMETER;
 		switch (parameters.length - this.preValueCount) {
@@ -31,10 +31,10 @@ public abstract class IfMethod implements Method {
 		default:
 			return null;
 		}
-		return this.match(player, event, Arrays.copyOf(parameters, this.preValueCount)) != this.inverted ? match.parse() : noMatch.parse();
+		return this.match(player, Arrays.copyOf(parameters, this.preValueCount), globalParameters) != this.inverted ? match.parse() : noMatch.parse();
 	}
 
-	protected abstract Boolean match(OfflinePlayer player, String event, Parameter[] preValues);
+	protected abstract Boolean match(OfflinePlayer player, Parameter[] preValues, Variables globalParameters);
 
 	@Override
 	public boolean isRecursive() {

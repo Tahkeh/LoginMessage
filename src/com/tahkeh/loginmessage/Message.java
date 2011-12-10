@@ -85,6 +85,7 @@ import com.tahkeh.loginmessage.methods.impl.TimeMethod;
 import com.tahkeh.loginmessage.methods.impl.TotalExperienceMethod;
 import com.tahkeh.loginmessage.methods.impl.WhitelistedMethod;
 import com.tahkeh.loginmessage.methods.impl.WorldMethod;
+import com.tahkeh.loginmessage.methods.variables.CommandVariables;
 import com.tahkeh.loginmessage.methods.variables.DeathVariables;
 import com.tahkeh.loginmessage.methods.variables.KickVariables;
 import com.tahkeh.loginmessage.methods.variables.Variables;
@@ -95,9 +96,7 @@ import com.tahkeh.loginmessage.timers.Cooldown.CooldownTask;
 import com.tahkeh.loginmessage.timers.Interval;
 
 import de.xzise.XLogger;
-import de.xzise.wrappers.economy.EconomyHandler;
 import de.xzise.wrappers.permissions.BufferPermission;
-import de.xzise.wrappers.permissions.PermissionsHandler;
 
 public class Message
 {
@@ -115,7 +114,6 @@ public class Message
 	private final MaterialTable table;
 	private final MethodParser methodParser;
 
-	String separator = "%&%&";
 	Set<String> kicked = new HashSet<String>();
 	List<String> running = new ArrayList<String>();
 	Map<String, Integer> cycle = new HashMap<String, Integer>();
@@ -293,7 +291,6 @@ public class Message
 			}
 			this.logger.info("Registered " + (redirectedEnabled + aliasEnabled + scriptEnabled) + " user defined methods (" + scriptEnabled + " scripts, " + aliasEnabled + " aliases, " + redirectedEnabled + " redirects)!");
 		}
-		separator = config.getString("separator", "%&%&");
 		store.load(event);
 		scheduleIntervals(event);
 	}
@@ -443,11 +440,11 @@ public class Message
 	public World getDefaultWorld() {
 		  return plugin.getServer().getWorlds().get(0);
 		}
-	
-	public String getLocation(String type, String p, String event) {
+
+	public String getLocation(String type, String p) {
 		return store.getLocation(type, p);
 	}
-	
+
 	public String getTime(Long rawtime, boolean caps) {
 		String name = getTime(rawtime);
 		if (name == null) {
@@ -570,34 +567,8 @@ public class Message
 		}
 	}
 
-	private static Variables generateVariables(final OfflinePlayer player, final String event, final Map<String, String> args) {
-		Variables variables = null;
-		Player trigger = null;
-		if (player != null) {
-			trigger = Bukkit.getServer().getPlayerExact(player.getName());
-			if (trigger == null && !event.equals("list") && args.containsKey("trigger")) {
-				trigger = Bukkit.getServer().getPlayerExact(args.get("trigger"));
-			}
-		} else {
-			trigger = null;
-		}
-		if (event.equalsIgnoreCase("kick")) {
-			String reason = args.get("kickreason");
-			if (reason != null) {
-				variables = new KickVariables(reason, trigger);
-			}
-		} else if (event.equalsIgnoreCase("death")) {
-			String item = args.get("item");
-			String entity = args.get("entity");
-			if (item != null && entity != null) {
-				variables = new DeathVariables(item, entity, trigger);
-			}
-		}
-		return variables == null ? new Variables(trigger) : variables;
-	}
-
-	public String processLine(String str, OfflinePlayer p, String event, Variables variables) {
-		return processColors(this.methodParser.parseLine(p, event, str, variables));
+	public String processLine(String str, OfflinePlayer p, Variables variables) {
+		return processColors(this.methodParser.parseLine(p, str, variables));
 	}
 
 	public long getLastLogin(String name) {
@@ -655,12 +626,12 @@ public class Message
 	 *            the name of the message (for the commands). Will be ignored if
 	 *            the event isn't <code>command</code>.
 	 */
-	public void preProcessMessage(OfflinePlayer trigger, String event, Map<String, String> args) {		
+	private void preProcessMessage(final OfflinePlayer trigger, final Variables variables) {
 		String[] messages;
-		if (event.equals("command")) {
-			messages = new String[] { args.get("cmd") };
+		if (variables instanceof CommandVariables) {
+			messages = new String[] { ((CommandVariables) variables).command };
 		} else {
-			List<String> keyList = message.getKeys("messages." + event);
+			List<String> keyList = message.getKeys("messages." + variables.name);
 			if (keyList == null) {
 				messages = EMPTY_STRING_ARRAY;
 			} else {
@@ -668,16 +639,28 @@ public class Message
 			}
 		}
 		for (String key : messages) {
-			if (event.equals("death") && !key.equals(args.get("key"))) {
+			if (!(variables instanceof DeathVariables) || !((DeathVariables) variables).key.equals(key)) {
 				break;
 			}
-			Set<Entry> triggers = null;
-			String name = args != null && args.containsKey("trigger") ? args.get("trigger") : trigger.getName();
-			Player trueTrigger = plugin.getServer().getPlayerExact(name);
-			triggers = getEntries(trueTrigger, key, event, "triggers");
+			final Player trueTrigger = getTrueTrigger(variables, trigger);
+			final Set<Entry> triggers = getEntries(trueTrigger, key, variables.name, "triggers");
 			if (matchEntries(trueTrigger, triggers)) {
-				finishMessage(trigger, event, key, args);
+				finishMessage(trigger, key, variables);
 			}
+		}
+	}
+
+	public static Player getTrueTrigger(final Variables variables, final OfflinePlayer trigger) {
+		final Player player;
+		if (variables instanceof CommandVariables) {
+			player = ((CommandVariables) variables).trigger;
+		} else {
+			player = null;
+		}
+		if (player == null) {
+			return Bukkit.getPlayerExact(trigger.getName());
+		} else {
+			return player;
 		}
 	}
 
@@ -784,35 +767,30 @@ public class Message
 		return capital + trim;
 	}
 
-	public void finishMessage(OfflinePlayer p, String event, String key, Map<String, String> args) // Final touches - delay and cooldown
+	public void finishMessage(OfflinePlayer trigger, String key, Variables variables) // Final touches - delay and cooldown
 	{
-		String[] lines = this.getLines(event, key);
+		String[] lines = this.getLines(variables.name, key);
 		if (lines.length == 0) {
-			this.logger.info("Empty message named '" + key + "' (Event: '" + event + "') found.");
+			this.logger.info("Empty message named '" + key + "' (Event: '" + variables.name + "') found.");
 		} else {
-			final String keypath = "messages." + event + "." + key;
+			final String keypath = "messages." + variables.name + "." + key;
 			int cd = message.getInt(keypath + ".cooldown", 0) * 1000;
 			int dl = message.getInt(keypath + ".delay", 0);
 
 			Player[] players = this.plugin.getServer().getOnlinePlayers();
 			List<Player> cooledDown = new ArrayList<Player>(players.length);
 			CooldownTask task = null;
-			Player truetrigger = null;
-			if (event.equals("command") && args.containsKey("trigger")) {
-				truetrigger = plugin.getServer().getPlayerExact(args.get("trigger"));
-			} else if (p != null) {
-				truetrigger = plugin.getServer().getPlayerExact(p.getName());
-			}
-			Set<Entry> receivers = getEntries(truetrigger, key, event, "receivers");
+			final Player truetrigger = getTrueTrigger(variables, trigger);
+			Set<Entry> receivers = getEntries(truetrigger, key, variables.name, "receivers");
 
 			// Since the only number lower than 1000 that is possible for the
 			// cooldown is 0, we make sure it isn't for the same reason as the delay.
 			if (cd > 0) {
 				List<String> cdstrs = new ArrayList<String>(players.length);
 				for (Player player : players) {
-					if (this.cooldown.isCooledDown(player, key, event) && matchEntries(player, receivers)) {
+					if (this.cooldown.isCooledDown(player, key, variables.name) && matchEntries(player, receivers)) {
 						cooledDown.add(player);
-						cdstrs.add(Cooldown.createKey(player, key, event));
+						cdstrs.add(Cooldown.createKey(player, key, variables.name));
 					}
 				}
 				task = this.cooldown.createTask(cdstrs, this.cooldown, cd);
@@ -830,9 +808,9 @@ public class Message
 				// Anything below 3 milliseconds makes your computer sad from my
 				// experience.
 				if (dl >= 3) {
-					new Timer().schedule(new Delay(this, lines, p, event, cooledDown, task, args), dl);
+					new Timer().schedule(new Delay(this, lines, trigger, cooledDown, task, variables), dl);
 				} else {
-					sendMessage(p, cooledDown, lines, event, task, args);
+					sendMessage(trigger, cooledDown, lines, task, variables);
 				}
 			}
 		}
@@ -851,12 +829,11 @@ public class Message
 	 * @param event
 	 *            the event type of the message (e.g. login).
 	 */
-	public void sendMessage(OfflinePlayer trigger, Collection<Player> possibleReceivers, String[] lines, String event, CooldownTask task, Map<String, String> args)
+	public void sendMessage(OfflinePlayer trigger, Collection<Player> possibleReceivers, String[] lines, CooldownTask task, Variables variables)
 	{
-		Variables variables = generateVariables(trigger, event, args);
 		ArrayList<String> processedLines = new ArrayList<String>(lines.length);
 		for (int i = 0; i < lines.length; i++) {
-			String processedLine = processLine(lines[i], trigger, event, variables);
+			String processedLine = processLine(lines[i], trigger, variables);
 			if (processedLine != null && !processedLine.trim().isEmpty()) {
 				processedLines.add(processedLine);
 			}
@@ -874,9 +851,9 @@ public class Message
 
 	public void onPlayerJoin(PlayerJoinEvent eventObject) {
 		final Player p = eventObject.getPlayer();
-		final String event = existingPlayer(p.getName()) ? "login" : "firstlogin";
-		load(event);
-		preProcessMessage(p, event, null);
+		final Variables variables = existingPlayer(p.getName()) ? Variables.INSTANCE_FIRST_LOGIN : Variables.INSTANCE_LOGIN;
+		load(variables.name);
+		preProcessMessage(p, variables);
 
 		if (config.getBoolean("clearjoinmsg", true)) {
 			eventObject.setJoinMessage(null);
@@ -886,8 +863,9 @@ public class Message
 	public void onPlayerQuit(PlayerQuitEvent event) {
 		Player p = event.getPlayer();
 		if (!this.kicked.remove(p.getName())) {
-			load("quit");
-			preProcessMessage(p, "quit", null);
+			final Variables variables = Variables.INSTANCE_QUIT;
+			load(variables.name);
+			preProcessMessage(p, variables);
 
 			if (config.getBoolean("clearquitmsg", true)) {
 				event.setQuitMessage(null);
@@ -896,13 +874,13 @@ public class Message
 	}
 
 	public void onPlayerKick(PlayerKickEvent event) {
-		load("kick");
+		KickVariables kick = new KickVariables(event.getReason());
+		load(kick.name);
 		Player p = event.getPlayer();
 		this.kicked.add(p.getName());
-		Map<String, String> args = new HashMap<String, String>();
 
-		args.put("kickreason", event.getReason());
-		preProcessMessage(p, "kick", args);
+		//TODO: Define trigger!
+		preProcessMessage(p, kick);
 
 		if (config.getBoolean("clearkickmsg", true)) {
 			event.setLeaveMessage(null);
@@ -911,30 +889,28 @@ public class Message
 
 	public void onIntervalCompletion(String key) {
 		load("interval");
-		finishMessage(null, "interval", key, null);
+		finishMessage(null, key, Variables.INSTANCE_INTERVAL);
 	}
 	
 	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
-		load("command");
+		load(CommandVariables.NAME);
 		Player sender = event.getPlayer();
 		String[] cmdargs = event.getMessage().substring(1).split(" ");
-		Map<String, String> args = new HashMap<String, String>();
 		List<String> commands = message.getKeys("messages.command");
 
-		args.put("cmd", cmdargs[0]);
+		final String command = cmdargs[0];
 		if (commands != null) {
 			for (String key : commands) {
-				List<String> msgargs = message.getStringList("messages.command." + key + ".args", null);
 				if (key.equalsIgnoreCase(cmdargs[0])) {
 					event.setCancelled(true);
 					if (cmdargs.length == 1) {
-						preProcessMessage(sender, "command", args);
+						preProcessMessage(sender, new CommandVariables(command, null));
 					} else {
 						OfflinePlayer target = plugin.getServer().getOfflinePlayer(cmdargs[1]);
+						List<String> msgargs = message.getStringList("messages.command." + key + ".args", null);
 						if (msgargs.contains("player")) {
 							if (existingPlayer(target.getName())) {
-								args.put("trigger", sender.getName());
-								preProcessMessage(target, "command", args);
+								preProcessMessage(target, new CommandVariables(command, sender));
 							} else {
 								String noplayerfound = config.getString("noplayerfound", "&cPlayer \"%nm\" does not exist!");
 								noplayerfound = noplayerfound.replaceAll("%nm", cmdargs[1]);
@@ -942,7 +918,7 @@ public class Message
 								sender.sendMessage(noplayerfound);
 							}
 						} else {
-							preProcessMessage(sender, "command", args);
+							preProcessMessage(sender, new CommandVariables(command, null));
 						}
 					}
 				}
@@ -951,26 +927,25 @@ public class Message
 	}
 	
 	public void onPlayerDeath(PlayerDeathEvent event) {
-		load("death");
-		Map<String, String> args = new HashMap<String, String>();
+		load(DeathVariables.NAME);
 		Map<String, List<String>> keyCauses = new HashMap<String, List<String>>();
 		Player p = (Player) event.getEntity();
 		DeathHandler handler = new DeathHandler(p, table);
-		List<String> keys = message.getKeys("messages.death");
+		List<String> keys = message.getKeys("messages." + DeathVariables.NAME);
 		
 		if (keys != null) {
 			for (String key : keys) {
-				List<String> triggerCauses = message.getStringList("messages.death." + key + ".causes", null);
+				List<String> triggerCauses = message.getStringList("messages." + DeathVariables.NAME + "." + key + ".causes", null);
 				Set<Cause> possibleCauses = handler.getCauses();
 				if (triggerCauses != null) {
 					keyCauses.put(key, triggerCauses);
 				}
 				for (String triggerCause : keyCauses.get(key)) {
 					if (DeathHandler.matchCauses(toCapitalCase(triggerCause), possibleCauses)) {
-						args.put("key", key);
-						args.put("entity", handler.getKiller());
-						args.put("item", handler.isKillerPlayer() ? handler.getItem(plugin.getServer().getPlayerExact(handler.getKiller()).getItemInHand()) : "?");
-						preProcessMessage(p, "death", args);
+						//TODO: Define trigger!
+						final String item = handler.isKillerPlayer() ? handler.getItem(plugin.getServer().getPlayerExact(handler.getKiller()).getItemInHand()) : "?";
+						DeathVariables variables = new DeathVariables(item, handler.getKiller(), key);
+						preProcessMessage(p, variables);
 						break;
 					}
 				}

@@ -21,7 +21,7 @@ public class PrintMethod extends DefaultNamedMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		StringBuilder builder = new StringBuilder();
 		for (Iterator<Parameter> parameterItr = new ArrayIterator<Parameter>(parameters); parameterItr.hasNext();) {
 			String next = parameterItr.next().parse();

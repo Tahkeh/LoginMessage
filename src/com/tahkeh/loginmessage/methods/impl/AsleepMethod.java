@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.Message;
 import com.tahkeh.loginmessage.methods.CasePlayerMethod;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class AsleepMethod extends CasePlayerMethod {
 
@@ -15,7 +16,7 @@ public class AsleepMethod extends CasePlayerMethod {
 	}
 
 	@Override
-	protected String call(Player player, String event) {
+	protected String call(Player player, Variables globalParameters) {
 		return this.message.booleanToName(player.isSleeping());
 	}
 

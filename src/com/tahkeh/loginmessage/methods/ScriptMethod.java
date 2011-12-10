@@ -49,16 +49,16 @@ public class ScriptMethod implements Method {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		Object result = null;
 		try {
-			result = this.invocable.invokeFunction(this.methodName, player, event, parameters, globalParameters);
+			result = this.invocable.invokeFunction(this.methodName, player, parameters, globalParameters);
 		} catch (ScriptException e) {
 			this.logger.warning("Unable to call '" + this.methodName + "'!", e);
 		} catch (NoSuchMethodException e) {
 			this.logger.warning("No such method named '" + this.methodName + "'! Try to call outdated method with this name.", e);
 			try {
-				result = this.invocable.invokeFunction(this.methodName, player, event, parameters);
+				result = this.invocable.invokeFunction(this.methodName, player, parameters);
 			} catch (ScriptException ex) {
 				this.logger.warning("Unable to call '" + this.methodName + "'!", e);
 			} catch (NoSuchMethodException ex) {

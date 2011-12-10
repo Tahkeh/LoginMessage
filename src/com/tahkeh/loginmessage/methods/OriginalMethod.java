@@ -16,13 +16,13 @@ public abstract class OriginalMethod extends DefaultNamedMethod {
 	}
 
 	@Override
-	public final String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public final String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		if (parameters.length == 0) {
-			return call(player, event, globalParameters);
+			return call(player, globalParameters);
 		} else {
 			return null;
 		}
 	}
 
-	protected abstract String call(OfflinePlayer player, String event, Variables globalParameters);
+	protected abstract String call(OfflinePlayer player, Variables globalParameters);
 }

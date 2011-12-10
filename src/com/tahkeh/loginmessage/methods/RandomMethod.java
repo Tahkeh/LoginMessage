@@ -14,7 +14,7 @@ public class RandomMethod extends DefaultNamedMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		return MinecraftUtil.getRandom(parameters).parse();
 	}
 

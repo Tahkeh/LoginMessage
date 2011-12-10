@@ -39,7 +39,7 @@ public class OnlistMethod extends DefaultNamedMethod {
 		}
 	}
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		String prefix = PREFIX;
 		String suffix = SUFFIX;
 		String delimiter = DELIMITER;
@@ -54,19 +54,19 @@ public class OnlistMethod extends DefaultNamedMethod {
 			suffix = maybeColored(parameters[1].parse());
 			break;
 		case 1:
-			return this.message.processOnlineList(parameters[0].parse(), Message.isLeaveEvent(event) ? MinecraftUtil.cast(Player.class, player) : null);
+			return this.message.processOnlineList(parameters[0].parse(), globalParameters.leaveEvent ? MinecraftUtil.cast(Player.class, player) : null);
 		case 0:
 			break;
 		default:
 			return null;
 		}
-		return this.call(player, event, prefix, suffix, useDisplayNames, delimiter);
+		return this.call(player, prefix, suffix, useDisplayNames, delimiter, globalParameters.leaveEvent);
 	}
 
-	private String call(final OfflinePlayer triggerPlayer, final String event, final String prefix, final String suffix, final boolean useDisplayNames, final String delimiter) {
+	private String call(final OfflinePlayer triggerPlayer, final String prefix, final String suffix, final boolean useDisplayNames, final String delimiter, final boolean isLeaveEvent) {
 		StringBuilder builder = new StringBuilder();
 		List<Player> allPlayers = Arrays.asList(Bukkit.getServer().getOnlinePlayers());
-		if (Message.isLeaveEvent(event)) {
+		if (isLeaveEvent) {
 			allPlayers.remove(triggerPlayer);
 		}
 		for (Iterator<Player> playerIt = allPlayers.iterator(); playerIt.hasNext();) {

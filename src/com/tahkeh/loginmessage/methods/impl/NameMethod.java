@@ -12,8 +12,8 @@ public class NameMethod extends OriginalMethod {
 	}
 
 	@Override
-	protected String call(OfflinePlayer p, String event, Variables globalParameters) {
-		return p.getName();
+	protected String call(OfflinePlayer trigger, Variables globalParameters) {
+		return trigger.getName();
 	}
 
 }

@@ -14,8 +14,8 @@ public class RedirectMethod implements Method {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
-		return this.redirected.call(player, event, parameters, globalParameters);
+	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
+		return this.redirected.call(player, parameters, globalParameters);
 	}
 
 	@Override

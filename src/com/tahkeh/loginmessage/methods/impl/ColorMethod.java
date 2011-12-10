@@ -15,7 +15,7 @@ public class ColorMethod extends DefaultNamedMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		if (parameters.length == 1) {
 			Integer i = DefaultMethod.parseAsInteger(parameters[0].parse());
 			if (i != null) {

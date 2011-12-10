@@ -15,7 +15,7 @@ public final class ConstantMethod extends OriginalMethod {
 	}
 
 	@Override
-	protected String call(OfflinePlayer player, String event, Variables globalParameters) {
+	protected String call(OfflinePlayer player, Variables globalParameters) {
 		return this.value;
 	}
 

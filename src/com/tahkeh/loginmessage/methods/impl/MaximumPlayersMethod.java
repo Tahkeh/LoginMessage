@@ -13,7 +13,7 @@ public class MaximumPlayersMethod extends OriginalMethod {
 	}
 
 	@Override
-	protected String call(OfflinePlayer player, String event, Variables globalParameters) {
+	protected String call(OfflinePlayer player, Variables globalParameters) {
 		return Integer.toString(Bukkit.getServer().getMaxPlayers());
 	}
 

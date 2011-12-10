@@ -3,6 +3,7 @@ package com.tahkeh.loginmessage.methods;
 import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.Message;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public abstract class BooleanMethod extends CaseMethod {
 
@@ -14,8 +15,8 @@ public abstract class BooleanMethod extends CaseMethod {
 	}
 
 	@Override
-	protected final String call(OfflinePlayer player, String event) {
-		Boolean bool = this.getBoolean(player, event);
+	protected final String call(OfflinePlayer player, Variables globalParameters) {
+		Boolean bool = this.getBoolean(player, globalParameters);
 		if (bool == null) {
 			return null;
 		} else {
@@ -23,5 +24,5 @@ public abstract class BooleanMethod extends CaseMethod {
 		}
 	}
 
-	protected abstract Boolean getBoolean(OfflinePlayer player, String event);
+	protected abstract Boolean getBoolean(OfflinePlayer player, Variables globalParameters);
 }

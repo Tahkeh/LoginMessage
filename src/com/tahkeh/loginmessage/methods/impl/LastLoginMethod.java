@@ -16,7 +16,7 @@ public class LastLoginMethod extends OriginalMethod {
 	}
 
 	@Override
-	protected String call(OfflinePlayer player, String event, Variables globalParameters) {
+	protected String call(OfflinePlayer player, Variables globalParameters) {
 		return this.message.getTimeDifference(this.message.getLastLogin(player.getName()));
 	}
 

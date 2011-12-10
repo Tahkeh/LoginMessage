@@ -21,7 +21,7 @@ public class DecimalTimeMethod extends DefaultNamedMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		if (player instanceof Player) {
 			final SimpleDateFormat dateformat;
 			if (parameters.length == 1) {

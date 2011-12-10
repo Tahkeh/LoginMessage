@@ -13,7 +13,7 @@ public interface Method {
 	 * @param parameters the parameters.
 	 * @return the parsed string or null if invalid.
 	 */
-	String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters);
+	String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters);
 
 	/**
 	 * Defines if this method has recursive calls.

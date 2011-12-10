@@ -10,7 +10,7 @@ import de.xzise.bukkit.util.callback.Callback;
 public final class OriginalCallbackMethods {
 
 	public static interface OriginalCallback<P extends OfflinePlayer> {
-		String call(P player, String event);
+		String call(P player, Variables globalParameters);
 	}
 
 	public static class OriginalCallbackMethod extends OriginalMethod {
@@ -23,8 +23,8 @@ public final class OriginalCallbackMethods {
 		}
 
 		@Override
-		protected String call(OfflinePlayer p, String event, Variables globalParameters) {
-			return this.callback.call(p, event);
+		protected String call(OfflinePlayer p, Variables globalParameters) {
+			return this.callback.call(p, globalParameters);
 		}
 	}
 
@@ -37,9 +37,9 @@ public final class OriginalCallbackMethods {
 		}
 
 		@Override
-		protected String call(OfflinePlayer p, String event, Variables globalParameters) {
+		protected String call(OfflinePlayer p, Variables globalParameters) {
 			if (p instanceof Player) {
-				return this.callback.call((Player) p, event);
+				return this.callback.call((Player) p, globalParameters);
 			} else {
 				return null;
 			}
@@ -58,7 +58,7 @@ public final class OriginalCallbackMethods {
 		}
 
 		@Override
-		public String call(P player, String event) {
+		public String call(P player, Variables globalParameters) {
 			return this.callback.call(player);
 		}
 	}
@@ -67,21 +67,21 @@ public final class OriginalCallbackMethods {
 		return new OriginalOfflinePlayerCallback<P>(callback);
 	}
 
-	private static final class OriginalEventCallback implements OriginalCallback<OfflinePlayer> {
+	private static final class OriginalGlobalParametersCallback implements OriginalCallback<OfflinePlayer> {
 
-		private final Callback<String, String> callback;
+		private final Callback<String, Variables> callback;
 
-		public OriginalEventCallback(Callback<String, String> callback) {
+		public OriginalGlobalParametersCallback(Callback<String, Variables> callback) {
 			this.callback = callback;
 		}
 
 		@Override
-		public String call(OfflinePlayer player, String event) {
-			return this.callback.call(event);
+		public String call(OfflinePlayer player, Variables globalParameters) {
+			return this.callback.call(globalParameters);
 		}
 	}
 	
-	public static OriginalCallback<OfflinePlayer> createOriginalCallbackByEvent(Callback<String, String> callback) {
-		return new OriginalEventCallback(callback);
+	public static OriginalCallback<OfflinePlayer> createOriginalCallbackByEvent(Callback<String, Variables> callback) {
+		return new OriginalGlobalParametersCallback(callback);
 	}
 }

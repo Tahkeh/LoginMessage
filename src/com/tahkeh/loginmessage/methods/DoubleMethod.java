@@ -15,11 +15,11 @@ public abstract class DoubleMethod extends DefaultNamedMethod {
 	}
 
 	@Override
-	public final String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public final String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		if (parameters.length > 2) {
 			return null;
 		} else {
-			Double value = getValue(player, event);
+			Double value = getValue(player, globalParameters);
 			if (value != null) {
 				int minDecimals = 0;
 				int maxDecimals = 0;
@@ -37,5 +37,5 @@ public abstract class DoubleMethod extends DefaultNamedMethod {
 		}
 	}
 
-	public abstract Double getValue(OfflinePlayer player, String event);
+	public abstract Double getValue(OfflinePlayer player, Variables globalParameters);
 }

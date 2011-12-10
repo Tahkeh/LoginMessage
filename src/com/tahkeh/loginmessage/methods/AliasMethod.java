@@ -15,7 +15,7 @@ public class AliasMethod extends DefaultNamedMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		if (this.getParamCounts()[0] == parameters.length) {
 			String result = this.result;
 			for (int i = 0; i < parameters.length; i++) {

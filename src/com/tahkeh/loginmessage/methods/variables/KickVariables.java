@@ -1,13 +1,11 @@
 package com.tahkeh.loginmessage.methods.variables;
 
-import org.bukkit.entity.Player;
-
 public class KickVariables extends Variables {
 
 	public final String reason;
 
-	public KickVariables(final String reason, final Player trigger) {
-		super(trigger);
+	public KickVariables(final String reason) {
+		super(true, "kick");
 		this.reason = reason;
 	}
 }

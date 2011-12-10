@@ -3,6 +3,7 @@ package com.tahkeh.loginmessage.methods;
 import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class IfSetMethod extends IfMethod {
 
@@ -11,7 +12,7 @@ public class IfSetMethod extends IfMethod {
 	}
 
 	@Override
-	protected Boolean match(OfflinePlayer player, String event, Parameter[] preValues) {
+	protected Boolean match(OfflinePlayer player, Parameter[] preValues, Variables globalParameters) {
 		return preValues[0].parse() != null;
 	}
 }

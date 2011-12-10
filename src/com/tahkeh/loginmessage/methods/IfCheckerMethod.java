@@ -5,6 +5,7 @@ import java.util.Comparator;
 import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.EqualCheck;
 
@@ -22,7 +23,7 @@ public class IfCheckerMethod extends IfMethod {
 	}
 
 	@Override
-	protected Boolean match(OfflinePlayer player, String event, Parameter[] preValues) {
+	protected Boolean match(OfflinePlayer player, Parameter[] preValues, Variables globalParameters) {
 		return this.checker.equals(preValues[0].parse(), preValues[1].parse());
 	}
 }

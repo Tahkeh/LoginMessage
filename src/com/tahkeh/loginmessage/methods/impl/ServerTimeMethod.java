@@ -20,7 +20,7 @@ public class ServerTimeMethod extends DefaultNamedMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		final SimpleDateFormat dateformat;
 		if (parameters.length == 1) {
 			dateformat = new SimpleDateFormat(parameters[0].parse());

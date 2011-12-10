@@ -3,6 +3,7 @@ package com.tahkeh.loginmessage.methods;
 import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.EqualCheck;
 import de.xzise.MinecraftUtil;
@@ -17,7 +18,7 @@ public class IfArithmeticMethod extends IfMethod {
 	}
 
 	@Override
-	protected Boolean match(OfflinePlayer player, String event, Parameter[] preValues) {
+	protected Boolean match(OfflinePlayer player, Parameter[] preValues, Variables globalParameters) {
 		Double a = MinecraftUtil.tryAndGetDouble(preValues[0].parse());
 		Double b = MinecraftUtil.tryAndGetDouble(preValues[1].parse());
 		if (a != null && b != null) {

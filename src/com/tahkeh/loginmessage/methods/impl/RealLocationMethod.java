@@ -18,7 +18,7 @@ public class RealLocationMethod extends OriginalMethod {
 	}
 
 	@Override
-	protected String call(OfflinePlayer player, String event, Variables globalParameters) {
-		return this.message.getLocation(this.type, player.getName(), event);
+	protected String call(OfflinePlayer player, Variables globalParameters) {
+		return this.message.getLocation(this.type, player.getName());
 	}
 }

@@ -12,14 +12,14 @@ public abstract class OriginalPlayerMethod extends OriginalMethod {
 	}
 
 	@Override
-	protected final String call(OfflinePlayer player, String event, Variables globalParameters) {
+	protected final String call(OfflinePlayer player, Variables globalParameters) {
 		if (player instanceof Player) {
-			return this.call((Player) player, event);
+			return this.call((Player) player, globalParameters);
 		} else {
 			return null;
 		}
 	}
 
-	protected abstract String call(Player player, String event);
+	protected abstract String call(Player player, Variables globalParameters);
 
 }

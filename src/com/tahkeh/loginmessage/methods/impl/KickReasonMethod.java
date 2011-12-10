@@ -13,7 +13,7 @@ public class KickReasonMethod extends OriginalMethod {
 	}
 
 	@Override
-	protected String call(OfflinePlayer player, String event, Variables globalParameters) {
+	protected String call(OfflinePlayer player, Variables globalParameters) {
 		if (globalParameters instanceof KickVariables) {
 			return ((KickVariables) globalParameters).reason;
 		} else {

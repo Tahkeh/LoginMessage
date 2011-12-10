@@ -17,6 +17,7 @@ import com.tahkeh.loginmessage.entries.Permission;
 import com.tahkeh.loginmessage.entries.Pub;
 import com.tahkeh.loginmessage.entries.User;
 import com.tahkeh.loginmessage.entries.World;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class PlayerList {
 	private final Main plugin;
@@ -56,8 +57,8 @@ public class PlayerList {
 		}
 		
 		for (OfflinePlayer p : players) {
-			String processedFormat = plugin.msg.processLine(format, p, "list", null);
-			String processedSeparator = plugin.msg.processLine(separator, p, "list", null);
+			String processedFormat = plugin.msg.processLine(format, p, Variables.INSTANCE_LIST);
+			String processedSeparator = plugin.msg.processLine(separator, p, Variables.INSTANCE_LIST);
 			s = processedSeparator;
 			if (!formatted) {
 				list = list + (on >= length ? processedFormat : processedFormat + processedSeparator);

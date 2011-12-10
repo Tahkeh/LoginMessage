@@ -18,7 +18,7 @@ public class LocationMethod extends DefaultNamedMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		if (player instanceof Player) {
 			Location location = ((Player) player).getLocation();
 			String format = null;

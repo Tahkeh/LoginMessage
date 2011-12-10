@@ -21,7 +21,7 @@ public abstract class MinMaxMethod extends DefaultNamedMethod {
 	protected abstract boolean compare(final int nHighLowest, final int tested);
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		if (parameters.length > 0) {
 			final Integer count = this.first ? 1 : DefaultMethod.parseAsInteger(parameters[0].parse());
 			if (count != null) {

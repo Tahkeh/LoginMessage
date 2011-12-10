@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import com.tahkeh.loginmessage.Main;
 import com.tahkeh.loginmessage.Message;
 import com.tahkeh.loginmessage.methods.OriginalPlayerMethod;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class IPMethod extends OriginalPlayerMethod {
 
@@ -16,7 +17,7 @@ public class IPMethod extends OriginalPlayerMethod {
 	}
 
 	@Override
-	protected String call(Player player, String event) {
+	protected String call(Player player, Variables globalParameters) {
 		return this.message.isLocal(player) ? Main.getExternalIp().getHostAddress() : player.getAddress().getAddress().getHostAddress();
 	}
 

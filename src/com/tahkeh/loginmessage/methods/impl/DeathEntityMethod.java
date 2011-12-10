@@ -13,7 +13,7 @@ public class DeathEntityMethod extends OriginalMethod {
 	}
 
 	@Override
-	protected String call(OfflinePlayer player, String event, Variables globalParameters) {
+	protected String call(OfflinePlayer player, Variables globalParameters) {
 		if (globalParameters instanceof DeathVariables) {
 			return ((DeathVariables) globalParameters).entity;
 		} else {

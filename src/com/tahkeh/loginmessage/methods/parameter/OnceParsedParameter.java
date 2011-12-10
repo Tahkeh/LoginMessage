@@ -10,8 +10,8 @@ public class OnceParsedParameter extends ParsedParameter {
 	private String parsedParameter = null;
 	private boolean parsed = false;
 
-	public OnceParsedParameter(final MethodParser parser, final OfflinePlayer player, final String event, final String parameterValue, final Variables variable, final int depth) {
-		super(parser, player, event, parameterValue, variable, depth);
+	public OnceParsedParameter(final MethodParser parser, final OfflinePlayer player, final String parameterValue, final Variables variable, final int depth) {
+		super(parser, player, parameterValue, variable, depth);
 	}
 
 	@Override

@@ -167,11 +167,11 @@ public class MethodParser {
 		this.methods.clear();
 	}
 
-	public String parseLine(OfflinePlayer player, String event, String line, Variables globalParameters) {
-		return this.parseLine(player, event, line, globalParameters, 0);
+	public String parseLine(OfflinePlayer player, String line, Variables globalParameters) {
+		return this.parseLine(player, line, globalParameters, 0);
 	}
 
-	public String parseLine(OfflinePlayer player, String event, String line, Variables globalParameters, final int depth) {
+	public String parseLine(OfflinePlayer player, String line, Variables globalParameters, final int depth) {
 		int index = 0;
 		int start = -1;
 		int delim = -1;
@@ -275,20 +275,20 @@ public class MethodParser {
 						Parameter[] parameterObjects = new Parameter[parameters.length];
 						for (int i = 0; i < parameters.length; i++) {
 							if (method.isRecursive()) {
-								parameterObjects[i] = new OnceParsedParameter(this, player, event, parameters[i], globalParameters, depth + 1);
+								parameterObjects[i] = new OnceParsedParameter(this, player, parameters[i], globalParameters, depth + 1);
 							} else {
 								parameterObjects[i] = new FinalParameter(parameters[i]);
 							}
 						}
 						String replacement = null;
 						try {
-							replacement = method.call(player, event, parameterObjects, globalParameters);
+							replacement = method.call(player, parameterObjects, globalParameters);
 						} catch (Exception e) {
 							this.logger.warning("Exception by calling '" + name + "'!", e);
 						}
 						if (replacement != null) {
 							if (method.isRecursive()) {
-								replacement = parseLine(player, event, replacement, globalParameters, depth + 1);
+								replacement = parseLine(player, replacement, globalParameters, depth + 1);
 							}
 							line = line.substring(0, start) + replacement + substring(line, end + 1, line.length());
 							index += replacement.length() - (end - start) - 1;

@@ -23,7 +23,7 @@ public class GroupNameMethod extends DefaultNamedMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		if (player instanceof Player && this.permissions.isActive()) {
 			Integer groupIdx = null;
 			if (parameters.length == 0) {

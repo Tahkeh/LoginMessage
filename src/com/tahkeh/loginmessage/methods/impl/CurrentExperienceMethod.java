@@ -3,6 +3,7 @@ package com.tahkeh.loginmessage.methods.impl;
 import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.methods.OriginalPlayerMethod;
+import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class CurrentExperienceMethod extends OriginalPlayerMethod {
 
@@ -12,7 +13,7 @@ public class CurrentExperienceMethod extends OriginalPlayerMethod {
 
 	@SuppressWarnings("deprecation")
 	@Override
-	protected String call(Player player, String event) {
+	protected String call(Player player, Variables globalParameters) {
 		try {
 			return Float.toString(player.getExp());
 		} catch (NoSuchMethodError e) {

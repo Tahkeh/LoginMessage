@@ -41,7 +41,7 @@ public abstract class CaseMethod extends DefaultNamedMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, String event, Parameter[] parameters, Variables globalParameters) {
+	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
 		CaseEnum caseEnum = null;
 		if (parameters.length == 0) {
 			caseEnum = CaseEnum.NONE;
@@ -49,7 +49,7 @@ public abstract class CaseMethod extends DefaultNamedMethod {
 			caseEnum = CaseEnum.CASE_ENUMS.get(parameters[0].parse().toLowerCase());
 		}
 		if ((caseEnum == CaseEnum.CUSTOM && parameters.length == 3) || (caseEnum != CaseEnum.CUSTOM && caseEnum != null && parameters.length == 1)) {
-			final String result = this.call(player, event);
+			final String result = this.call(player, globalParameters);
 			switch (caseEnum) {
 			case CUSTOM :
 				final char[] upperTrigger = new String(parameters[1].parse()).toCharArray();
@@ -97,5 +97,5 @@ public abstract class CaseMethod extends DefaultNamedMethod {
 		}
 	}
 
-	protected abstract String call(OfflinePlayer player, String event);
+	protected abstract String call(OfflinePlayer player, Variables globalParameters);
 }
