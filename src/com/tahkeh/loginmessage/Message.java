@@ -52,6 +52,7 @@ import com.tahkeh.loginmessage.methods.OnlistMethod;
 import com.tahkeh.loginmessage.methods.ScriptMethod;
 import com.tahkeh.loginmessage.methods.impl.AsleepMethod;
 import com.tahkeh.loginmessage.methods.impl.BannedMethod;
+import com.tahkeh.loginmessage.methods.impl.BarMethod;
 import com.tahkeh.loginmessage.methods.impl.ConstantMethod;
 import com.tahkeh.loginmessage.methods.impl.CurrentExperienceMethod;
 import com.tahkeh.loginmessage.methods.impl.DeathEntityMethod;
@@ -81,6 +82,7 @@ import com.tahkeh.loginmessage.methods.impl.SaturationMethod;
 import com.tahkeh.loginmessage.methods.impl.ServerTimeMethod;
 import com.tahkeh.loginmessage.methods.impl.SizeMethod;
 import com.tahkeh.loginmessage.methods.impl.StatusMethod;
+import com.tahkeh.loginmessage.methods.impl.TargetPlayerMethod;
 import com.tahkeh.loginmessage.methods.impl.TimeMethod;
 import com.tahkeh.loginmessage.methods.impl.TotalExperienceMethod;
 import com.tahkeh.loginmessage.methods.impl.WhitelistedMethod;
@@ -88,6 +90,7 @@ import com.tahkeh.loginmessage.methods.impl.WorldMethod;
 import com.tahkeh.loginmessage.methods.variables.CommandVariables;
 import com.tahkeh.loginmessage.methods.variables.DeathVariables;
 import com.tahkeh.loginmessage.methods.variables.KickVariables;
+import com.tahkeh.loginmessage.methods.variables.PlayerNotFoundVariables;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 import com.tahkeh.loginmessage.store.Store;
 import com.tahkeh.loginmessage.timers.Cooldown;
@@ -160,6 +163,7 @@ public class Message
 			new RealLocationMethod("rcode", this).register(this.methodParser);
 			new RealLocationMethod("rname", this).register(this.methodParser);
 			new OnlistMethod(this).register(this.methodParser);
+			new TargetPlayerMethod().register(this.methodParser);
 
 			// Player methods
 			new DisplayNameMethod().register(this.methodParser);
@@ -200,6 +204,7 @@ public class Message
 			new MinimumMethod(true).register(this.methodParser);
 			new MinimumMethod(false).register(this.methodParser);
 			new PrintPrefixMethod(this.methodParser).register();
+			new BarMethod().register(this.methodParser);
 
 			Configuration configuration = new Configuration(new File(this.plugin.getDataFolder(), "methods.yml"));
 			configuration.load();
@@ -445,14 +450,6 @@ public class Message
 		return store.getLocation(type, p);
 	}
 
-	public String getTime(Long rawtime, boolean caps) {
-		String name = getTime(rawtime);
-		if (name == null) {
-			name = "";
-		}
-		return caps ? toCapitalCase(name) : name.toLowerCase();
-	}
-
 	public String getTime(Long rawtime) {
 		int modTime = (int) (rawtime % 24000);
 
@@ -504,47 +501,21 @@ public class Message
 		return Main.getPermissions().getString(world, group, SUFFIX_PERMISSION);
 	}
 
-	public static boolean isLeaveEvent(String event) // For %ol and %size
-	{
-		return event.equals("kick") || event.equals("quit");
-	}
-
-	public String booleanToName(boolean bool, boolean caps) {
-		String name = booleanToName(bool);
-
-		if (name == null) {
-			name = "";
-		}
-		
-		name = processColors(name);
-
-		return caps ? name : name.toLowerCase();
-	}
-	
 	public String booleanToName(boolean bool) {
 		return bool ? config.getString("istrue", "&2Yes") : config.getString("isfalse", "&4No");
 	}
-	
-	public String getStatus(OfflinePlayer p, boolean caps) {
-		String status = getStatus(p);
-		return processColors(caps ? toCapitalCase(status) : status.toLowerCase());
-	}
 
 	public String getStatus(OfflinePlayer p) {
-		AFKHandler afkhandler = new AFKHandler(plugin);
-		final String status;
-
 		if (p.isOnline()) {
+			AFKHandler afkhandler = new AFKHandler(plugin);
 			if (afkhandler.isActive() && afkhandler.isAFK(plugin.getServer().getPlayerExact(p.getName()))) {
-				status = config.getString("status.afk", "&6AFK");
+				return config.getString("status.afk", "&6AFK");
 			} else {
-				status = config.getString("status.online", "&2Online");
+				return config.getString("status.online", "&2Online");
 			}
 		} else {
-			status = config.getString("status.offline", "&7Offline");
+			return config.getString("status.offline", "&7Offline");
 		}
-		
-		return status;
 	}
 
 	public String processOnlineList(final String name, final Player trigger) {
@@ -759,12 +730,26 @@ public class Message
 			return def;
 		}
 	}
-	
+
 	public static String toCapitalCase(String str) {
 		//TODO: Search for first instance of a letter in str instead of assuming index 1 is a letter.
 		String capital = str.substring(0, 1).toUpperCase();
 		String trim = str.substring(1).toLowerCase();
 		return capital + trim;
+	}
+
+	public static String toCapitalCase(final String string, final boolean restToLowercase) {
+		final char[] chars = string.toCharArray();
+		boolean found = false;
+		for (int i = 0; i < chars.length; i++) {
+			if (Character.isLetter(chars[i]) && !found) {
+				chars[i] = Character.toUpperCase(chars[i]);
+				found = true;
+			} else if (restToLowercase) {
+				chars[i] = Character.toLowerCase(chars[i]);
+			}
+		}
+		return new String(chars);
 	}
 
 	public void finishMessage(OfflinePlayer trigger, String key, Variables variables) // Final touches - delay and cooldown
@@ -912,10 +897,8 @@ public class Message
 							if (existingPlayer(target.getName())) {
 								preProcessMessage(target, new CommandVariables(command, sender));
 							} else {
-								String noplayerfound = config.getString("noplayerfound", "&cPlayer \"%nm\" does not exist!");
-								noplayerfound = noplayerfound.replaceAll("%nm", cmdargs[1]);
-								noplayerfound = processColors(noplayerfound);
-								sender.sendMessage(noplayerfound);
+								String noplayerfound = config.getString("noplayerfound", "&cPlayer \"%target()\" does not exist!");
+								sender.sendMessage(processLine(noplayerfound, sender, new PlayerNotFoundVariables(cmdargs[1])));
 							}
 						} else {
 							preProcessMessage(sender, new CommandVariables(command, null));

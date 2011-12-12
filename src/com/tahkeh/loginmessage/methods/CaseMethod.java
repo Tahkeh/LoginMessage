@@ -31,7 +31,7 @@ public abstract class CaseMethod extends DefaultNamedMethod {
 		public static final Map<String, CaseEnum> CASE_ENUMS = MinecraftUtil.createReverseMutableEnumMap(CaseEnum.class, new Callback<String, CaseEnum>() {
 			@Override
 			public String call(CaseEnum caseEnum) {
-			    return caseEnum.name.toLowerCase();
+				return caseEnum.name.toLowerCase();
 			}
 		});
 	}
@@ -51,7 +51,7 @@ public abstract class CaseMethod extends DefaultNamedMethod {
 		if ((caseEnum == CaseEnum.CUSTOM && parameters.length == 3) || (caseEnum != CaseEnum.CUSTOM && caseEnum != null && parameters.length == 1)) {
 			final String result = this.call(player, globalParameters);
 			switch (caseEnum) {
-			case CUSTOM :
+			case CUSTOM:
 				final char[] upperTrigger = new String(parameters[1].parse()).toCharArray();
 				final char[] upperReceiver = new String(parameters[2].parse()).toCharArray();
 				final char[] processedCustom = new char[result.length()];
@@ -67,7 +67,7 @@ public abstract class CaseMethod extends DefaultNamedMethod {
 					processedCustom[indexCustom++] = c;
 				}
 				return new String(processedCustom);
-			case CAMEL_CASE :
+			case CAMEL_CASE:
 				final char[] processed = new char[result.length()];
 				int index = 0;
 				boolean makeUpper = true;
@@ -81,15 +81,15 @@ public abstract class CaseMethod extends DefaultNamedMethod {
 					processed[index++] = c;
 				}
 				return new String(processed);
-			case FIRST_UPPER :
-				return Message.toCapitalCase(result);
-			case UPPER_CASE :
+			case FIRST_UPPER:
+				return Message.toCapitalCase(result, false);
+			case UPPER_CASE:
 				return result.toUpperCase();
-			case LOWER_CASE :
+			case LOWER_CASE:
 				return result.toLowerCase();
-			case NONE :
+			case NONE:
 				return result;
-			default :
+			default:
 				return null;
 			}
 		} else {
