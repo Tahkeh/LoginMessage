@@ -2,22 +2,14 @@ package com.tahkeh.loginmessage;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
-import com.tahkeh.loginmessage.entries.DefaultEntry;
 import com.tahkeh.loginmessage.entries.Entry;
-import com.tahkeh.loginmessage.entries.Group;
-import com.tahkeh.loginmessage.entries.Op;
-import com.tahkeh.loginmessage.entries.Permission;
-import com.tahkeh.loginmessage.entries.Pub;
-import com.tahkeh.loginmessage.entries.User;
-import com.tahkeh.loginmessage.entries.World;
-import com.tahkeh.loginmessage.methods.variables.Variables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.BukkitVariables;
 
 public class PlayerList {
 	private final Main plugin;
@@ -57,8 +49,9 @@ public class PlayerList {
 		}
 		
 		for (OfflinePlayer p : players) {
-			String processedFormat = plugin.msg.processLine(format, p, Variables.INSTANCE_LIST);
-			String processedSeparator = plugin.msg.processLine(separator, p, Variables.INSTANCE_LIST);
+			BukkitVariables variables = BukkitVariables.createList(p);
+			String processedFormat = plugin.msg.processLine(format, variables);
+			String processedSeparator = plugin.msg.processLine(separator, variables);
 			s = processedSeparator;
 			if (!formatted) {
 				list = list + (on >= length ? processedFormat : processedFormat + processedSeparator);
@@ -117,30 +110,6 @@ public class PlayerList {
 	}
 	
 	public Set<Entry> getEntries() {
-		Set<Entry> entries = new HashSet<Entry>();
-		for (String group : groups) {
-			boolean positive = DefaultEntry.isPositive(group);
-			String unsignedGroup = DefaultEntry.getUnsignedText(group);
-			if (unsignedGroup.equalsIgnoreCase("pub")) {
-				entries.add(new Pub(null));
-			} else if (unsignedGroup.equalsIgnoreCase("op")) {
-				entries.add(new Op(positive));
-			} else {
-				entries.add(new Group(group, Main.getPermissions(), plugin));
-			}
-		}
-
-		for (String user : users) {
-			entries.add(new User(user));
-		}
-
-		for (String perm : permissions) {
-			entries.add(new Permission(perm, Main.getPermissions(), plugin));
-		}
-		
-		for (String world : worlds) {
-			entries.add(new World(world, plugin));
-		}
-		return entries;
+		return Message.getEntries(null, plugin, groups, users, permissions, worlds);
 	}
 }

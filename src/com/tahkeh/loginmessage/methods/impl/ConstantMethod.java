@@ -1,11 +1,9 @@
 package com.tahkeh.loginmessage.methods.impl;
 
-import org.bukkit.OfflinePlayer;
-
 import com.tahkeh.loginmessage.methods.OriginalMethod;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
-public final class ConstantMethod extends OriginalMethod {
+public final class ConstantMethod extends OriginalMethod<Variables> {
 
 	private final String value;
 
@@ -15,7 +13,7 @@ public final class ConstantMethod extends OriginalMethod {
 	}
 
 	@Override
-	protected String call(OfflinePlayer player, Variables globalParameters) {
+	protected String call(Variables globalParameters) {
 		return this.value;
 	}
 

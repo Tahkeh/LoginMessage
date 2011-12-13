@@ -8,7 +8,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -46,52 +45,46 @@ import com.tahkeh.loginmessage.entries.causes.Cause;
 import com.tahkeh.loginmessage.handlers.AFKHandler;
 import com.tahkeh.loginmessage.handlers.DeathHandler;
 import com.tahkeh.loginmessage.store.MaterialTable;
-import com.tahkeh.loginmessage.methods.AliasMethod;
 import com.tahkeh.loginmessage.methods.MethodParser;
-import com.tahkeh.loginmessage.methods.OnlistMethod;
-import com.tahkeh.loginmessage.methods.ScriptMethod;
-import com.tahkeh.loginmessage.methods.impl.AsleepMethod;
-import com.tahkeh.loginmessage.methods.impl.BannedMethod;
-import com.tahkeh.loginmessage.methods.impl.BarMethod;
-import com.tahkeh.loginmessage.methods.impl.ConstantMethod;
-import com.tahkeh.loginmessage.methods.impl.CurrentExperienceMethod;
-import com.tahkeh.loginmessage.methods.impl.DeathEntityMethod;
-import com.tahkeh.loginmessage.methods.impl.DeathItemMethod;
-import com.tahkeh.loginmessage.methods.impl.DecimalTimeMethod;
-import com.tahkeh.loginmessage.methods.impl.DisplayNameMethod;
-import com.tahkeh.loginmessage.methods.impl.ExhaustMethod;
-import com.tahkeh.loginmessage.methods.impl.FoodLevelMethod;
-import com.tahkeh.loginmessage.methods.impl.GameModeMethod;
-import com.tahkeh.loginmessage.methods.impl.GroupNameMethod;
-import com.tahkeh.loginmessage.methods.impl.IPMethod;
-import com.tahkeh.loginmessage.methods.impl.IndefiniteArticleMethod;
-import com.tahkeh.loginmessage.methods.impl.LastLoginMethod;
-import com.tahkeh.loginmessage.methods.impl.LevelMethod;
-import com.tahkeh.loginmessage.methods.impl.LocationMethod;
-import com.tahkeh.loginmessage.methods.impl.MaximumMethod;
-import com.tahkeh.loginmessage.methods.impl.MaximumPlayersMethod;
-import com.tahkeh.loginmessage.methods.impl.MinimumMethod;
-import com.tahkeh.loginmessage.methods.impl.NameMethod;
-import com.tahkeh.loginmessage.methods.impl.OnlineMethod;
-import com.tahkeh.loginmessage.methods.impl.OpMethod;
-import com.tahkeh.loginmessage.methods.impl.PermissionMethod;
-import com.tahkeh.loginmessage.methods.impl.PrintPrefixMethod;
-import com.tahkeh.loginmessage.methods.impl.RawTimeMethod;
-import com.tahkeh.loginmessage.methods.impl.RealLocationMethod;
-import com.tahkeh.loginmessage.methods.impl.SaturationMethod;
-import com.tahkeh.loginmessage.methods.impl.ServerTimeMethod;
-import com.tahkeh.loginmessage.methods.impl.SizeMethod;
-import com.tahkeh.loginmessage.methods.impl.StatusMethod;
-import com.tahkeh.loginmessage.methods.impl.TargetPlayerMethod;
-import com.tahkeh.loginmessage.methods.impl.TimeMethod;
-import com.tahkeh.loginmessage.methods.impl.TotalExperienceMethod;
-import com.tahkeh.loginmessage.methods.impl.WhitelistedMethod;
-import com.tahkeh.loginmessage.methods.impl.WorldMethod;
-import com.tahkeh.loginmessage.methods.variables.CommandVariables;
-import com.tahkeh.loginmessage.methods.variables.DeathVariables;
-import com.tahkeh.loginmessage.methods.variables.KickVariables;
-import com.tahkeh.loginmessage.methods.variables.PlayerNotFoundVariables;
-import com.tahkeh.loginmessage.methods.variables.Variables;
+import com.tahkeh.loginmessage.methods.impl.AliasMethod;
+import com.tahkeh.loginmessage.methods.impl.ScriptMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.AsleepMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.BannedMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.CurrentExperienceMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.DeathEntityMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.DeathItemMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.DecimalTimeMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.DisplayNameMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.ExhaustMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.FoodLevelMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.GameModeMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.GroupNameMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.IPMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.LastLoginMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.LevelMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.LocationMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.MaximumPlayersMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.NameMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.OnlineMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.OnlistMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.OpMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.PermissionMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.RawTimeMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.RealLocationMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.SaturationMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.ServerTimeMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.SizeMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.StatusMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.TargetPlayerMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.TimeMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.TotalExperienceMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.WhitelistedMethod;
+import com.tahkeh.loginmessage.methods.impl.bukkit.WorldMethod;
+import com.tahkeh.loginmessage.methods.variables.bukkit.BukkitVariables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.CommandVariables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.DeathVariables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.KickVariables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.PlayerNotFoundVariables;
 import com.tahkeh.loginmessage.store.Store;
 import com.tahkeh.loginmessage.timers.Cooldown;
 import com.tahkeh.loginmessage.timers.Delay;
@@ -115,7 +108,7 @@ public class Message
 	private final XLogger logger;
 	private final Store store;
 	private final MaterialTable table;
-	private final MethodParser methodParser;
+	private final MethodParser<BukkitVariables> methodParser;
 
 	Set<String> kicked = new HashSet<String>();
 	List<String> running = new ArrayList<String>();
@@ -132,7 +125,7 @@ public class Message
 		this.cooldown = new Cooldown();
 		this.store = store;
 		this.table = table;
-		this.methodParser = new MethodParser(logger, "%");
+		this.methodParser = new MethodParser<BukkitVariables>(logger, "%");
 		// Register methods
 		}
 
@@ -193,18 +186,10 @@ public class Message
 			new DeathItemMethod().register(this.methodParser);
 
 			// Methods without any relation to players
-			new IndefiniteArticleMethod().register(this.methodParser);
 			new SizeMethod().register(this.methodParser);
 			// This doesn't collide with the maximum method, as this requests no parameters!
 			new MaximumPlayersMethod().register(this.methodParser);
 			new ServerTimeMethod(this).register(this.methodParser);
-			new ConstantMethod("", "sp").register(this.methodParser);
-			new MaximumMethod(true).register(this.methodParser);
-			new MaximumMethod(false).register(this.methodParser);
-			new MinimumMethod(true).register(this.methodParser);
-			new MinimumMethod(false).register(this.methodParser);
-			new PrintPrefixMethod(this.methodParser).register();
-			new BarMethod().register(this.methodParser);
 
 			Configuration configuration = new Configuration(new File(this.plugin.getDataFolder(), "methods.yml"));
 			configuration.load();
@@ -481,18 +466,6 @@ public class Message
 		return this.config.getString("mode." + mode.getValue(), getDefaultGameModeText(mode));
 	}
 
-	private static <T> T getFirst(T[] array) {
-		return getFirst(array, null);
-	}
-
-	private static <T> T getFirst(T[] array, T def) {
-		if (array != null && array.length > 0) {
-			return array[0];
-		} else {
-			return def;
-		}
-	}
-
 	public static String getPrefix(String group, String world) {
 		return Main.getPermissions().getString(world, group, PREFIX_PERMISSION);
 	}
@@ -538,8 +511,8 @@ public class Message
 		}
 	}
 
-	public String processLine(String str, OfflinePlayer p, Variables variables) {
-		return processColors(this.methodParser.parseLine(p, str, variables));
+	public String processLine(String str, BukkitVariables variables) {
+		return processColors(this.methodParser.parseLine(str, variables));
 	}
 
 	public long getLastLogin(String name) {
@@ -552,13 +525,23 @@ public class Message
 
 	public Set<Entry> getEntries(Player trigger, String key, String event, String type) // For receivers/triggers
 	{
-		Set<Entry> entries = new HashSet<Entry>();
 		final String keypath = "messages." + event + "." + key + "." + type;
 		final String userpath = keypath + ".users";
 		final String grouppath = keypath + ".groups";
 		final String permspath = keypath + ".permissions";
 		final String worldpath = keypath + ".worlds";
-		for (String group : message.getStringList(grouppath, null)) {
+		//@formatter:off
+		return getEntries(trigger, this.plugin, 
+				this.message.getStringList(grouppath, null), 
+				this.message.getStringList(userpath, null),
+				this.message.getStringList(permspath, null),
+				this.message.getStringList(worldpath, null));
+		//@formatter:on
+	}
+
+	public static Set<Entry> getEntries(final Player trigger, final Main plugin, final List<String> groups, final List<String> users, final List<String> permissions, final List<String> worlds) {
+		Set<Entry> entries = new HashSet<Entry>();
+		for (String group : groups) {
 			boolean positive = DefaultEntry.isPositive(group);
 			String unsignedGroup = DefaultEntry.getUnsignedText(group);
 			if (unsignedGroup.equalsIgnoreCase("pub")) {
@@ -566,21 +549,23 @@ public class Message
 			} else if (unsignedGroup.equalsIgnoreCase("op")) {
 				entries.add(new Op(positive));
 			} else if (unsignedGroup.equalsIgnoreCase("pri")) {
-				entries.add(new Pri(positive, trigger));
+				if (trigger != null) {
+					entries.add(new Pri(positive, trigger));
+				}
 			} else {
 				entries.add(new Group(group, Main.getPermissions(), plugin));
 			}
 		}
 
-		for (String user : message.getStringList(userpath, null)) {
+		for (String user : users) {
 			entries.add(new User(user));
 		}
 
-		for (String perm : message.getStringList(permspath, null)) {
+		for (String perm : permissions) {
 			entries.add(new Permission(perm, Main.getPermissions(), plugin));
 		}
 		
-		for (String world : message.getStringList(worldpath, null)) {
+		for (String world : worlds) {
 			entries.add(new com.tahkeh.loginmessage.entries.World(world, plugin));
 		}
 		return entries;
@@ -597,7 +582,7 @@ public class Message
 	 *            the name of the message (for the commands). Will be ignored if
 	 *            the event isn't <code>command</code>.
 	 */
-	private void preProcessMessage(final OfflinePlayer trigger, final Variables variables) {
+	private void preProcessMessage(final BukkitVariables variables) {
 		String[] messages;
 		if (variables instanceof CommandVariables) {
 			messages = new String[] { ((CommandVariables) variables).command };
@@ -613,15 +598,15 @@ public class Message
 			if (!(variables instanceof DeathVariables) || !((DeathVariables) variables).key.equals(key)) {
 				break;
 			}
-			final Player trueTrigger = getTrueTrigger(variables, trigger);
+			final Player trueTrigger = getTrueTrigger(variables);
 			final Set<Entry> triggers = getEntries(trueTrigger, key, variables.name, "triggers");
 			if (matchEntries(trueTrigger, triggers)) {
-				finishMessage(trigger, key, variables);
+				finishMessage(key, variables);
 			}
 		}
 	}
 
-	public static Player getTrueTrigger(final Variables variables, final OfflinePlayer trigger) {
+	public static Player getTrueTrigger(final BukkitVariables variables) {
 		final Player player;
 		if (variables instanceof CommandVariables) {
 			player = ((CommandVariables) variables).trigger;
@@ -629,7 +614,7 @@ public class Message
 			player = null;
 		}
 		if (player == null) {
-			return Bukkit.getPlayerExact(trigger.getName());
+			return Bukkit.getPlayerExact(variables.offlinePlayer.getName());
 		} else {
 			return player;
 		}
@@ -752,7 +737,7 @@ public class Message
 		return new String(chars);
 	}
 
-	public void finishMessage(OfflinePlayer trigger, String key, Variables variables) // Final touches - delay and cooldown
+	public void finishMessage(String key, BukkitVariables variables) // Final touches - delay and cooldown
 	{
 		String[] lines = this.getLines(variables.name, key);
 		if (lines.length == 0) {
@@ -765,7 +750,7 @@ public class Message
 			Player[] players = this.plugin.getServer().getOnlinePlayers();
 			List<Player> cooledDown = new ArrayList<Player>(players.length);
 			CooldownTask task = null;
-			final Player truetrigger = getTrueTrigger(variables, trigger);
+			final Player truetrigger = getTrueTrigger(variables);
 			Set<Entry> receivers = getEntries(truetrigger, key, variables.name, "receivers");
 
 			// Since the only number lower than 1000 that is possible for the
@@ -793,9 +778,9 @@ public class Message
 				// Anything below 3 milliseconds makes your computer sad from my
 				// experience.
 				if (dl >= 3) {
-					new Timer().schedule(new Delay(this, lines, trigger, cooledDown, task, variables), dl);
+					new Timer().schedule(new Delay(this, lines, cooledDown, task, variables), dl);
 				} else {
-					sendMessage(trigger, cooledDown, lines, task, variables);
+					sendMessage(cooledDown, lines, task, variables);
 				}
 			}
 		}
@@ -814,11 +799,11 @@ public class Message
 	 * @param event
 	 *            the event type of the message (e.g. login).
 	 */
-	public void sendMessage(OfflinePlayer trigger, Collection<Player> possibleReceivers, String[] lines, CooldownTask task, Variables variables)
+	public void sendMessage(Collection<Player> possibleReceivers, String[] lines, CooldownTask task, BukkitVariables variables)
 	{
 		ArrayList<String> processedLines = new ArrayList<String>(lines.length);
 		for (int i = 0; i < lines.length; i++) {
-			String processedLine = processLine(lines[i], trigger, variables);
+			String processedLine = processLine(lines[i], variables);
 			if (processedLine != null && !processedLine.trim().isEmpty()) {
 				processedLines.add(processedLine);
 			}
@@ -836,9 +821,9 @@ public class Message
 
 	public void onPlayerJoin(PlayerJoinEvent eventObject) {
 		final Player p = eventObject.getPlayer();
-		final Variables variables = existingPlayer(p.getName()) ? Variables.INSTANCE_FIRST_LOGIN : Variables.INSTANCE_LOGIN;
+		final BukkitVariables variables = existingPlayer(p.getName()) ? BukkitVariables.createFirstLogin(p) : BukkitVariables.createLogin(p);
 		load(variables.name);
-		preProcessMessage(p, variables);
+		preProcessMessage(variables);
 
 		if (config.getBoolean("clearjoinmsg", true)) {
 			eventObject.setJoinMessage(null);
@@ -848,9 +833,9 @@ public class Message
 	public void onPlayerQuit(PlayerQuitEvent event) {
 		Player p = event.getPlayer();
 		if (!this.kicked.remove(p.getName())) {
-			final Variables variables = Variables.INSTANCE_QUIT;
+			final BukkitVariables variables = BukkitVariables.createQuit(p);
 			load(variables.name);
-			preProcessMessage(p, variables);
+			preProcessMessage(variables);
 
 			if (config.getBoolean("clearquitmsg", true)) {
 				event.setQuitMessage(null);
@@ -859,13 +844,12 @@ public class Message
 	}
 
 	public void onPlayerKick(PlayerKickEvent event) {
-		KickVariables kick = new KickVariables(event.getReason());
-		load(kick.name);
 		Player p = event.getPlayer();
+		KickVariables kick = new KickVariables(event.getReason(), p);
+		load(kick.name);
 		this.kicked.add(p.getName());
 
-		//TODO: Define trigger!
-		preProcessMessage(p, kick);
+		preProcessMessage(kick);
 
 		if (config.getBoolean("clearkickmsg", true)) {
 			event.setLeaveMessage(null);
@@ -874,7 +858,7 @@ public class Message
 
 	public void onIntervalCompletion(String key) {
 		load("interval");
-		finishMessage(null, key, Variables.INSTANCE_INTERVAL);
+		finishMessage(key, BukkitVariables.createInterval(null));
 	}
 	
 	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
@@ -889,19 +873,19 @@ public class Message
 				if (key.equalsIgnoreCase(cmdargs[0])) {
 					event.setCancelled(true);
 					if (cmdargs.length == 1) {
-						preProcessMessage(sender, new CommandVariables(command, null));
+						preProcessMessage(new CommandVariables(command, null, sender));
 					} else {
 						OfflinePlayer target = plugin.getServer().getOfflinePlayer(cmdargs[1]);
 						List<String> msgargs = message.getStringList("messages.command." + key + ".args", null);
 						if (msgargs.contains("player")) {
 							if (existingPlayer(target.getName())) {
-								preProcessMessage(target, new CommandVariables(command, sender));
+								preProcessMessage(new CommandVariables(command, sender, target));
 							} else {
 								String noplayerfound = config.getString("noplayerfound", "&cPlayer \"%target()\" does not exist!");
-								sender.sendMessage(processLine(noplayerfound, sender, new PlayerNotFoundVariables(cmdargs[1])));
+								sender.sendMessage(processLine(noplayerfound, new PlayerNotFoundVariables(cmdargs[1], sender)));
 							}
 						} else {
-							preProcessMessage(sender, new CommandVariables(command, null));
+							preProcessMessage(new CommandVariables(command, null, sender));
 						}
 					}
 				}
@@ -927,8 +911,8 @@ public class Message
 					if (DeathHandler.matchCauses(toCapitalCase(triggerCause), possibleCauses)) {
 						//TODO: Define trigger!
 						final String item = handler.isKillerPlayer() ? handler.getItem(plugin.getServer().getPlayerExact(handler.getKiller()).getItemInHand()) : "?";
-						DeathVariables variables = new DeathVariables(item, handler.getKiller(), key);
-						preProcessMessage(p, variables);
+						DeathVariables variables = new DeathVariables(item, handler.getKiller(), key, p);
+						preProcessMessage(variables);
 						break;
 					}
 				}

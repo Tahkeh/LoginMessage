@@ -3,14 +3,13 @@ package com.tahkeh.loginmessage.methods.impl;
 import java.util.Arrays;
 
 import org.bukkit.ChatColor;
-import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.methods.DefaultMethod;
 import com.tahkeh.loginmessage.methods.DefaultNamedMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
-public class BarMethod extends DefaultNamedMethod {
+public class BarMethod extends DefaultNamedMethod<Variables> {
 
 	public BarMethod() {
 		super(true, "bar", 2, 3, 4, 5, 6, 7);
@@ -35,7 +34,7 @@ public class BarMethod extends DefaultNamedMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
+	public String call(Parameter[] parameters, Variables globalParameters) {
 		if (parameters.length >= 2 && parameters.length <= 7) {
 			final Integer value = DefaultMethod.parseAsInteger(parameters[0].parse());
 			if (value == null) {

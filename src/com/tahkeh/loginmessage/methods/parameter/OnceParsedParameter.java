@@ -1,17 +1,19 @@
 package com.tahkeh.loginmessage.methods.parameter;
 
-import org.bukkit.OfflinePlayer;
-
 import com.tahkeh.loginmessage.methods.MethodParser;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
-public class OnceParsedParameter extends ParsedParameter {
+public class OnceParsedParameter<V extends Variables> extends ParsedParameter<V> {
 
 	private String parsedParameter = null;
 	private boolean parsed = false;
 
-	public OnceParsedParameter(final MethodParser parser, final OfflinePlayer player, final String parameterValue, final Variables variable, final int depth) {
-		super(parser, player, parameterValue, variable, depth);
+	public OnceParsedParameter(final MethodParser<? super V> parser, final String parameterValue, final V variable, final int depth) {
+		super(parser, parameterValue, variable, depth);
+	}
+
+	public static <V extends Variables> OnceParsedParameter<V> create(final MethodParser<? super V> parser, final String parameterValue, final V variable, final int depth) {
+		return new OnceParsedParameter<V>(parser, parameterValue, variable, depth);
 	}
 
 	@Override

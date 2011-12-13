@@ -2,13 +2,11 @@ package com.tahkeh.loginmessage.methods;
 
 import java.util.Arrays;
 
-import org.bukkit.OfflinePlayer;
-
 import com.tahkeh.loginmessage.methods.parameter.FinalParameter;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
-public abstract class IfMethod implements Method {
+public abstract class IfMethod<V extends Variables> implements Method<V> {
 
 	private final int preValueCount;
 	private final boolean inverted;
@@ -19,7 +17,7 @@ public abstract class IfMethod implements Method {
 	}
 
 	@Override
-	public final String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
+	public final String call(Parameter[] parameters, V globalParameters) {
 		Parameter match = FinalParameter.EMPTY_PARAMETER;
 		Parameter noMatch = FinalParameter.EMPTY_PARAMETER;
 		switch (parameters.length - this.preValueCount) {
@@ -31,10 +29,10 @@ public abstract class IfMethod implements Method {
 		default:
 			return null;
 		}
-		return this.match(player, Arrays.copyOf(parameters, this.preValueCount), globalParameters) != this.inverted ? match.parse() : noMatch.parse();
+		return this.match(Arrays.copyOf(parameters, this.preValueCount), globalParameters) != this.inverted ? match.parse() : noMatch.parse();
 	}
 
-	protected abstract Boolean match(OfflinePlayer player, Parameter[] preValues, Variables globalParameters);
+	protected abstract Boolean match(Parameter[] preValues, V globalParameters);
 
 	@Override
 	public boolean isRecursive() {

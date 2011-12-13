@@ -1,11 +1,13 @@
 package com.tahkeh.loginmessage.methods;
 
+import com.tahkeh.loginmessage.methods.variables.Variables;
+
 import de.xzise.MinecraftUtil;
 
 /**
  * Default method implementation which implements {@link Method#isRecursive()}.
  */
-public abstract class DefaultMethod implements Method {
+public abstract class DefaultMethod<V extends Variables> implements Method<V> {
 
 	private final boolean recursive;
 	private final int[] paramCounts;
@@ -24,12 +26,12 @@ public abstract class DefaultMethod implements Method {
 		return this.recursive;
 	}
 
-	public final DefaultMethod register(String name, MethodParser parser) {
+	public final DefaultMethod<V> register(String name, MethodParser<? extends V> parser) {
 		parser.registerMethod(name, this, this.paramCounts);
 		return this;
 	}
 
-	public final DefaultMethod unregister(String name, MethodParser parser) {
+	public final DefaultMethod<V> unregister(String name, MethodParser<? extends V> parser) {
 		parser.unregisterMethod(name, this.paramCounts);
 		return this;
 	}

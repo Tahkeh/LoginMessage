@@ -2,8 +2,6 @@ package com.tahkeh.loginmessage.methods;
 
 import java.util.Map;
 
-import org.bukkit.OfflinePlayer;
-
 import com.tahkeh.loginmessage.Message;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.Variables;
@@ -12,7 +10,7 @@ import de.xzise.MinecraftUtil;
 import de.xzise.bukkit.util.callback.Callback;
 import de.xzise.collections.ArrayReferenceList;
 
-public abstract class CaseMethod extends DefaultNamedMethod {
+public abstract class CaseMethod<V extends Variables> extends DefaultNamedMethod<V> {
 
 	public static enum CaseEnum {
 		LOWER_CASE("lower"),
@@ -41,7 +39,7 @@ public abstract class CaseMethod extends DefaultNamedMethod {
 	}
 
 	@Override
-	public String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
+	public String call(Parameter[] parameters, V globalParameters) {
 		CaseEnum caseEnum = null;
 		if (parameters.length == 0) {
 			caseEnum = CaseEnum.NONE;
@@ -49,7 +47,7 @@ public abstract class CaseMethod extends DefaultNamedMethod {
 			caseEnum = CaseEnum.CASE_ENUMS.get(parameters[0].parse().toLowerCase());
 		}
 		if ((caseEnum == CaseEnum.CUSTOM && parameters.length == 3) || (caseEnum != CaseEnum.CUSTOM && caseEnum != null && parameters.length == 1)) {
-			final String result = this.call(player, globalParameters);
+			final String result = this.call(globalParameters);
 			switch (caseEnum) {
 			case CUSTOM:
 				final char[] upperTrigger = new String(parameters[1].parse()).toCharArray();
@@ -97,5 +95,5 @@ public abstract class CaseMethod extends DefaultNamedMethod {
 		}
 	}
 
-	protected abstract String call(OfflinePlayer player, Variables globalParameters);
+	protected abstract String call(V globalParameters);
 }

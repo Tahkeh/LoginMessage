@@ -1,9 +1,11 @@
 package com.tahkeh.loginmessage.methods;
 
+import com.tahkeh.loginmessage.methods.variables.Variables;
+
 /**
  * Extended default implementation which adds support for a default method name.
  */
-public abstract class DefaultNamedMethod extends DefaultMethod {
+public abstract class DefaultNamedMethod<V extends Variables> extends DefaultMethod<V> {
 
 	private final String defaultName;
 
@@ -12,12 +14,12 @@ public abstract class DefaultNamedMethod extends DefaultMethod {
 		this.defaultName = defaultName;
 	}
 
-	public final DefaultNamedMethod register(MethodParser parser) {
+	public final DefaultNamedMethod<V> register(MethodParser<? extends V> parser) {
 		super.register(this.defaultName, parser);
 		return this;
 	}
 
-	public final DefaultNamedMethod unregister(MethodParser parser) {
+	public final DefaultNamedMethod<V> unregister(MethodParser<? extends V> parser) {
 		super.unregister(this.defaultName, parser);
 		return this;
 	}

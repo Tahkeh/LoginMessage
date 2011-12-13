@@ -1,87 +1,68 @@
 package com.tahkeh.loginmessage.methods;
 
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
-import com.tahkeh.loginmessage.methods.variables.Variables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.BukkitVariables;
 
 import de.xzise.bukkit.util.callback.Callback;
 
 public final class OriginalCallbackMethods {
 
-	public static interface OriginalCallback<P extends OfflinePlayer> {
-		String call(P player, Variables globalParameters);
+	private OriginalCallbackMethods() {
 	}
 
-	public static class OriginalCallbackMethod extends OriginalMethod {
+	public static interface OriginalCallback {
+		String call(Player player, BukkitVariables globalParameters);
+	}
 
-		private final OriginalCallback<OfflinePlayer> callback;
+	public static class OriginalCallbackMethod extends OriginalMethod<BukkitVariables> {
 
-		public OriginalCallbackMethod(final OriginalCallback<OfflinePlayer> callback, final String defaultName) {
+		private final Callback<String, BukkitVariables> callback;
+
+		public OriginalCallbackMethod(final Callback<String, BukkitVariables> callback, final String defaultName) {
 			super(defaultName);
 			this.callback = callback;
 		}
 
 		@Override
-		protected String call(OfflinePlayer p, Variables globalParameters) {
-			return this.callback.call(p, globalParameters);
+		protected String call(BukkitVariables globalParameters) {
+			return this.callback.call(globalParameters);
 		}
 	}
 
-	public static class OriginalPlayerCallbackMethod extends OriginalMethod {
-		private final OriginalCallback<Player> callback;
+	public static class OriginalPlayerCallbackMethod extends OriginalMethod<BukkitVariables> {
+		private final OriginalCallback callback;
 
-		public OriginalPlayerCallbackMethod(OriginalCallback<Player> callback, final String defaultName) {
+		public OriginalPlayerCallbackMethod(OriginalCallback callback, final String defaultName) {
 			super(defaultName);
 			this.callback = callback;
 		}
 
 		@Override
-		protected String call(OfflinePlayer p, Variables globalParameters) {
-			if (p instanceof Player) {
-				return this.callback.call((Player) p, globalParameters);
+		protected String call(BukkitVariables globalParameters) {
+			if (globalParameters.offlinePlayer instanceof Player) {
+				return this.callback.call((Player) globalParameters.offlinePlayer, globalParameters);
 			} else {
 				return null;
 			}
 		}
 	}
 
-	private OriginalCallbackMethods() {
-	}
+	private static final class OriginalOfflinePlayerCallback implements OriginalCallback {
 
-	private static final class OriginalOfflinePlayerCallback<P extends OfflinePlayer> implements OriginalCallback<P> {
+		private final Callback<String, Player> callback;
 
-		private final Callback<String, P> callback;
-
-		public OriginalOfflinePlayerCallback(Callback<String, P> callback) {
+		public OriginalOfflinePlayerCallback(Callback<String, Player> callback) {
 			this.callback = callback;
 		}
 
 		@Override
-		public String call(P player, Variables globalParameters) {
+		public String call(Player player, BukkitVariables globalParameters) {
 			return this.callback.call(player);
 		}
 	}
 
-	public static <P extends OfflinePlayer> OriginalCallback<P> createOriginalCallbackByPlayer(Callback<String, P> callback) {
-		return new OriginalOfflinePlayerCallback<P>(callback);
-	}
-
-	private static final class OriginalGlobalParametersCallback implements OriginalCallback<OfflinePlayer> {
-
-		private final Callback<String, Variables> callback;
-
-		public OriginalGlobalParametersCallback(Callback<String, Variables> callback) {
-			this.callback = callback;
-		}
-
-		@Override
-		public String call(OfflinePlayer player, Variables globalParameters) {
-			return this.callback.call(globalParameters);
-		}
-	}
-	
-	public static OriginalCallback<OfflinePlayer> createOriginalCallbackByEvent(Callback<String, Variables> callback) {
-		return new OriginalGlobalParametersCallback(callback);
+	public static OriginalCallback createOriginalCallbackByPlayer(Callback<String, Player> callback) {
+		return new OriginalOfflinePlayerCallback(callback);
 	}
 }

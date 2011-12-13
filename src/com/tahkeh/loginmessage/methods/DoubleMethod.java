@@ -1,25 +1,22 @@
 package com.tahkeh.loginmessage.methods;
 
-import org.bukkit.OfflinePlayer;
-
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
-
 import de.xzise.MinecraftUtil;
 
-public abstract class DoubleMethod extends DefaultNamedMethod {
+public abstract class DoubleMethod<V extends Variables> extends DefaultNamedMethod<V> {
 
 	public DoubleMethod(final String defaultName) {
 		super(true, defaultName, 0, 1, 2);
 	}
 
 	@Override
-	public final String call(OfflinePlayer player, Parameter[] parameters, Variables globalParameters) {
+	public final String call(Parameter[] parameters, V globalParameters) {
 		if (parameters.length > 2) {
 			return null;
 		} else {
-			Double value = getValue(player, globalParameters);
+			Double value = getValue(globalParameters);
 			if (value != null) {
 				int minDecimals = 0;
 				int maxDecimals = 0;
@@ -37,5 +34,5 @@ public abstract class DoubleMethod extends DefaultNamedMethod {
 		}
 	}
 
-	public abstract Double getValue(OfflinePlayer player, Variables globalParameters);
+	public abstract Double getValue(V globalParameters);
 }

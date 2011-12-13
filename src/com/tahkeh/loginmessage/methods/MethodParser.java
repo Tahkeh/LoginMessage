@@ -7,8 +7,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.bukkit.OfflinePlayer;
-
+import com.tahkeh.loginmessage.methods.impl.BarMethod;
+import com.tahkeh.loginmessage.methods.impl.CaseCheckerMethod;
+import com.tahkeh.loginmessage.methods.impl.ConstantMethod;
+import com.tahkeh.loginmessage.methods.impl.IfArithmeticMethod;
+import com.tahkeh.loginmessage.methods.impl.IfCheckerMethod;
+import com.tahkeh.loginmessage.methods.impl.IfSetMethod;
+import com.tahkeh.loginmessage.methods.impl.IndefiniteArticleMethod;
+import com.tahkeh.loginmessage.methods.impl.MaximumMethod;
+import com.tahkeh.loginmessage.methods.impl.MinimumMethod;
+import com.tahkeh.loginmessage.methods.impl.NullMethod;
+import com.tahkeh.loginmessage.methods.impl.PrintMethod;
+import com.tahkeh.loginmessage.methods.impl.PrintPrefixMethod;
+import com.tahkeh.loginmessage.methods.impl.RandomMethod;
+import com.tahkeh.loginmessage.methods.impl.RedirectMethod;
 import com.tahkeh.loginmessage.methods.parameter.FinalParameter;
 import com.tahkeh.loginmessage.methods.parameter.OnceParsedParameter;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
@@ -18,12 +30,12 @@ import de.xzise.EqualCheck;
 import de.xzise.MinecraftUtil;
 import de.xzise.XLogger;
 
-public class MethodParser {
+public class MethodParser<V extends Variables> {
 
 	public static final int STOPPING_THRESHOLD = 100;
 	public static final int WARNING_THRESHOLD = STOPPING_THRESHOLD * 9 / 10;
 
-	private final Map<String, Map<Integer, Method>> methods = new HashMap<String, Map<Integer, Method>>();
+	private final Map<String, Map<Integer, Method<? super V>>> methods = new HashMap<String, Map<Integer, Method<? super V>>>();
 	private final XLogger logger;
 	private String prefix = "";
 
@@ -77,12 +89,12 @@ public class MethodParser {
 	 *            absolute value.
 	 * @return How many methods were already registered and overwritten.
 	 */
-	public int registerMethod(final String name, Method method, int... paramCount) {
+	public int registerMethod(final String name, Method<? super V> method, int... paramCount) {
 		paramCount = testParameters(name, paramCount);
 		// TODO: Case insensitive?
-		Map<Integer, Method> methods = this.methods.get(name);
+		Map<Integer, Method<? super V>> methods = this.methods.get(name);
 		if (methods == null) {
-			methods = new HashMap<Integer, Method>();
+			methods = new HashMap<Integer, Method<? super V>>();
 			this.methods.put(name, methods);
 		}
 		int failCount = 0;
@@ -97,7 +109,7 @@ public class MethodParser {
 	public int unregisterMethod(final String name, int... paramCount) {
 		paramCount = testParameters(name, paramCount);
 		// TODO: Case insensitive?
-		Map<Integer, Method> methods = this.methods.get(name);
+		Map<Integer, Method<? super V>> methods = this.methods.get(name);
 		int failCount = 0;
 		if (methods != null) {
 			for (int i : paramCount) {
@@ -135,10 +147,10 @@ public class MethodParser {
 	 * @return a method with the name and parameter count. If there wasn't a
 	 *         method found it will return null.
 	 */
-	public Method getMethod(final String name, final int paramCount) {
+	public Method<? super V> getMethod(final String name, final int paramCount) {
 		// TODO: Case insensitive?
 		if (name != null) {
-			Map<Integer, Method> methods = this.methods.get(name.substring(this.prefix.length()));
+			Map<Integer, Method<? super V>> methods = this.methods.get(name.substring(this.prefix.length()));
 			if (methods != null) {
 				return getMethod(methods, paramCount);
 			} else {
@@ -149,11 +161,11 @@ public class MethodParser {
 		}
 	}
 
-	private static Method getMethod(Map<Integer, Method> methods, int paramCount) {
+	private static <V extends Variables> Method<? super V> getMethod(Map<Integer, Method<? super V>> methods, int paramCount) {
 		if (methods.containsKey(paramCount)) {
 			return methods.get(paramCount);
 		} else {
-			Method method = null;
+			Method<? super V> method = null;
 			paramCount = -Math.abs(paramCount);
 			while (paramCount < 0 && method == null) {
 				method = methods.get(paramCount);
@@ -167,11 +179,11 @@ public class MethodParser {
 		this.methods.clear();
 	}
 
-	public String parseLine(OfflinePlayer player, String line, Variables globalParameters) {
-		return this.parseLine(player, line, globalParameters, 0);
+	public String parseLine(String line, V globalParameters) {
+		return this.parseLine(line, globalParameters, 0);
 	}
 
-	public String parseLine(OfflinePlayer player, String line, Variables globalParameters, final int depth) {
+	public String parseLine(String line, V globalParameters, final int depth) {
 		int index = 0;
 		int start = -1;
 		int delim = -1;
@@ -247,7 +259,7 @@ public class MethodParser {
 				}
 				final String name = line.substring(start, nameEnd + 1);
 
-				final Method method;
+				final Method<? super V> method;
 				final String methodName;
 				if (MinecraftUtil.isSet(this.prefix)) {
 					final int idx = name.indexOf(this.prefix);
@@ -275,20 +287,20 @@ public class MethodParser {
 						Parameter[] parameterObjects = new Parameter[parameters.length];
 						for (int i = 0; i < parameters.length; i++) {
 							if (method.isRecursive()) {
-								parameterObjects[i] = new OnceParsedParameter(this, player, parameters[i], globalParameters, depth + 1);
+								parameterObjects[i] = OnceParsedParameter.create(this, parameters[i], globalParameters, depth + 1);
 							} else {
 								parameterObjects[i] = new FinalParameter(parameters[i]);
 							}
 						}
 						String replacement = null;
 						try {
-							replacement = method.call(player, parameterObjects, globalParameters);
+							replacement = method.call(parameterObjects, globalParameters);
 						} catch (Exception e) {
 							this.logger.warning("Exception by calling '" + name + "'!", e);
 						}
 						if (replacement != null) {
 							if (method.isRecursive()) {
-								replacement = parseLine(player, replacement, globalParameters, depth + 1);
+								replacement = parseLine(replacement, globalParameters, depth + 1);
 							}
 							line = line.substring(0, start) + replacement + substring(line, end + 1, line.length());
 							index += replacement.length() - (end - start) - 1;
@@ -306,7 +318,7 @@ public class MethodParser {
 			}
 		}
 
-		return line;
+		return MinecraftUtil.isSet(line) ? line : null;
 	}
 
 	public void loadDefaults() {
@@ -329,6 +341,17 @@ public class MethodParser {
 		this.registerMethod("iflowerequals", new IfArithmeticMethod(EqualCheck.LOWER_EQUAL_CHECKER), 3, 4);
 
 		this.registerMethod("random", new RandomMethod(), -1);
+
+		new NullMethod().register(this);
+
+		new IndefiniteArticleMethod().register(this);
+		new ConstantMethod("", "sp").register(this);
+		new MaximumMethod(true).register(this);
+		new MaximumMethod(false).register(this);
+		new MinimumMethod(true).register(this);
+		new MinimumMethod(false).register(this);
+		new PrintPrefixMethod(this).register();
+		new BarMethod().register(this);
 	}
 
 	private static String substring(String input, int start, int end) {
@@ -341,7 +364,7 @@ public class MethodParser {
 
 	public void createRedirected(String name, String redirected, int... paramCounts) {
 		final Collection<Integer> paramCountsSet;
-		Map<Integer, Method> methods = this.methods.get(redirected);
+		Map<Integer, Method<? super V>> methods = this.methods.get(redirected);
 		if (paramCounts.length == 0) {
 			if (methods != null) {
 				paramCountsSet = methods.keySet();
@@ -355,17 +378,17 @@ public class MethodParser {
 			}
 		}
 		for (int paramCount : paramCounts) {
-			Method redirectedMethod = getMethod(methods, paramCount);
+			Method<? super V> redirectedMethod = getMethod(methods, paramCount);
 			if (redirectedMethod != null) {
-				this.registerMethod(name, new RedirectMethod(redirectedMethod), paramCount);
+				this.registerMethod(name, new RedirectMethod<V>(redirectedMethod), paramCount);
 			}
 		}
 	}
 
 	public boolean createRedirected(String name, String redirected, int paramCount) {
-		Method redirectedMethod = this.getMethod(redirected, paramCount);
+		Method<? super V> redirectedMethod = this.getMethod(redirected, paramCount);
 		if (redirectedMethod != null) {
-			this.registerMethod(name, new RedirectMethod(redirectedMethod), paramCount);
+			this.registerMethod(name, new RedirectMethod<V>(redirectedMethod), paramCount);
 			return true;
 		} else {
 			return false;
