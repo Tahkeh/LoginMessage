@@ -36,8 +36,9 @@ import com.tahkeh.loginmessage.entries.User;
 import com.tahkeh.loginmessage.entries.causes.Cause;
 import com.tahkeh.loginmessage.handlers.AFKHandler;
 import com.tahkeh.loginmessage.handlers.DeathHandler;
+import com.tahkeh.loginmessage.handlers.PlayerDataHandler;
 import com.tahkeh.loginmessage.store.MaterialTable;
-import com.tahkeh.loginmessage.store.Store;
+import com.tahkeh.loginmessage.store.PropertiesFile;
 import com.tahkeh.loginmessage.timers.Cooldown;
 import com.tahkeh.loginmessage.timers.Delay;
 import com.tahkeh.loginmessage.timers.Cooldown.CooldownTask;
@@ -60,25 +61,28 @@ public class Message
 	private final Configuration message;
 	private final Configuration list;
 	private final XLogger logger;
-	private final Store store;
 	private final MaterialTable table;
-
+	private final PlayerDataHandler data;
 	String separator = "%&%&";
 	Set<String> kicked = new HashSet<String>();
 	List<String> running = new ArrayList<String>();
 	Map<String, Integer> cycle = new HashMap<String, Integer>();
+	Map<String, String> geoipFail = new HashMap<String, String>();
 	
 	private final Cooldown cooldown;
 	
-	public Message(Main plugin, Configuration config, Configuration message, Configuration list, XLogger logger, Store store, MaterialTable table) {
+	public Message(Main plugin, Configuration config, Configuration message, Configuration list, XLogger logger, MaterialTable table) {
 		this.plugin = plugin;
 		this.config = config;
 		this.message = message;
 		this.list = list;
 		this.logger = logger;
 		this.cooldown = new Cooldown();
-		this.store = store;
 		this.table = table;
+		addGeoipFail();
+		File geoip = new File(plugin.getDataFolder(), "GeoLiteCity.dat");
+		PropertiesFile store = new PropertiesFile(new File(plugin.getDataFolder(), "store.txt"), logger);
+		this.data = new PlayerDataHandler(store, geoip);
 		}
 	
 	public void load(String event) {
@@ -88,7 +92,7 @@ public class Message
 			list.load();
 		}
 		separator = config.getString("separator", "%&%&");
-		store.load(event);
+		addGeoipFail();
 		scheduleIntervals(event);
 	}
 	
@@ -96,6 +100,16 @@ public class Message
 		plugin.getServer().getScheduler().cancelTasks(plugin);
 		running.clear();
 		cycle.clear();
+	}
+	
+	public void addGeoipFail() {
+		geoipFail.clear();
+		geoipFail.put("city", config.getString("cityfail", "Ragetown"));
+		geoipFail.put("ccode", config.getString("ccodefail", "USL"));
+		geoipFail.put("cname", config.getString("cnamefail", "United States of Lulz"));
+		geoipFail.put("zip", config.getString("zipfail", "09001"));
+		geoipFail.put("rcode", config.getString("rcodefail", "TF"));
+		geoipFail.put("rname", config.getString("rnamefail", "Trollface"));
 	}
 	
 	public void scheduleIntervals(String event) {
@@ -216,8 +230,8 @@ public class Message
 		  return plugin.getServer().getWorlds().get(0);
 		}
 	
-	public String getLocation(String type, String p, String event) {
-		return store.getLocation(type, p);
+	public String getLocation(String type, String p) {
+		return data.lookupGeoIP(PlayerDataHandler.getPlayer(p), type, geoipFail);
 	}
 	
 	public String getTime(Long rawtime, boolean caps) {
@@ -461,7 +475,8 @@ public class Message
 		String[] onlineCodes = {
 				"%world", "%rtime", "%time", "%Time", "%Mode", "%mode",
 				"%asleep", "%Asleep", "%x", "%y", "%z", "%level",
-				"%curxp", "%totalxp", "%food", "%exhaust", "%sat", "%ip"
+				"%curxp", "%totalxp", "%food", "%exhaust", "%sat", "%ip",
+				"%health"
 				};
 		String[] playerCodes = {
 				"%laston", "%nm", "%online", "%Online", "%status", "%Status", "%banned", "%Banned",
@@ -473,7 +488,7 @@ public class Message
 		}
 		
 		if(p != null) {
-			str = str.replaceAll("%laston", getTimeDifference(store.getLastLogin(p.getName())));		
+			str = str.replaceAll("%laston", getTimeDifference(data.getLong(p.getPlayer(), "laston", PlayerDataHandler.getTime())));		
 			str = str.replaceAll("%nm", p.getName());
 			str = str.replaceAll("%status", getStatus(p, false));
 			str = str.replaceAll("%Status", getStatus(p, true));
@@ -487,22 +502,22 @@ public class Message
 			str = str.replaceAll("%Op", booleanToName(p.isOp(), true));
 
 			if (str.contains("%city")) {
-				str = str.replaceAll("%city", getLocation("city", p.getName(), event));
+				str = str.replaceAll("%city", getLocation("city", p.getName()));
 			}
 			if (str.contains("%ccode")) {
-				str = str.replaceAll("%ccode", getLocation("ccode", p.getName(), event));
+				str = str.replaceAll("%ccode", getLocation("ccode", p.getName()));
 			}
 			if (str.contains("%cname")) {
-				str = str.replaceAll("%cname", getLocation("cname", p.getName(), event));
+				str = str.replaceAll("%cname", getLocation("cname", p.getName()));
 			}
 			if (str.contains("%zip")) {
-				str = str.replaceAll("%zip", getLocation("zip", p.getName(), event));
+				str = str.replaceAll("%zip", getLocation("zip", p.getName()));
 			}
 			if (str.contains("%rcode")) {
-				str = str.replaceAll("%rcode", getLocation("rcode", p.getName(), event));
+				str = str.replaceAll("%rcode", getLocation("rcode", p.getName()));
 			}
 			if (str.contains("%rname")) {
-				str = str.replaceAll("%rname", getLocation("rname", p.getName(), event));
+				str = str.replaceAll("%rname", getLocation("rname", p.getName()));
 			}
 			
 			if (p.isOnline()) {
@@ -536,7 +551,7 @@ public class Message
 	public String onlineProcess(String str, Player p, String event, Map<String, String> args) {
 		EconomyHandler economy = Main.getEconomy();
 		PermissionsHandler permissions = Main.getPermissions();
-		String ip = !isLocal(p) ? p.getAddress().getAddress().getHostAddress() : Main.getExternalIp().getHostAddress();
+		String ip = data.getIP(p);
 		Long rawtime = p.getWorld().getTime();
 
 		str = eventProcess(str, p, event, args);
@@ -559,6 +574,7 @@ public class Message
 		str = str.replaceAll("%food", Integer.toString(p.getFoodLevel()));
 		str = str.replaceAll("%exhaust", Float.toString(p.getExhaustion()));
 		str = str.replaceAll("%sat", Float.toString(p.getSaturation()));
+		str = str.replaceAll("%health", Double.toString(p.getHealth() / 2D));
 		str = str.replaceAll("%ip", ip);
 		
 		if (economy.isActive()) {
@@ -590,10 +606,6 @@ public class Message
 		}
 
 		return str;
-	}
-
-	public boolean isLocal(Player p) {
-		return store.isLocal(p);
 	}
 
 	public Set<Entry> getEntries(Player trigger, String key, String event, String type) // For receivers/triggers
@@ -864,7 +876,10 @@ public class Message
 		String e = existingPlayer(p.getName()) ? "login" : "firstlogin";
 		load(e);
 		preProcessMessage(p, e, null);
-
+		
+		if (e.equals("firstlogin")) {
+			data.storeLong(p, "laston", PlayerDataHandler.getTime());
+		}
 		if (config.getBoolean("clearjoinmsg", true)) {
 			event.setJoinMessage(null);
 		}
@@ -874,6 +889,7 @@ public class Message
 		Player p = event.getPlayer();
 		if (!this.kicked.remove(p.getName())) {
 			load("quit");
+			data.storeLong(p, "laston", PlayerDataHandler.getTime());
 			preProcessMessage(p, "quit", null);
 
 			if (config.getBoolean("clearquitmsg", true)) {
@@ -885,6 +901,7 @@ public class Message
 	public void onPlayerKick(PlayerKickEvent event) {
 		load("kick");
 		Player p = event.getPlayer();
+		data.storeLong(p, "laston", PlayerDataHandler.getTime());
 		this.kicked.add(p.getName());
 		Map<String, String> args = new HashMap<String, String>();
 
@@ -952,14 +969,11 @@ public class Message
 				if (triggerCauses != null) {
 					keyCauses.put(key, triggerCauses);
 				}
-				for (String triggerCause : keyCauses.get(key)) {
-					if (DeathHandler.matchCauses(toCapitalCase(triggerCause), possibleCauses)) {
-						args.put("key", key);
-						args.put("entity", handler.getKiller());
-						args.put("item", handler.isKillerPlayer() ? handler.getItem(plugin.getServer().getPlayerExact(handler.getKiller()).getItemInHand()) : "?");
-						preProcessMessage(p, "death", args);
-						break;
-					}
+				if (DeathHandler.matchCauses(keyCauses.get(key), possibleCauses)) {
+					args.put("key", key);
+					args.put("entity", handler.getKiller());
+					args.put("item", handler.isKillerPlayer() ? handler.getItem(plugin.getServer().getPlayerExact(handler.getKiller()).getItemInHand()) : "?");
+					preProcessMessage(p, "death", args);
 				}
 			}
 		}
