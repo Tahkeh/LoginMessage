@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.entries.Entry;
 import com.tahkeh.loginmessage.methods.variables.bukkit.BukkitVariables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.ListVariables;
 
 public class PlayerList {
 	private final Main plugin;
@@ -49,7 +50,7 @@ public class PlayerList {
 		}
 		
 		for (OfflinePlayer p : players) {
-			BukkitVariables variables = BukkitVariables.createList(p);
+			final BukkitVariables variables = new ListVariables(p);
 			String processedFormat = plugin.msg.processLine(format, variables);
 			String processedSeparator = plugin.msg.processLine(separator, variables);
 			s = processedSeparator;

@@ -44,7 +44,9 @@ import com.tahkeh.loginmessage.entries.User;
 import com.tahkeh.loginmessage.entries.causes.Cause;
 import com.tahkeh.loginmessage.handlers.AFKHandler;
 import com.tahkeh.loginmessage.handlers.DeathHandler;
+import com.tahkeh.loginmessage.handlers.PlayerDataHandler;
 import com.tahkeh.loginmessage.store.MaterialTable;
+import com.tahkeh.loginmessage.store.PropertiesFile;
 import com.tahkeh.loginmessage.methods.MethodParser;
 import com.tahkeh.loginmessage.methods.impl.AliasMethod;
 import com.tahkeh.loginmessage.methods.impl.ScriptMethod;
@@ -83,9 +85,12 @@ import com.tahkeh.loginmessage.methods.impl.bukkit.WorldMethod;
 import com.tahkeh.loginmessage.methods.variables.bukkit.BukkitVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.CommandVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.DeathVariables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.FirstLoginVariables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.IntervalVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.KickVariables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.LoginVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.PlayerNotFoundVariables;
-import com.tahkeh.loginmessage.store.Store;
+import com.tahkeh.loginmessage.methods.variables.bukkit.QuitVariables;
 import com.tahkeh.loginmessage.timers.Cooldown;
 import com.tahkeh.loginmessage.timers.Delay;
 import com.tahkeh.loginmessage.timers.Cooldown.CooldownTask;
@@ -106,27 +111,30 @@ public class Message
 	private final Configuration message;
 	private final Configuration list;
 	private final XLogger logger;
-	private final Store store;
 	private final MaterialTable table;
 	private final MethodParser<BukkitVariables> methodParser;
+	private final PlayerDataHandler data;
 
 	Set<String> kicked = new HashSet<String>();
 	List<String> running = new ArrayList<String>();
 	Map<String, Integer> cycle = new HashMap<String, Integer>();
+	Map<String, String> geoipFail = new HashMap<String, String>();
 	
 	private final Cooldown cooldown;
 	
-	public Message(Main plugin, Configuration config, Configuration message, Configuration list, XLogger logger, Store store, MaterialTable table) {
+	public Message(Main plugin, Configuration config, Configuration message, Configuration list, XLogger logger, MaterialTable table) {
 		this.plugin = plugin;
 		this.config = config;
 		this.message = message;
 		this.list = list;
 		this.logger = logger;
 		this.cooldown = new Cooldown();
-		this.store = store;
 		this.table = table;
 		this.methodParser = new MethodParser<BukkitVariables>(logger, "%");
-		// Register methods
+		addGeoipFail();
+		File geoip = new File(plugin.getDataFolder(), "GeoLiteCity.dat");
+		PropertiesFile store = new PropertiesFile(new File(plugin.getDataFolder(), "store.txt"), logger);
+		this.data = new PlayerDataHandler(store, geoip);
 		}
 
 	public void load(String event) {
@@ -281,7 +289,7 @@ public class Message
 			}
 			this.logger.info("Registered " + (redirectedEnabled + aliasEnabled + scriptEnabled) + " user defined methods (" + scriptEnabled + " scripts, " + aliasEnabled + " aliases, " + redirectedEnabled + " redirects)!");
 		}
-		store.load(event);
+		addGeoipFail();
 		scheduleIntervals(event);
 	}
 
@@ -309,6 +317,16 @@ public class Message
 		plugin.getServer().getScheduler().cancelTasks(plugin);
 		running.clear();
 		cycle.clear();
+	}
+	
+	public void addGeoipFail() {
+		geoipFail.clear();
+		geoipFail.put("city", config.getString("cityfail", "Ragetown"));
+		geoipFail.put("ccode", config.getString("ccodefail", "USL"));
+		geoipFail.put("cname", config.getString("cnamefail", "United States of Lulz"));
+		geoipFail.put("zip", config.getString("zipfail", "09001"));
+		geoipFail.put("rcode", config.getString("rcodefail", "TF"));
+		geoipFail.put("rname", config.getString("rnamefail", "Trollface"));
 	}
 	
 	public void scheduleIntervals(String event) {
@@ -432,7 +450,7 @@ public class Message
 		}
 
 	public String getLocation(String type, String p) {
-		return store.getLocation(type, p);
+		return data.lookupGeoIP(PlayerDataHandler.getPlayer(p), type, geoipFail);
 	}
 
 	public String getTime(Long rawtime) {
@@ -516,11 +534,7 @@ public class Message
 	}
 
 	public long getLastLogin(String name) {
-		return this.store.getLastLogin(name);
-	}
-
-	public boolean isLocal(Player p) {
-		return store.isLocal(p);
+		return this.data.getLong(this.plugin.getServer().getPlayerExact(name), "laston", PlayerDataHandler.getTime());
 	}
 
 	public Set<Entry> getEntries(Player trigger, String key, String event, String type) // For receivers/triggers
@@ -819,11 +833,19 @@ public class Message
 		}
 	}
 
+	public String getIP(final Player player) {
+		return this.data.getIP(player);
+	}
+
 	public void onPlayerJoin(PlayerJoinEvent eventObject) {
 		final Player p = eventObject.getPlayer();
-		final BukkitVariables variables = existingPlayer(p.getName()) ? BukkitVariables.createFirstLogin(p) : BukkitVariables.createLogin(p);
+		final BukkitVariables variables = existingPlayer(p.getName()) ? new LoginVariables(p) : new FirstLoginVariables(p);
 		load(variables.name);
 		preProcessMessage(variables);
+
+		if (variables instanceof FirstLoginVariables) {
+			data.storeLong(p, "laston", PlayerDataHandler.getTime());
+		}
 
 		if (config.getBoolean("clearjoinmsg", true)) {
 			eventObject.setJoinMessage(null);
@@ -833,8 +855,9 @@ public class Message
 	public void onPlayerQuit(PlayerQuitEvent event) {
 		Player p = event.getPlayer();
 		if (!this.kicked.remove(p.getName())) {
-			final BukkitVariables variables = BukkitVariables.createQuit(p);
+			final BukkitVariables variables = new QuitVariables(p);
 			load(variables.name);
+			data.storeLong(p, "laston", PlayerDataHandler.getTime());
 			preProcessMessage(variables);
 
 			if (config.getBoolean("clearquitmsg", true)) {
@@ -846,6 +869,7 @@ public class Message
 	public void onPlayerKick(PlayerKickEvent event) {
 		Player p = event.getPlayer();
 		KickVariables kick = new KickVariables(event.getReason(), p);
+		data.storeLong(p, "laston", PlayerDataHandler.getTime());
 		load(kick.name);
 		this.kicked.add(p.getName());
 
@@ -858,9 +882,9 @@ public class Message
 
 	public void onIntervalCompletion(String key) {
 		load("interval");
-		finishMessage(key, BukkitVariables.createInterval(null));
+		finishMessage(key, new IntervalVariables());
 	}
-	
+
 	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
 		load(CommandVariables.NAME);
 		Player sender = event.getPlayer();
@@ -907,14 +931,10 @@ public class Message
 				if (triggerCauses != null) {
 					keyCauses.put(key, triggerCauses);
 				}
-				for (String triggerCause : keyCauses.get(key)) {
-					if (DeathHandler.matchCauses(toCapitalCase(triggerCause), possibleCauses)) {
-						//TODO: Define trigger!
-						final String item = handler.isKillerPlayer() ? handler.getItem(plugin.getServer().getPlayerExact(handler.getKiller()).getItemInHand()) : "?";
-						DeathVariables variables = new DeathVariables(item, handler.getKiller(), key, p);
-						preProcessMessage(variables);
-						break;
-					}
+				if (DeathHandler.matchCauses(keyCauses.get(key), possibleCauses)) {
+					final String item = handler.isKillerPlayer() ? handler.getItem(plugin.getServer().getPlayerExact(handler.getKiller()).getItemInHand()) : "?";
+					DeathVariables variables = new DeathVariables(item, handler.getKiller(), key, p);
+					preProcessMessage(variables);
 				}
 			}
 		}

@@ -259,12 +259,12 @@ public class Config //For all your configuration needs
 				o.write("            causes: [player]\n");
 				o.write("            message:\n");
 				o.write("                - '%dentity (carrying %ditem) killed %nm!'\n");
-				o.write("        monster:\n");
+				o.write("        entity:\n");
 				o.write("            triggers:\n");
 				o.write("                groups: [pub]\n");
 				o.write("            receivers:\n");
 				o.write("                groups: [pub]\n");
-				o.write("            causes: [monster]\n");
+				o.write("            causes: [livingentity, -player]\n");
 				o.write("            message:\n");
 				o.write("                - '%nm was killed by %an% %dentity!'\n");
 				o.write("        fall:\n");

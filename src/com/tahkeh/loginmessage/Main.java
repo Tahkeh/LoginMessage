@@ -31,7 +31,6 @@ import com.tahkeh.loginmessage.listeners.EListener;
 import com.tahkeh.loginmessage.listeners.PListener;
 import com.tahkeh.loginmessage.store.MaterialTable;
 import com.tahkeh.loginmessage.store.PropertiesFile;
-import com.tahkeh.loginmessage.store.Store;
 
 import de.xzise.MinecraftUtil;
 import de.xzise.XLogger;
@@ -53,7 +52,6 @@ public class Main extends JavaPlugin {
 	public PropertiesFile storeProperties;
 	public File tableFile;
 	public Message msg;
-	public Store store;
 	public MaterialTable table;
 	
 	private XLogger logger;
@@ -107,6 +105,7 @@ public class Main extends JavaPlugin {
 
 		File folder = getDataFolder();
 		logger = new XLogger(this);
+
 		reload = BufferPermission.create("loginmessage.reload", false);
 		storeProperties = new PropertiesFile(new File(folder, "store.txt"), logger);
 		tableFile = new File(folder, "items.txt");
@@ -117,12 +116,11 @@ public class Main extends JavaPlugin {
 		cfg.setup();
 		config.load();
 		message.load();
-		store = new Store(this, storeProperties);
 		if (!tableFile.exists()) {
 			MaterialTable.initialWrite(tableFile, logger);
 		}
 		table = new MaterialTable(tableFile, logger);
-		msg = new Message(this, config, message, list, logger, store, table);
+		msg = new Message(this, config, message, list, logger, table);
 		msg.load("load");
 		cfg.setup();
 		config.load();

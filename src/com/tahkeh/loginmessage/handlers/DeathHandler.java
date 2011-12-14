@@ -2,8 +2,11 @@ package com.tahkeh.loginmessage.handlers;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -11,6 +14,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.ItemStack;
 
+import com.tahkeh.loginmessage.Message;
 import com.tahkeh.loginmessage.entries.causes.Cause;
 import com.tahkeh.loginmessage.entries.causes.EntityCause;
 import com.tahkeh.loginmessage.entries.causes.OtherCause;
@@ -28,14 +32,30 @@ public class DeathHandler {
 		this.table = table;
 	}
 	
-	public static boolean matchCauses(String causeString, Collection<Cause> causes) {
+	private boolean inLava() {
+		return victim.getWorld().getBlockAt(victim.getLocation()).getType() == Material.LAVA;
+	}
+	
+	private String getSuffocator() {
+		Block b = victim.getWorld().getBlockAt(victim.getLocation());
+		return table.getMaterialName(b.getType().getId(), b.getData());
+	}
+	
+	public static boolean matchCauses(List<String> possibleCauses, Collection<Cause> causes) {
 		boolean match = false;
-		for (Cause cause : causes) {
-			if (cause.match(causeString)) {
-				if (!cause.isPositive()) {
-					return false;
-				} else {
-					match = true;
+		for (String causeString : possibleCauses) {
+			boolean negative = causeString.charAt(0) == '-';
+			if (negative) {
+				causeString = causeString.substring(1);
+			}
+			for (Cause cause : causes) {
+				if (cause.match(Message.toCapitalCase(causeString))) {
+					if (negative) {
+						match = false;
+						break;
+					} else {
+						match = true;
+					}
 				}
 			}
 		}
@@ -49,7 +69,19 @@ public class DeathHandler {
 		String cause = damageCause.name().toLowerCase();
 		if (damageCause == DamageCause.ENTITY_ATTACK || damageCause == DamageCause.ENTITY_EXPLOSION) {
 			Entity attacker = ((EntityDamageByEntityEvent)event).getDamager();
-			causes.add(new EntityCause(attacker.getClass().getSimpleName()));
+			String attackerClass = attacker.getClass().getSimpleName();
+			
+			//Special cases for mobs with projectiles
+			if (attackerClass.equals("CraftProjectile")) {
+				attackerClass = "CraftSkeleton";
+			}
+			if (attackerClass.equals("CraftFireball")) {
+				attackerClass = "CraftGhast";
+			}
+			if (attackerClass.equals("CraftSmallFireball")) {
+				attackerClass = "CraftBlaze";
+			}
+			causes.add(new EntityCause(attackerClass));
 			if (attacker instanceof Player) {
 				killer = ((Player) attacker).getName();
 				killerIsPlayer = true;
@@ -57,12 +89,17 @@ public class DeathHandler {
 				killer = attacker.toString().substring(5).toLowerCase();
 			}
 		} else {
+			if (inLava()) {
+				cause = "lava";
+			}
 			causes.add(new OtherCause(cause));
 		}
 		if (damageCause == DamageCause.PROJECTILE) {
 			killer = ((EntityDamageByEntityEvent)event).getDamager().toString().substring(5).toLowerCase();
 		}
-		
+		if (damageCause == DamageCause.SUFFOCATION) {
+			killer = getSuffocator();
+		}
 		return causes;
 	}
 	
