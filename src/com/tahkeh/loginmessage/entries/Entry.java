@@ -1,6 +1,6 @@
 package com.tahkeh.loginmessage.entries;
 
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 
 /**
  * Basic entry files. Simply checks if the player is matched by this player. Any
@@ -27,5 +27,5 @@ public interface Entry {
      *            the player to test.
      * @return if the player matches the entry.
      */
-    boolean match(Player player);
+    boolean match(OfflinePlayer player);
 }

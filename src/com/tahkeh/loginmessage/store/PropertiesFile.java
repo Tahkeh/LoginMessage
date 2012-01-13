@@ -8,7 +8,7 @@ import java.util.Properties;
 
 import de.xzise.XLogger;
 
-public final class PropertiesFile {
+public class PropertiesFile {
 	private final File file;
 	private Properties props = new Properties();
 
@@ -21,7 +21,7 @@ public final class PropertiesFile {
 			else
 				save();
 		} catch (IOException ex) {
-			logger.severe("[LoginMessage] Unable to load " + file.getAbsolutePath() + "!");
+			logger.severe("Error creating " + file.getAbsolutePath() + " file.");
 		}
 	}
 

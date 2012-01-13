@@ -1,5 +1,6 @@
 package com.tahkeh.loginmessage.entries;
 
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 public class Pri implements Entry {
@@ -18,7 +19,7 @@ public class Pri implements Entry {
     }
 
     @Override
-    public boolean match(Player player) {
+    public boolean match(OfflinePlayer player) {
         return this.trigger.equals(player);
     }
 

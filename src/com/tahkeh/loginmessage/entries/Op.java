@@ -1,6 +1,6 @@
 package com.tahkeh.loginmessage.entries;
 
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 
 public class Op implements Entry {
 
@@ -16,7 +16,7 @@ public class Op implements Entry {
     }
 
     @Override
-    public boolean match(Player player) {
+    public boolean match(OfflinePlayer player) {
         return player.isOp();
     }
 

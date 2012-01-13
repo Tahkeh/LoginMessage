@@ -1,5 +1,6 @@
 package com.tahkeh.loginmessage.entries;
 
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 /**
@@ -23,7 +24,7 @@ public class Pub implements Entry {
     }
 
     @Override
-    public boolean match(Player player) {
+    public boolean match(OfflinePlayer player) {
         return !player.equals(this.trigger);
     }
 
