@@ -159,7 +159,7 @@ public class Config //For all your configuration needs
 				o.write("            cooldown: 0\n");
 				o.write("            delay: 500\n");
 				o.write("            message:\n");
-				o.write("                - 'Welcome back, %nm!'\n");
+				o.write("                - 'Welcome to the server, %nm!'\n");
 				o.write("                - 'Players online: %ol'\n");
 				o.write("        bc:\n");
 				o.write("            receivers:\n");
