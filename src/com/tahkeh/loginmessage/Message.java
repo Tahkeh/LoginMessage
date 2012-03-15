@@ -15,15 +15,14 @@ import java.util.Timer;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.World;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.util.config.Configuration;
-import org.bukkit.util.config.ConfigurationNode;
 
 import com.tahkeh.loginmessage.entries.DefaultEntry;
 import com.tahkeh.loginmessage.entries.Entry;
@@ -44,6 +43,7 @@ import com.tahkeh.loginmessage.timers.Delay;
 import com.tahkeh.loginmessage.timers.Cooldown.CooldownTask;
 import com.tahkeh.loginmessage.timers.Interval;
 
+import de.xzise.MinecraftUtil;
 import de.xzise.XLogger;
 import de.xzise.wrappers.economy.EconomyHandler;
 import de.xzise.wrappers.permissions.BufferPermission;
@@ -57,9 +57,9 @@ public class Message
 	private final static BufferPermission<String> SUFFIX_PERMISSION = BufferPermission.create("suffix", (String) null);
 
 	private final Main plugin;
-	private final Configuration config;
-	private final Configuration message;
-	private final Configuration list;
+	private final FileConfigurationPair<YamlConfiguration> config;
+	private final FileConfigurationPair<YamlConfiguration> message;
+	private final FileConfigurationPair<YamlConfiguration> list;
 	private final XLogger logger;
 	private final MaterialTable table;
 	private final PlayerDataHandler data;
@@ -70,12 +70,12 @@ public class Message
 	Map<String, String> geoipFail = new HashMap<String, String>();
 	
 	private final Cooldown cooldown;
-	
-	public Message(Main plugin, Configuration config, Configuration message, Configuration list, XLogger logger, MaterialTable table) {
+
+	public Message(Main plugin, FileConfigurationPair<YamlConfiguration> config, FileConfigurationPair<YamlConfiguration> message, FileConfigurationPair<YamlConfiguration> list, XLogger logger, MaterialTable table) {
 		this.plugin = plugin;
-		this.config = config;
-		this.message = message;
-		this.list = list;
+		this.config = config.load();
+		this.message = message.load();
+		this.list = list.load();
 		this.logger = logger;
 		this.cooldown = new Cooldown();
 		this.table = table;
@@ -83,48 +83,48 @@ public class Message
 		File geoip = new File(plugin.getDataFolder(), "GeoLiteCity.dat");
 		PropertiesFile store = new PropertiesFile(new File(plugin.getDataFolder(), "store.txt"), logger);
 		this.data = new PlayerDataHandler(store, geoip);
-		}
-	
+	}
+
 	public void load(String event) {
-		if(config.getBoolean("autoload", true) || event.equals("load")) {
+		if(config.fileConfiguration.getBoolean("autoload", true) || event.equals("load")) {
 			config.load();
 			message.load();
 			list.load();
 		}
-		separator = config.getString("separator", "%&%&");
+		separator = config.fileConfiguration.getString("separator", "%&%&");
 		addGeoipFail();
 		scheduleIntervals(event);
 	}
-	
+
 	public void unload() {
 		plugin.getServer().getScheduler().cancelTasks(plugin);
 		running.clear();
 		cycle.clear();
 	}
-	
+
 	public void addGeoipFail() {
 		geoipFail.clear();
-		geoipFail.put("city", config.getString("cityfail", "Ragetown"));
-		geoipFail.put("ccode", config.getString("ccodefail", "USL"));
-		geoipFail.put("cname", config.getString("cnamefail", "United States of Lulz"));
-		geoipFail.put("zip", config.getString("zipfail", "09001"));
-		geoipFail.put("rcode", config.getString("rcodefail", "TF"));
-		geoipFail.put("rname", config.getString("rnamefail", "Trollface"));
+		geoipFail.put("city", config.fileConfiguration.getString("cityfail", "Ragetown"));
+		geoipFail.put("ccode", config.fileConfiguration.getString("ccodefail", "USL"));
+		geoipFail.put("cname", config.fileConfiguration.getString("cnamefail", "United States of Lulz"));
+		geoipFail.put("zip", config.fileConfiguration.getString("zipfail", "09001"));
+		geoipFail.put("rcode", config.fileConfiguration.getString("rcodefail", "TF"));
+		geoipFail.put("rname", config.fileConfiguration.getString("rnamefail", "Trollface"));
 	}
-	
+
 	public void scheduleIntervals(String event) {
-		List<String> keys = message.getKeys("messages.interval");
+		Set<String> keys = getKeys(message.fileConfiguration, "messages.interval");
 		if(keys != null && !event.equals("interval")) {
 			for(String key : keys) {
 				if(!running.contains(key)) {
-					int interval = message.getInt("messages.interval." + key + ".interval", 300);
+					int interval = message.fileConfiguration.getInt("messages.interval." + key + ".interval", 300);
 					plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, new Interval(this, key), interval * 20, interval * 20);
 					running.add(key);
 				}
 			}
 		}
 	}
-	
+
 	public String getTimeDifference(long start) {
 		List<String> lines = new ArrayList<String>();
 		Date end = Calendar.getInstance().getTime();
@@ -198,16 +198,16 @@ public class Message
 		
 		return sb.toString();	
 	}
-	
+
 	public String getLocation(String type, String p) {
 		return data.lookupGeoIP(PlayerDataHandler.getPlayer(p), type, geoipFail);
 	}
-	
+
 	public String getTime(Long rawtime, boolean caps) {
-		String day = config.getString("day");
-		String dusk = config.getString("sunset");
-		String dawn = config.getString("sunrise");
-		String night = config.getString("night");
+		String day = config.fileConfiguration.getString("day");
+		String dusk = config.fileConfiguration.getString("sunset");
+		String dawn = config.fileConfiguration.getString("sunrise");
+		String night = config.fileConfiguration.getString("night");
 
 		int modTime = (int) (rawtime % 24000);
 
@@ -223,7 +223,7 @@ public class Message
 		}
 		return caps ? name : name.toLowerCase();
 	}
-	
+
 	public String getGameMode(GameMode mode, boolean caps) {
 		String name = "";
 		
@@ -234,7 +234,7 @@ public class Message
 		}
 		return caps ? name : name.toLowerCase();
 	}
-	
+
 	private static <T> T getFirst(T[] array) {
 		return getFirst(array, null);
 	}
@@ -261,8 +261,8 @@ public class Message
 	}
 
 	public String booleanToName(boolean bool, boolean caps) {
-		String t = config.getString("istrue", "&2Yes");
-		String f = config.getString("isfalse", "&4No");
+		String t = config.fileConfiguration.getString("istrue", "&2Yes");
+		String f = config.fileConfiguration.getString("isfalse", "&4No");
 		String name = "";
 
 		if (bool) {
@@ -275,13 +275,13 @@ public class Message
 
 		return caps ? name : name.toLowerCase();
 	}
-	
+
 	public String getStatus(OfflinePlayer p, boolean caps) {
 		AFKHandler afkhandler = new AFKHandler(plugin);
 		String status = "";
-		String online = config.getString("status.online", "&2Online");
-		String offline = config.getString("status.offline", "&7Offline");
-		String afk = config.getString("status.afk", "&6AFK");
+		String online = config.fileConfiguration.getString("status.online", "&2Online");
+		String offline = config.fileConfiguration.getString("status.offline", "&7Offline");
+		String afk = config.fileConfiguration.getString("status.afk", "&6AFK");
 		
 		if (p.isOnline()) {
 			status = caps ? online : online.toLowerCase();
@@ -393,18 +393,22 @@ public class Message
 		if (str.contains("%ol_")) {
 			List<String> pub = new ArrayList<String>();
 			pub.add("pub");
-			if (list.getKeys("lists") != null) {
-				for (String key : list.getKeys("lists")) {
+			Set<String> keys = getKeys(list.fileConfiguration, "lists");
+			if (MinecraftUtil.isSet(keys)) {
+				for (String key : keys) {
 					if (str.contains("%ol_" + key)) {
 						String path = "lists." + key;
-						boolean online = list.getBoolean(path + ".online", true);
-						boolean formatted = list.getBoolean(path + ".formatted", false);
-						List<String> groups = list.getStringList(path + ".players.groups", pub);
-						List<String> users = list.getStringList(path + ".players.users", null);
-						List<String> permissions = list.getStringList(path + ".players.permissions", null);
-						List<String> worlds = list.getStringList(path + ".players.worlds", null);
-						String format = list.getString(path + ".format", "%nm");
-						String separator = list.getString(path + ".separator", ", ");
+						boolean online = list.fileConfiguration.getBoolean(path + ".online", true);
+						boolean formatted = list.fileConfiguration.getBoolean(path + ".formatted", false);
+						List<String> groups = list.fileConfiguration.getStringList(path + ".players.groups");
+						if (groups == null) {
+							groups = new ArrayList<String>(pub);
+						}
+						List<String> users = getNonNullList(list.fileConfiguration.getStringList(path + ".players.users"));
+						List<String> permissions = getNonNullList(list.fileConfiguration.getStringList(path + ".players.permissions"));
+						List<String> worlds = getNonNullList(list.fileConfiguration.getStringList(path + ".players.worlds"));
+						String format = list.fileConfiguration.getString(path + ".format", "%nm");
+						String separator = list.fileConfiguration.getString(path + ".separator", ", ");
 						Player trigger = isLeaveEvent(event) ? p : null;
 						PlayerList playerList = new PlayerList(plugin, online, formatted, groups, users, permissions, worlds, format, separator, trigger);
 						str = str.replaceAll("%ol_" + key, playerList.getList());
@@ -440,8 +444,8 @@ public class Message
 	public String processLine(String str, OfflinePlayer p, String event, Map<String, String> args) {
 		Player trigger = null;
 		int size = plugin.getServer().getOnlinePlayers().length;
-		SimpleDateFormat tf = new SimpleDateFormat(config.getString("timeformat", "K:mm a z"));
-		SimpleDateFormat df = new SimpleDateFormat(config.getString("dateformat", "EEEE, MMMM d yyyy 'at' K:mm a z"));
+		SimpleDateFormat tf = new SimpleDateFormat(config.fileConfiguration.getString("timeformat", "K:mm a z"));
+		SimpleDateFormat df = new SimpleDateFormat(config.fileConfiguration.getString("dateformat", "EEEE, MMMM d yyyy 'at' K:mm a z"));
 		String[] onlineCodes = {
 				"%world", "%rtime", "%time", "%Time", "%Mode", "%mode",
 				"%asleep", "%Asleep", "%x", "%y", "%z", "%level",
@@ -578,7 +582,7 @@ public class Message
 
 		return str;
 	}
-	
+
 	public Player getPlayerFromNick(String nick) {
 		for (Player p : Bukkit.getServer().getOnlinePlayers()) {
 			if (p.getDisplayName().equalsIgnoreCase(nick)) {
@@ -588,7 +592,15 @@ public class Message
 		return null;
 	}
 
-	public Set<Entry> getEntries(Player trigger, String key, String event, String type) // For receivers/triggers
+	private static <T> List<T> getNonNullList(final List<T> rawList) {
+		if (rawList == null) {
+			return new ArrayList<T>(0);
+		} else {
+			return rawList;
+		}
+	}
+
+	public Set<Entry> getEntries(Player trigger, String key, String event, String type) //For receivers/triggers
 	{
 		Set<Entry> entries = new HashSet<Entry>();
 		final String keypath = "messages." + event + "." + key + "." + type;
@@ -596,7 +608,7 @@ public class Message
 		final String grouppath = keypath + ".groups";
 		final String permspath = keypath + ".permissions";
 		final String worldpath = keypath + ".worlds";
-		for (String group : message.getStringList(grouppath, null)) {
+		for (String group : getNonNullList(message.fileConfiguration.getStringList(grouppath))) {
 			boolean positive = DefaultEntry.isPositive(group);
 			String unsignedGroup = DefaultEntry.getUnsignedText(group);
 			if (unsignedGroup.equalsIgnoreCase("pub")) {
@@ -610,15 +622,15 @@ public class Message
 			}
 		}
 
-		for (String user : message.getStringList(userpath, null)) {
+		for (String user : getNonNullList(message.fileConfiguration.getStringList(userpath))) {
 			entries.add(new User(user));
 		}
 
-		for (String perm : message.getStringList(permspath, null)) {
+		for (String perm : getNonNullList(message.fileConfiguration.getStringList(permspath))) {
 			entries.add(new Permission(perm, Main.getPermissions(), plugin));
 		}
 		
-		for (String world : message.getStringList(worldpath, null)) {
+		for (String world : getNonNullList(message.fileConfiguration.getStringList(worldpath))) {
 			entries.add(new com.tahkeh.loginmessage.entries.World(world, plugin));
 		}
 		return entries;
@@ -629,6 +641,14 @@ public class Message
 	}
 	
 
+	private static Set<String> getKeys(final ConfigurationSection section, final String path) {
+		ConfigurationSection subSection = section.getConfigurationSection(path);
+		if (subSection != null) {
+			return subSection.getKeys(false);
+		} else {
+			return null;
+		}
+	}
 	/**
 	 * Prints all messages which the player is triggering.
 	 * 
@@ -646,7 +666,7 @@ public class Message
 		if (event.equals("command")) {
 			messages = new String[] { args.get("cmd") };
 		} else {
-			List<String> keyList = message.getKeys("messages." + event);
+			Set<String> keyList = getKeys(message.fileConfiguration, "messages." + event);
 			if (keyList == null) {
 				messages = EMPTY_STRING_ARRAY;
 			} else {
@@ -685,6 +705,19 @@ public class Message
 		return match;
 	}
 
+	public static double toDouble(final Object object, final double def) {
+		if (object instanceof Number) {
+			return ((Number) object).doubleValue();
+		}
+
+		try {
+			return Double.valueOf(object.toString());
+		} catch (NumberFormatException e) {
+		} catch (NullPointerException e) {
+		}
+		return def;
+	}
+
 	/**
 	 * Returns the list of not empty message lines.
 	 * 
@@ -695,36 +728,44 @@ public class Message
 	 * @return the list of not empty message lines.
 	 */
 	private String[] getLines(String event, String name) {
-		List<ConfigurationNode> messages = this.message.getNodeList("messages." + event + "." + name + ".messages", null);
+		List<Map<?,?>> mapList = this.message.fileConfiguration.getMapList("messages." + event + "." + name + ".messages");
 		String[] lines = EMPTY_STRING_ARRAY;
-		if (messages != null && messages.size() > 0) {
+		if (MinecraftUtil.isSet(mapList)) {
 			// See: MinecraftUtil.getRandomFromChances
 			// Read chances
-			int length = messages.toArray().length;
+			int length = mapList.size();
 			double totalchance = 0;
-			double defChance = 1.0 / messages.size();
-			for (ConfigurationNode messageNode : messages) {
-				totalchance += messageNode.getDouble("chance", defChance);
+			double defChance = 1.0 / mapList.size();
+			for (Map<?, ?> messageNode : mapList) {
+				totalchance += toDouble(messageNode.get("chance"), defChance);
 			}
-			
 			double value = Math.random() * totalchance;
-			if (messages.get(0).getProperty("order") != null) {
+
+			if (mapList.get(0).get("order") != null) {
+				int idx;
 				if (!cycle.containsKey(name)) {
 					cycle.put(name, 0);
+					idx = 0;
+				} else {
+					idx = cycle.get(name);
+					if (idx >= mapList.size()) {
+						idx = 0;
+						cycle.remove(name);
+					}
 				}
-				lines = getStringList(messages.get(cycle.get(name)), "order", EMPTY_STRING_ARRAY);
+				lines = getStringList(mapList.get(idx).get("order"), EMPTY_STRING_ARRAY);
 				cycle.put(name, cycle.get(name) >= length - 1 ? 0 : cycle.get(name) + 1);
 			} else {
-				for (ConfigurationNode messageNode : messages) {
-					value -= messageNode.getDouble("chance", defChance);
+				for (Map<?, ?> messageNode : mapList) {
+					value -= toDouble(messageNode.get("chance"), defChance);
 					if (value < 0) {
-						lines = getStringList(messageNode, "random", EMPTY_STRING_ARRAY);
+						lines = getStringList(messageNode.get("random"), EMPTY_STRING_ARRAY);
 						break;
 					}
 				}
 			}
 		} else {
-			lines = getStringList(message, "messages." + event + "." + name + ".message", EMPTY_STRING_ARRAY);
+			lines = getStringList(message.fileConfiguration, "messages." + event + "." + name + ".message", EMPTY_STRING_ARRAY);
 		}
 		List<String> cleanedLines = new ArrayList<String>(lines.length);
 		for (int i = 0; i < lines.length; i++) {
@@ -748,8 +789,12 @@ public class Message
 	 *            default value.
 	 * @return a string list from a yml configuration node.
 	 */
-	public static String[] getStringList(ConfigurationNode node, String path, String[] def) {
-		Object property = node.getProperty(path);
+	public static String[] getStringList(ConfigurationSection node, String path, String[] def) {
+		Object property = node.get(path);
+		return getStringList(property, def);
+	}
+
+	public static String[] getStringList(final Object property, final String[] def) {
 		if (property instanceof List) {
 			@SuppressWarnings("unchecked")
 			List<Object> rawList = (List<Object>) property;
@@ -774,8 +819,8 @@ public class Message
 			this.logger.info("Empty message named '" + key + "' (Event: '" + event + "') found.");
 		} else {
 			final String keypath = "messages." + event + "." + key;
-			int cd = message.getInt(keypath + ".cooldown", 0) * 1000;
-			int dl = message.getInt(keypath + ".delay", 0);
+			int cd = message.fileConfiguration.getInt(keypath + ".cooldown", 0) * 1000;
+			int dl = message.fileConfiguration.getInt(keypath + ".delay", 0);
 
 			Player[] players = this.plugin.getServer().getOnlinePlayers();
 			List<Player> cooledDown = new ArrayList<Player>(players.length);
@@ -859,7 +904,7 @@ public class Message
 		load(e);
 		preProcessMessage(p, e, null);
 		
-		if (config.getBoolean("clearjoinmsg", true)) {
+		if (config.fileConfiguration.getBoolean("clearjoinmsg", true)) {
 			event.setJoinMessage(null);
 		}
 	}
@@ -870,7 +915,7 @@ public class Message
 			load("quit");
 			preProcessMessage(p, "quit", null);
 
-			if (config.getBoolean("clearquitmsg", true)) {
+			if (config.fileConfiguration.getBoolean("clearquitmsg", true)) {
 				event.setQuitMessage(null);
 			}
 		}
@@ -885,7 +930,7 @@ public class Message
 		args.put("kickreason", event.getReason());
 		preProcessMessage(p, "kick", args);
 
-		if (config.getBoolean("clearkickmsg", true)) {
+		if (config.fileConfiguration.getBoolean("clearkickmsg", true)) {
 			event.setLeaveMessage(null);
 		}
 	}
@@ -894,19 +939,19 @@ public class Message
 		load("interval");
 		finishMessage(null, "interval", key, null);
 	}
-	
+
 	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
 		load("command");
 		Player sender = event.getPlayer();
 		String[] cmdargs = event.getMessage().substring(1).split(" ");
 		Map<String, String> args = new HashMap<String, String>();
-		List<String> commands = message.getKeys("messages.command");
-		String npf = config.getString("noplayerfound", "&cPlayer \"%nm\" does not exist!");
+		Set<String> commands = getKeys(message.fileConfiguration, "messages.command");
+		String npf = config.fileConfiguration.getString("noplayerfound", "&cPlayer \"%nm\" does not exist!");
 		
 		args.put("cmd", cmdargs[0]);
 		if (commands != null) {
 			for (String key : commands) {
-				List<String> msgargs = message.getStringList("messages.command." + key + ".args", null);
+				List<String> msgargs = getNonNullList(message.fileConfiguration.getStringList("messages.command." + key + ".args"));
 				if (key.equalsIgnoreCase(cmdargs[0])) {
 					event.setCancelled(true);
 					if (cmdargs.length >= 1) {
@@ -950,11 +995,11 @@ public class Message
 		Map<String, List<String>> keyCauses = new HashMap<String, List<String>>();
 		Player p = (Player) event.getEntity();
 		DeathHandler handler = new DeathHandler(p, table);
-		List<String> keys = message.getKeys("messages.death");
+		Set<String> keys = getKeys(message.fileConfiguration, "messages.death");
 		
 		if (keys != null) {
 			for (String key : keys) {
-				List<String> triggerCauses = message.getStringList("messages.death." + key + ".causes", null);
+				List<String> triggerCauses = getNonNullList(message.fileConfiguration.getStringList("messages.death." + key + ".causes"));
 				Set<Cause> possibleCauses = handler.getCauses();
 				if (triggerCauses != null) {
 					keyCauses.put(key, triggerCauses);
@@ -968,7 +1013,7 @@ public class Message
 			}
 		}
 		
-		if (config.getBoolean("cleardeathmsg", true)) {
+		if (config.fileConfiguration.getBoolean("cleardeathmsg", true)) {
 			event.setDeathMessage(null);
 		}
 	}

@@ -5,7 +5,6 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Inet4Address;
@@ -21,14 +20,12 @@ import java.util.regex.Pattern;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.config.Configuration;
 
-import com.tahkeh.loginmessage.listeners.EListener;
-import com.tahkeh.loginmessage.listeners.PListener;
+import com.tahkeh.loginmessage.listeners.MessageListener;
 import com.tahkeh.loginmessage.store.MaterialTable;
 import com.tahkeh.loginmessage.store.PropertiesFile;
 
@@ -39,59 +36,51 @@ import de.xzise.wrappers.permissions.PermissionsHandler;
 
 public class Main extends JavaPlugin {
 	public final static String BPU = "BukkitPluginUtilities";
-	public final static String BPU_NAME = "bukkitutil-1.2.1.jar";
+	public final static String BPU_NAME = "bukkitutil-1.2.3.jar";
 	public final static String BPU_PATH = "http://cloud.github.com/downloads/xZise/Bukkit-Plugin-Utilties/" + BPU_NAME;
 	public final static String BPU_DEST = "lib" + File.separator + BPU + ".jar";
 
-	public Configuration config;
-	public Configuration message;
-	public Configuration list;
+	private final static BufferPermission<Boolean> RELOAD = BufferPermission.create("loginmessage.reload", false);
+
 	private Config cfg;
 	public PropertiesFile storeProperties;
 	public File tableFile;
 	public Message msg;
 	public MaterialTable table;
-	
+
+	private FileConfigurationPair<YamlConfiguration> configuration;
 	private XLogger logger;
 	private static PermissionsHandler permissions;
 	private static EconomyHandler economy;
-	private final static BufferPermission<Boolean> reload = BufferPermission.create("loginmessage.reload", false);
-	
-	public void registerEvents() {
-		PluginManager pm = getServer().getPluginManager();
-		Event.Priority priority = getPriority();
-		pm.registerEvent(Event.Type.PLAYER_JOIN, new PListener(msg), priority, this);
-		pm.registerEvent(Event.Type.PLAYER_QUIT, new PListener(msg), priority, this);
-		pm.registerEvent(Event.Type.PLAYER_KICK, new PListener(msg), priority, this);
-		pm.registerEvent(Event.Type.PLAYER_COMMAND_PREPROCESS, new PListener(msg), priority, this);
-		pm.registerEvent(Event.Type.ENTITY_DEATH, new EListener(msg), priority, this);
-		pm.registerEvent(Event.Type.PLUGIN_ENABLE, new SListener(), Event.Priority.Monitor, this);
-		pm.registerEvent(Event.Type.PLUGIN_DISABLE, new SListener(), Event.Priority.Monitor, this);
-	}
-	
-	public Event.Priority getPriority() {
-		String p = config.getString("priority", "normal");
-		if (p.equalsIgnoreCase("monitor")) {
-			return Event.Priority.Monitor;
-		} else if (p.equalsIgnoreCase("lowest")) {
-			return Event.Priority.Lowest;
-		} else if (p.equalsIgnoreCase("low")) {
-			return Event.Priority.Low;
-		} else if (p.equalsIgnoreCase("high")) {
-			return Event.Priority.High;
-		} else if (p.equalsIgnoreCase("highest")) {
-			return Event.Priority.Highest;
-		} else {
-			return Event.Priority.Normal;
+
+	//@formatter:off
+//	public Event.Priority getPriority() {
+//		String p = config.getString("priority", "normal");
+//		if (p.equalsIgnoreCase("monitor")) {
+//			return Event.Priority.Monitor;
+//		} else if (p.equalsIgnoreCase("lowest")) {
+//			return Event.Priority.Lowest;
+//		} else if (p.equalsIgnoreCase("low")) {
+//			return Event.Priority.Low;
+//		} else if (p.equalsIgnoreCase("high")) {
+//			return Event.Priority.High;
+//		} else if (p.equalsIgnoreCase("highest")) {
+//			return Event.Priority.Highest;
+//		} else {
+//			return Event.Priority.Normal;
+//		}
+//	}
+	//@formatter:on
+
+	@Override
+	public void onDisable() {
+		getServer().getScheduler().cancelTasks(this);
+		if (logger != null) {
+			logger.disableMsg();
 		}
 	}
 
-	public void onDisable() {
-		getServer().getScheduler().cancelTasks(this);
-		logger.disableMsg();
-	}
-	
-	
+	@Override
 	public void onEnable() {
 		File folder = getDataFolder();
 		folder.mkdir();
@@ -104,30 +93,29 @@ public class Main extends JavaPlugin {
 				this.getPluginLoader().disablePlugin(this);
 				return;
 			}
+
 			storeProperties = new PropertiesFile(new File(folder, "store.txt"), logger);
 			tableFile = new File(folder, "items.txt");
-			config = new Configuration(new File(folder, "config.yml"));
-			message = new Configuration(new File(folder, "messages.yml"));
-			list = new Configuration(new File(folder, "lists.yml"));
+			this.configuration = new FileConfigurationPair<YamlConfiguration>(new File(getDataFolder(), "config.yml"), new YamlConfiguration(), "configuration", this.logger).load();
+			FileConfigurationPair<YamlConfiguration> m = new FileConfigurationPair<YamlConfiguration>(new File(getDataFolder(), "messages.yml"), new YamlConfiguration(), "messages", this.logger).load();
+			FileConfigurationPair<YamlConfiguration> list = new FileConfigurationPair<YamlConfiguration>(new File(getDataFolder(), "lists.yml"), new YamlConfiguration(), "lists", this.logger).load();
 			cfg = new Config(folder, this, logger);
 			cfg.setup();
-			config.load();
-			message.load();
 			if (!tableFile.exists()) {
 				MaterialTable.initialWrite(tableFile, logger);
 			}
 			table = new MaterialTable(tableFile, logger);
-			msg = new Message(this, config, message, list, logger, table);
+			msg = new Message(this, this.configuration, m, list, logger, table);
 			msg.load("load");
 			cfg.setup();
-			config.load();
 			PluginManager pm = getServer().getPluginManager();
 			// Init handlers
-			permissions = new PermissionsHandler(pm, config.getString("plugins.permissions"), this.logger);
+			permissions = new PermissionsHandler(pm, this.configuration.fileConfiguration.getString("plugins.permissions"), this.logger);
 			permissions.load();
-			economy = new EconomyHandler(pm, config.getString("plugins.economy"), "", this.logger);
+			economy = new EconomyHandler(pm, this.configuration.fileConfiguration.getString("plugins.economy"), "", this.logger);
 			economy.load();
-			registerEvents();
+			this.getServer().getPluginManager().registerEvents(new MessageListener(this.msg), this);
+			this.getServer().getPluginManager().registerEvents(new SListener(), this);
 			this.logger.enableMsg();
 		} else {
 			Logger.getLogger("Minecraft").severe("[LoginMessage] Unable to install '" + BPU + "'! Disabling plugin.");
@@ -137,7 +125,7 @@ public class Main extends JavaPlugin {
 	
 	public void readUsage(CommandSender sender, String alias) {
 		sender.sendMessage(ChatColor.RED + "Usage:");
-		if (permissions.permission(sender, reload)) {
+		if (permissions.permission(sender, RELOAD)) {
 			sender.sendMessage(ChatColor.RED + alias + " reload - Reloads LoginMessage files.");
 		}
 	}
@@ -152,7 +140,7 @@ public class Main extends JavaPlugin {
 		if (command.getName().equalsIgnoreCase("lmsg")) {
 			if (args.length >= 1) {
 				if (args[0].equalsIgnoreCase("reload")) {
-					if (permissions.permission(sender, reload)) {
+					if (permissions.permission(sender, RELOAD)) {
 						msg.unload();
 						msg.load("load");
 						sender.sendMessage(ChatColor.RED + "LoginMessage files reloaded.");
@@ -161,7 +149,7 @@ public class Main extends JavaPlugin {
 						sender.sendMessage(noPerm);
 					}
 				}
-			} else if (permissions.permission(sender, reload)) {
+			} else if (permissions.permission(sender, RELOAD)) {
 				readUsage(sender, alias);
 			}
 		}
@@ -228,6 +216,10 @@ public class Main extends JavaPlugin {
 		}
 
 		return value + " " + PREFIXES[iterations];
+	}
+
+	public FileConfigurationPair<YamlConfiguration> getConfiguration() {
+		return this.configuration;
 	}
 
   public static EconomyHandler getEconomy()

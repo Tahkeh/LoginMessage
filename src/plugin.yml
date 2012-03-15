@@ -1,8 +1,7 @@
 name: LoginMessage
 main: com.tahkeh.loginmessage.Main
-version: 0.8
-author: Tahkeh
-authors: [xZise]
+version: 0.8.1
+authors: [Tahkeh, xZise]
 
 commands:
     lmsg:
