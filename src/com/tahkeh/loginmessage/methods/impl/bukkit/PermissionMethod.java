@@ -2,8 +2,9 @@ package com.tahkeh.loginmessage.methods.impl.bukkit;
 
 import org.bukkit.entity.Player;
 
-import com.tahkeh.loginmessage.methods.OriginalPlayerMethod;
-import com.tahkeh.loginmessage.methods.variables.bukkit.BukkitVariables;
+import com.tahkeh.loginmessage.methods.parameter.types.StringParameterType;
+import com.tahkeh.loginmessage.methods.preset.bukkit.OriginalPlayerMethod;
+import com.tahkeh.loginmessage.methods.variables.bukkit.PlayerVariables;
 
 import de.xzise.bukkit.util.callback.CallbackTriple;
 import de.xzise.wrappers.permissions.Permission;
@@ -31,16 +32,16 @@ public class PermissionMethod<T extends Object> extends OriginalPlayerMethod {
 	}
 
 	@Override
-	protected final String call(Player player, BukkitVariables globalParameters) {
+	protected final StringParameterType call(Player player, PlayerVariables globalParameters) {
 		if (this.handler.isActive()) {
 			String str = this.valueCallback.call(this.handler, this.permission, player);
 			if (str == null) {
-				return "";
+				return StringParameterType.EMPTY_PARAMETER_TYPE;
 			} else {
-				return str;
+				return new StringParameterType(str);
 			}
 		} else {
-			return "";
+			return StringParameterType.EMPTY_PARAMETER_TYPE;
 		}
 	}
 }

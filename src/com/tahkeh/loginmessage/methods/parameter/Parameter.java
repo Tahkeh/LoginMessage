@@ -1,6 +1,10 @@
 package com.tahkeh.loginmessage.methods.parameter;
 
+import com.tahkeh.loginmessage.methods.parameter.types.ParameterType;
+
 public interface Parameter {
 
-	String parse();
+	ParameterType parse();
+
+	String getText();
 }

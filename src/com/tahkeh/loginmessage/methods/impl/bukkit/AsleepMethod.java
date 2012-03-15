@@ -3,21 +3,23 @@ package com.tahkeh.loginmessage.methods.impl.bukkit;
 import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.Message;
-import com.tahkeh.loginmessage.methods.CasePlayerMethod;
-import com.tahkeh.loginmessage.methods.variables.bukkit.BukkitVariables;
+import com.tahkeh.loginmessage.methods.parameter.Parameter;
+import com.tahkeh.loginmessage.methods.preset.bukkit.BooleanMethod;
+import com.tahkeh.loginmessage.methods.variables.bukkit.PlayerVariables;
 
-public class AsleepMethod extends CasePlayerMethod {
+public class AsleepMethod extends BooleanMethod {
 
-	private final Message message;
-	
 	public AsleepMethod(final Message message) {
-		super("asleep");
-		this.message = message;
+		super(0, message, "asleep");
 	}
 
 	@Override
-	protected String call(Player player, BukkitVariables globalParameters) {
-		return this.message.booleanToName(player.isSleeping());
+	protected Boolean getBoolean(final Parameter[] preValues, PlayerVariables globalParameters) {
+		if (globalParameters.offlinePlayer instanceof Player) {
+			return ((Player) globalParameters.offlinePlayer).isSleeping();
+		} else {
+			return null;
+		}
 	}
 
 }

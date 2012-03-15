@@ -1,16 +1,19 @@
-package com.tahkeh.loginmessage.methods;
+package com.tahkeh.loginmessage.methods.preset;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import com.tahkeh.loginmessage.Message;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
+import com.tahkeh.loginmessage.methods.parameter.types.ParameterType;
+import com.tahkeh.loginmessage.methods.parameter.types.StringParameterType;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.MinecraftUtil;
 import de.xzise.bukkit.util.callback.Callback;
 import de.xzise.collections.ArrayReferenceList;
 
-public abstract class CaseMethod<V extends Variables> extends DefaultNamedMethod<V> {
+public abstract class CaseMethod<V extends Variables, C extends V> extends DefaultCastedNamedMethod<V, C> {
 
 	public static enum CaseEnum {
 		LOWER_CASE("lower"),
@@ -34,24 +37,28 @@ public abstract class CaseMethod<V extends Variables> extends DefaultNamedMethod
 		});
 	}
 
-	public CaseMethod(final String defaultName) {
-		super(true, defaultName, 0, 1, 3);
+	private final int preValueCount;
+
+	public CaseMethod(final int preValueCount, final String defaultName, final Class<? extends C> variableClass) {
+		super(defaultName, variableClass, 0, 1, 3);
+		this.preValueCount = preValueCount;
 	}
 
 	@Override
-	public String call(Parameter[] parameters, V globalParameters) {
+	public ParameterType innerCall(Parameter[] parameters, C globalParameters) {
 		CaseEnum caseEnum = null;
 		if (parameters.length == 0) {
 			caseEnum = CaseEnum.NONE;
 		} else if (parameters.length == 1 || parameters.length == 3) {
-			caseEnum = CaseEnum.CASE_ENUMS.get(parameters[0].parse().toLowerCase());
+			caseEnum = CaseEnum.CASE_ENUMS.get(parameters[0].parse().asString().toLowerCase());
 		}
 		if ((caseEnum == CaseEnum.CUSTOM && parameters.length == 3) || (caseEnum != CaseEnum.CUSTOM && caseEnum != null && parameters.length == 1)) {
-			final String result = this.call(globalParameters);
+			Parameter[] preValues = Arrays.copyOf(parameters, preValueCount);
+			final String result = this.call(preValues, globalParameters);
 			switch (caseEnum) {
 			case CUSTOM:
-				final char[] upperTrigger = new String(parameters[1].parse()).toCharArray();
-				final char[] upperReceiver = new String(parameters[2].parse()).toCharArray();
+				final char[] upperTrigger = parameters[1].parse().asString().toCharArray();
+				final char[] upperReceiver = parameters[2].parse().asString().toCharArray();
 				final char[] processedCustom = new char[result.length()];
 				int indexCustom = 0;
 				boolean makeUpperCustom = true;
@@ -64,7 +71,7 @@ public abstract class CaseMethod<V extends Variables> extends DefaultNamedMethod
 					}
 					processedCustom[indexCustom++] = c;
 				}
-				return new String(processedCustom);
+				return new StringParameterType(new String(processedCustom));
 			case CAMEL_CASE:
 				final char[] processed = new char[result.length()];
 				int index = 0;
@@ -78,15 +85,15 @@ public abstract class CaseMethod<V extends Variables> extends DefaultNamedMethod
 					}
 					processed[index++] = c;
 				}
-				return new String(processed);
+				return new StringParameterType(new String(processed));
 			case FIRST_UPPER:
-				return Message.toCapitalCase(result, false);
+				return new StringParameterType(Message.toCapitalCase(result, false));
 			case UPPER_CASE:
-				return result.toUpperCase();
+				return new StringParameterType(result.toUpperCase());
 			case LOWER_CASE:
-				return result.toLowerCase();
+				return new StringParameterType(result.toLowerCase());
 			case NONE:
-				return result;
+				return new StringParameterType(result);
 			default:
 				return null;
 			}
@@ -95,5 +102,5 @@ public abstract class CaseMethod<V extends Variables> extends DefaultNamedMethod
 		}
 	}
 
-	protected abstract String call(V globalParameters);
+	protected abstract String call(Parameter[] preValues, C globalParameters);
 }

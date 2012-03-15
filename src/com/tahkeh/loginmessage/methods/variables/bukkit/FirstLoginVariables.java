@@ -2,7 +2,7 @@ package com.tahkeh.loginmessage.methods.variables.bukkit;
 
 import org.bukkit.OfflinePlayer;
 
-public class FirstLoginVariables extends BukkitVariables {
+public class FirstLoginVariables extends PlayerVariables {
 
 	public static final String NAME = "firstlogin";
 

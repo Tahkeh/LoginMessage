@@ -1,5 +1,6 @@
-package com.tahkeh.loginmessage.methods;
+package com.tahkeh.loginmessage.methods.preset;
 
+import com.tahkeh.loginmessage.methods.MethodParser;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
 /**
@@ -9,8 +10,8 @@ public abstract class DefaultNamedMethod<V extends Variables> extends DefaultMet
 
 	private final String defaultName;
 
-	public DefaultNamedMethod(final boolean recursive, final String defaultName, final int paramCount, final int... paramCounts) {
-		super(recursive, paramCount, paramCounts);
+	public DefaultNamedMethod(final String defaultName, final int paramCount, final int... paramCounts) {
+		super(paramCount, paramCounts);
 		this.defaultName = defaultName;
 	}
 

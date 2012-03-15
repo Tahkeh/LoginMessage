@@ -1,35 +1,43 @@
 package com.tahkeh.loginmessage.methods.impl;
 
-import com.tahkeh.loginmessage.methods.DefaultMethod;
 import com.tahkeh.loginmessage.methods.MethodParser;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
+import com.tahkeh.loginmessage.methods.parameter.types.ParameterType;
+import com.tahkeh.loginmessage.methods.parameter.types.StringParameterType;
+import com.tahkeh.loginmessage.methods.preset.DefaultMethod;
 import com.tahkeh.loginmessage.methods.variables.Variables;
+
+import de.xzise.MinecraftUtil;
 
 public class PrintPrefixMethod extends DefaultMethod<Variables> {
 
 	private final MethodParser<?> parser;
 
 	public PrintPrefixMethod(final MethodParser<?> parser) {
-		super(false, 0);
+		super(0);
 		this.parser = parser;
 	}
 
 	@Override
-	public String call(Parameter[] parameters, Variables globalParameters) {
+	public ParameterType call(Parameter[] parameters, int depth, Variables globalParameters) {
 		if (parameters.length == 0) {
-			return this.parser.getPrefix();
+			return new StringParameterType(this.parser.getPrefix());
 		} else {
 			return null;
 		}
 	}
 
 	public PrintPrefixMethod register() {
-		super.register(this.parser.getPrefix(), this.parser);
+		if (MinecraftUtil.isSet(this.parser.getPrefix())) {
+			super.register(this.parser.getPrefix(), this.parser);
+		}
 		return this;
 	}
 
 	public PrintPrefixMethod unregister() {
-		super.unregister(this.parser.getPrefix(), this.parser);
+		if (MinecraftUtil.isSet(this.parser.getPrefix())) {
+			super.unregister(this.parser.getPrefix(), this.parser);
+		}
 		return this;
 	}
 }

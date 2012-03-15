@@ -1,7 +1,7 @@
 package com.tahkeh.loginmessage.methods.impl;
 
-import com.tahkeh.loginmessage.methods.IfMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
+import com.tahkeh.loginmessage.methods.preset.IfMethod;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class IfSetMethod extends IfMethod<Variables> {

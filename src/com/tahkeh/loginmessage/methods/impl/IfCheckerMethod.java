@@ -2,8 +2,8 @@ package com.tahkeh.loginmessage.methods.impl;
 
 import java.util.Comparator;
 
-import com.tahkeh.loginmessage.methods.IfMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
+import com.tahkeh.loginmessage.methods.preset.IfMethod;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.EqualCheck;
@@ -23,6 +23,6 @@ public class IfCheckerMethod extends IfMethod<Variables> {
 
 	@Override
 	protected Boolean match(Parameter[] preValues, Variables globalParameters) {
-		return this.checker.equals(preValues[0].parse(), preValues[1].parse());
+		return this.checker.equals(preValues[0].parse().asString(), preValues[1].parse().asString());
 	}
 }

@@ -1,6 +1,7 @@
 package com.tahkeh.loginmessage.methods.impl.bukkit;
 
-import com.tahkeh.loginmessage.methods.OriginalMethod;
+import com.tahkeh.loginmessage.methods.parameter.types.StringParameterType;
+import com.tahkeh.loginmessage.methods.preset.OriginalMethod;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.KickVariables;
 
@@ -11,9 +12,9 @@ public class KickReasonMethod extends OriginalMethod<Variables> {
 	}
 
 	@Override
-	protected String call(Variables globalParameters) {
+	protected StringParameterType call(Variables globalParameters) {
 		if (globalParameters instanceof KickVariables) {
-			return ((KickVariables) globalParameters).reason;
+			return new StringParameterType(((KickVariables) globalParameters).reason);
 		} else {
 			return null;
 		}

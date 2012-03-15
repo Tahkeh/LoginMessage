@@ -1,6 +1,7 @@
 package com.tahkeh.loginmessage.methods.impl.bukkit;
 
-import com.tahkeh.loginmessage.methods.OriginalMethod;
+import com.tahkeh.loginmessage.methods.parameter.types.StringParameterType;
+import com.tahkeh.loginmessage.methods.preset.OriginalMethod;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.PlayerNotFoundVariables;
 
@@ -11,9 +12,9 @@ public class TargetPlayerMethod extends OriginalMethod<Variables> {
 	}
 
 	@Override
-	protected String call(Variables globalParameters) {
+	protected StringParameterType call(Variables globalParameters) {
 		if (globalParameters instanceof PlayerNotFoundVariables) {
-			return ((PlayerNotFoundVariables) globalParameters).targetName;
+			return new StringParameterType(((PlayerNotFoundVariables) globalParameters).targetName);
 		} else {
 			return null;
 		}

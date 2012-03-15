@@ -2,8 +2,13 @@ package com.tahkeh.loginmessage.methods.impl.bukkit;
 
 import org.bukkit.entity.Player;
 
-import com.tahkeh.loginmessage.methods.OriginalPlayerMethod;
-import com.tahkeh.loginmessage.methods.variables.bukkit.BukkitVariables;
+import com.tahkeh.loginmessage.methods.parameter.types.DoubleParameterType;
+import com.tahkeh.loginmessage.methods.parameter.types.LongParameterType;
+import com.tahkeh.loginmessage.methods.parameter.types.ParameterType;
+import com.tahkeh.loginmessage.methods.preset.bukkit.OriginalPlayerMethod;
+import com.tahkeh.loginmessage.methods.variables.bukkit.PlayerVariables;
+
+import de.xzise.MinecraftUtil;
 
 public class CurrentExperienceMethod extends OriginalPlayerMethod {
 
@@ -13,11 +18,11 @@ public class CurrentExperienceMethod extends OriginalPlayerMethod {
 
 	@SuppressWarnings("deprecation")
 	@Override
-	protected String call(Player player, BukkitVariables globalParameters) {
+	protected ParameterType call(Player player, PlayerVariables globalParameters) {
 		try {
-			return Float.toString(player.getExp());
+			return new DoubleParameterType(player.getExp(), MinecraftUtil.MAX_TWO_DECIMALS_FORMAT);
 		} catch (NoSuchMethodError e) {
-			return Integer.toString(player.getExperience());
+			return new LongParameterType(player.getExperience());
 		}
 	}
 

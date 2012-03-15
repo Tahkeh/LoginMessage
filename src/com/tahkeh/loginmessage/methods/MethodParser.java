@@ -7,23 +7,27 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import com.tahkeh.loginmessage.methods.impl.AddMethod;
+import com.tahkeh.loginmessage.methods.impl.ArrayMethod;
 import com.tahkeh.loginmessage.methods.impl.BarMethod;
 import com.tahkeh.loginmessage.methods.impl.CaseCheckerMethod;
 import com.tahkeh.loginmessage.methods.impl.ConstantMethod;
+import com.tahkeh.loginmessage.methods.impl.CreateMethod;
 import com.tahkeh.loginmessage.methods.impl.IfArithmeticMethod;
 import com.tahkeh.loginmessage.methods.impl.IfCheckerMethod;
 import com.tahkeh.loginmessage.methods.impl.IfSetMethod;
 import com.tahkeh.loginmessage.methods.impl.IndefiniteArticleMethod;
 import com.tahkeh.loginmessage.methods.impl.MaximumMethod;
 import com.tahkeh.loginmessage.methods.impl.MinimumMethod;
-import com.tahkeh.loginmessage.methods.impl.NullMethod;
 import com.tahkeh.loginmessage.methods.impl.PrintMethod;
 import com.tahkeh.loginmessage.methods.impl.PrintPrefixMethod;
 import com.tahkeh.loginmessage.methods.impl.RandomMethod;
 import com.tahkeh.loginmessage.methods.impl.RedirectMethod;
-import com.tahkeh.loginmessage.methods.parameter.FinalParameter;
+import com.tahkeh.loginmessage.methods.impl.SubtractMethod;
 import com.tahkeh.loginmessage.methods.parameter.OnceParsedParameter;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
+import com.tahkeh.loginmessage.methods.parameter.types.ParameterType;
+import com.tahkeh.loginmessage.methods.parameter.types.StringParameterType;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.EqualCheck;
@@ -180,10 +184,10 @@ public class MethodParser<V extends Variables> {
 	}
 
 	public String parseLine(String line, V globalParameters) {
-		return this.parseLine(line, globalParameters, 0);
+		return this.parseLine(line, globalParameters, 0).asString();
 	}
 
-	public String parseLine(String line, V globalParameters, final int depth) {
+	public ParameterType parseLine(String line, V globalParameters, final int depth) {
 		int index = 0;
 		int start = -1;
 		int delim = -1;
@@ -286,24 +290,25 @@ public class MethodParser<V extends Variables> {
 						}
 						Parameter[] parameterObjects = new Parameter[parameters.length];
 						for (int i = 0; i < parameters.length; i++) {
-							if (method.isRecursive()) {
-								parameterObjects[i] = OnceParsedParameter.create(this, parameters[i], globalParameters, depth + 1);
-							} else {
-								parameterObjects[i] = new FinalParameter(parameters[i]);
-							}
+							parameterObjects[i] = OnceParsedParameter.create(this, parameters[i], globalParameters, depth + 1);
 						}
-						String replacement = null;
+						ParameterType replacement = null;
 						try {
-							replacement = method.call(parameterObjects, globalParameters);
+							replacement = method.call(parameterObjects, depth, globalParameters);
 						} catch (Exception e) {
 							this.logger.warning("Exception by calling '" + name + "'!", e);
 						}
 						if (replacement != null) {
-							if (method.isRecursive()) {
-								replacement = parseLine(replacement, globalParameters, depth + 1);
+							final String prefix = line.substring(0, start);
+							final String suffix = substring(line, end + 1, line.length());
+							// This is the only statement
+							if (prefix.isEmpty() && suffix.isEmpty()) {
+								return replacement;
+							} else {
+								String replacementText = replacement.asString();
+								line = line.substring(0, start) + replacementText + substring(line, end + 1, line.length());
+								index += replacementText.length() - (end - start) - 1;
 							}
-							line = line.substring(0, start) + replacement + substring(line, end + 1, line.length());
-							index += replacement.length() - (end - start) - 1;
 						}
 					} else {
 						this.logger.severe("Didn't called method '" + name + "' at depth " + depth);
@@ -318,12 +323,12 @@ public class MethodParser<V extends Variables> {
 			}
 		}
 
-		return MinecraftUtil.isSet(line) ? line : null;
+		return new StringParameterType(line);
 	}
 
 	public void loadDefaults() {
-		new PrintMethod(true, "call").register(this);
-		new PrintMethod(false, "print").register(this);
+		PrintMethod.create(true, "call", this).register();
+		PrintMethod.create(false, "print", this).register();
 
 		// IfChecker
 		this.registerMethod("ifequals", new IfCheckerMethod(EqualCheck.CLASSIC_EQUAL_CHECKER, false), 3, 4);
@@ -342,8 +347,9 @@ public class MethodParser<V extends Variables> {
 
 		this.registerMethod("random", new RandomMethod(), -1);
 
-		new NullMethod().register(this);
+		ConstantMethod.NULL_METHOD.register(this);
 
+		new ArrayMethod().register(this);
 		new IndefiniteArticleMethod().register(this);
 		new ConstantMethod("", "sp").register(this);
 		new MaximumMethod(true).register(this);
@@ -352,6 +358,13 @@ public class MethodParser<V extends Variables> {
 		new MinimumMethod(false).register(this);
 		new PrintPrefixMethod(this).register();
 		new BarMethod().register(this);
+
+		new AddMethod().register(this);
+		new SubtractMethod().register(this);
+	}
+
+	public void loadEssential() {
+		new CreateMethod().register(this);
 	}
 
 	private static String substring(String input, int start, int end) {

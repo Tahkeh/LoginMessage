@@ -1,9 +1,11 @@
-package com.tahkeh.loginmessage.methods;
+package com.tahkeh.loginmessage.methods.preset;
 
 import java.util.Arrays;
 
+import com.tahkeh.loginmessage.methods.Method;
 import com.tahkeh.loginmessage.methods.parameter.FinalParameter;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
+import com.tahkeh.loginmessage.methods.parameter.types.ParameterType;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public abstract class IfMethod<V extends Variables> implements Method<V> {
@@ -17,7 +19,7 @@ public abstract class IfMethod<V extends Variables> implements Method<V> {
 	}
 
 	@Override
-	public final String call(Parameter[] parameters, V globalParameters) {
+	public final ParameterType call(Parameter[] parameters, int depth, V globalParameters) {
 		Parameter match = FinalParameter.EMPTY_PARAMETER;
 		Parameter noMatch = FinalParameter.EMPTY_PARAMETER;
 		switch (parameters.length - this.preValueCount) {
@@ -33,10 +35,5 @@ public abstract class IfMethod<V extends Variables> implements Method<V> {
 	}
 
 	protected abstract Boolean match(Parameter[] preValues, V globalParameters);
-
-	@Override
-	public boolean isRecursive() {
-		return true;
-	}
 
 }

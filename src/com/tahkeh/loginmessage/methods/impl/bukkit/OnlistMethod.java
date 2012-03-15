@@ -6,14 +6,15 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.Message;
-import com.tahkeh.loginmessage.methods.DefaultMethod;
-import com.tahkeh.loginmessage.methods.DefaultNamedMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
+import com.tahkeh.loginmessage.methods.parameter.types.ParameterType;
+import com.tahkeh.loginmessage.methods.parameter.types.StringParameterType;
+import com.tahkeh.loginmessage.methods.preset.DefaultNamedMethod;
 import com.tahkeh.loginmessage.methods.variables.bukkit.BukkitVariables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.PlayerVariables;
 
 import de.xzise.MinecraftUtil;
 
@@ -29,7 +30,7 @@ public class OnlistMethod extends DefaultNamedMethod<BukkitVariables> {
 	private final Message message;
 
 	public OnlistMethod(final Message message) {
-		super(false, "onlist", 0, 1, 2, 3, 4);
+		super("onlist", 0, 1, 2, 3, 4);
 		this.message = message;
 	}
 
@@ -41,35 +42,35 @@ public class OnlistMethod extends DefaultNamedMethod<BukkitVariables> {
 		}
 	}
 	@Override
-	public String call(Parameter[] parameters, BukkitVariables globalParameters) {
+	public ParameterType call(Parameter[] parameters, int depth, BukkitVariables globalParameters) {
 		String prefix = PREFIX;
 		String suffix = SUFFIX;
 		String delimiter = DELIMITER;
 		boolean useDisplayNames = false;
 		switch (parameters.length) {
 		case 4:
-			delimiter = parameters[3].parse();
+			delimiter = parameters[3].parse().asString();
 		case 3:
-			useDisplayNames = DefaultMethod.parseAsBoolean(parameters[2].parse());
+			useDisplayNames = parameters[2].parse().asBoolean();
 		case 2:
-			prefix = maybeColored(parameters[0].parse());
-			suffix = maybeColored(parameters[1].parse());
+			prefix = maybeColored(parameters[0].parse().asString());
+			suffix = maybeColored(parameters[1].parse().asString());
 			break;
 		case 1:
-			return this.message.processOnlineList(parameters[0].parse(), globalParameters.leaveEvent ? MinecraftUtil.cast(Player.class, globalParameters.offlinePlayer) : null);
+			return new StringParameterType(this.message.processOnlineList(parameters[0].parse().asString(), globalParameters.leaveEvent && globalParameters instanceof PlayerVariables ? MinecraftUtil.cast(Player.class, ((PlayerVariables) globalParameters).offlinePlayer) : null));
 		case 0:
 			break;
 		default:
 			return null;
 		}
-		return this.call(globalParameters.offlinePlayer, prefix, suffix, useDisplayNames, delimiter, globalParameters.leaveEvent);
+		return new StringParameterType(this.call(globalParameters, prefix, suffix, useDisplayNames, delimiter));
 	}
 
-	private String call(final OfflinePlayer triggerPlayer, final String prefix, final String suffix, final boolean useDisplayNames, final String delimiter, final boolean isLeaveEvent) {
+	private String call(final BukkitVariables variables, final String prefix, final String suffix, final boolean useDisplayNames, final String delimiter) {
 		StringBuilder builder = new StringBuilder();
 		List<Player> allPlayers = Arrays.asList(Bukkit.getServer().getOnlinePlayers());
-		if (isLeaveEvent) {
-			allPlayers.remove(triggerPlayer);
+		if (variables.leaveEvent && variables instanceof PlayerVariables) {
+			allPlayers.remove(((PlayerVariables) variables).offlinePlayer);
 		}
 		for (Iterator<Player> playerIt = allPlayers.iterator(); playerIt.hasNext();) {
 			Player player = playerIt.next();

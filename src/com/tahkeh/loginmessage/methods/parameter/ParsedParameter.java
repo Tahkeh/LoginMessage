@@ -1,6 +1,7 @@
 package com.tahkeh.loginmessage.methods.parameter;
 
 import com.tahkeh.loginmessage.methods.MethodParser;
+import com.tahkeh.loginmessage.methods.parameter.types.ParameterType;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class ParsedParameter<V extends Variables> implements Parameter {
@@ -22,8 +23,13 @@ public class ParsedParameter<V extends Variables> implements Parameter {
 	}
 
 	@Override
-	public String parse() {
+	public ParameterType parse() {
 		return this.parser.parseLine(this.parameterValue, this.variable, this.depth);
+	}
+
+	@Override
+	public String getText() {
+		return this.parameterValue;
 	}
 
 }

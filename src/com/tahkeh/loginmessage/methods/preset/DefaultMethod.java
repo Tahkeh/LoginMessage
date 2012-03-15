@@ -1,29 +1,24 @@
-package com.tahkeh.loginmessage.methods;
+package com.tahkeh.loginmessage.methods.preset;
 
+import com.tahkeh.loginmessage.methods.Method;
+import com.tahkeh.loginmessage.methods.MethodParser;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.MinecraftUtil;
 
 /**
- * Default method implementation which implements {@link Method#isRecursive()}.
+ * Default method implementation with the allowed parameter counts.
  */
 public abstract class DefaultMethod<V extends Variables> implements Method<V> {
 
-	private final boolean recursive;
 	private final int[] paramCounts;
 
-	public DefaultMethod(final boolean recursive, final int paramCount, final int... paramCounts) {
-		this.recursive = recursive;
+	public DefaultMethod(final int paramCount, final int... paramCounts) {
 		this.paramCounts = MinecraftUtil.concat(paramCount, paramCounts);
 	}
 
 	public final int[] getParamCounts() {
 		return this.paramCounts.clone();
-	}
-
-	@Override
-	public final boolean isRecursive() {
-		return this.recursive;
 	}
 
 	public final DefaultMethod<V> register(String name, MethodParser<? extends V> parser) {
@@ -82,18 +77,18 @@ public abstract class DefaultMethod<V extends Variables> implements Method<V> {
 	 *            parameter value.
 	 * @return The parameter parsed as an integer. If it isn't a valid value it
 	 *         returns <code>null</code>.
-	 * @see DefaultMethod#parseAsIntegerFixed(String)
+	 * @see DefaultMethod#parseAsLongFixed(String)
 	 */
-	public static Integer parseAsInteger(String parameter) {
+	public static Long parseAsLong(final String parameter) {
 		if (MinecraftUtil.isSet(parameter)) {
-			Integer fixedParse = parseAsIntegerFixed(parameter);
+			Long fixedParse = parseAsLongFixed(parameter);
 			if (fixedParse != null) {
 				return fixedParse;
 			} else {
 				final String[] s = parameter.split("_");
 				if (s.length == 2) {
-					Integer radix = parseAsIntegerFixed(s[1]);
-					return radix != null ? MinecraftUtil.tryAndGetInteger(s[0], radix) : null;
+					Long radix = parseAsLongFixed(s[1]);
+					return radix != null ? MinecraftUtil.tryAndGetLong(s[0], radix.intValue()) : null;
 				} else {
 					return null;
 				}
@@ -104,7 +99,7 @@ public abstract class DefaultMethod<V extends Variables> implements Method<V> {
 	}
 
 	/**
-	 * Try to read the parameter as an integer. There are several configurations
+	 * Try to read the parameter as a long. There are several configurations
 	 * possible:
 	 * <ul>
 	 * <li>If the parameter's length is one it try to read it as a hexadecimal
@@ -120,14 +115,14 @@ public abstract class DefaultMethod<V extends Variables> implements Method<V> {
 	 * 
 	 * @param parameter
 	 *            parameter value.
-	 * @return The parameter parsed as an integer. If it isn't a valid value it
+	 * @return The parameter parsed as a long. If it isn't a valid value it
 	 *         returns <code>null</code>.
-	 * @see DefaultMethod#parseAsInteger(String)
+	 * @see DefaultMethod#parseAsLong(String)
 	 */
-	public static Integer parseAsIntegerFixed(String parameter) {
+	public static Long parseAsLongFixed(final String parameter) {
 		if (MinecraftUtil.isSet(parameter)) {
 			if (parameter.length() == 1) {
-				return MinecraftUtil.tryAndGetInteger(parameter, 16);
+				return MinecraftUtil.tryAndGetLong(parameter, 16);
 			} else {
 				final int radix;
 				boolean positive = true;
@@ -154,7 +149,7 @@ public abstract class DefaultMethod<V extends Variables> implements Method<V> {
 					radix = 10;
 				}
 				try {
-					final int value = Integer.parseInt(parameter.substring(start), radix);
+					final long value = Long.parseLong(parameter.substring(start), radix);
 					return positive ? value : -value;
 				} catch (NumberFormatException e) {
 					return null;

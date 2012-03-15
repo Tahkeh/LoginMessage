@@ -2,7 +2,7 @@ package com.tahkeh.loginmessage.methods.variables.bukkit;
 
 import org.bukkit.OfflinePlayer;
 
-public class DeathVariables extends BukkitVariables {
+public class DeathVariables extends PlayerVariables {
 
 	public static final String NAME = "death";
 

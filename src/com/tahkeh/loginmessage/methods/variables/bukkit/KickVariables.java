@@ -2,7 +2,7 @@ package com.tahkeh.loginmessage.methods.variables.bukkit;
 
 import org.bukkit.OfflinePlayer;
 
-public class KickVariables extends BukkitVariables {
+public class KickVariables extends PlayerVariables {
 
 	public static final String NAME = "kick";
 

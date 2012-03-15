@@ -90,6 +90,7 @@ import com.tahkeh.loginmessage.methods.variables.bukkit.IntervalVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.KickVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.LoginVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.PlayerNotFoundVariables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.PlayerVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.QuitVariables;
 import com.tahkeh.loginmessage.timers.Cooldown;
 import com.tahkeh.loginmessage.timers.Delay;
@@ -137,8 +138,8 @@ public class Message
 		this.data = new PlayerDataHandler(store, geoip);
 		}
 
-	public void load(String event) {
-		if(config.getBoolean("autoload", true) || event.equals("load")) {
+	public void load(final boolean forceLoad, final boolean schedule) {
+		if(config.getBoolean("autoload", true) || forceLoad) {
 			config.load();
 			message.load();
 			list.load();
@@ -210,7 +211,6 @@ public class Message
 					ConfigurationNode values = scriptNode.getValue();
 
 					String method = values.getString("method", "call");
-					boolean recursive = values.getBoolean("recursive", true);
 					String engine = values.getString("engine");
 					String fileName = values.getString("file");
 					int[] paramCountArray = getParamCounts(values, "parameters", 0, -1);
@@ -234,7 +234,7 @@ public class Message
 					if (engine == null) {
 						this.logger.warning("No engine defined.");
 					} else if (reader != null) {
-						ScriptMethod methodObj = ScriptMethod.create(engine, method, reader, engineManager, recursive, logger);
+						ScriptMethod methodObj = ScriptMethod.create(engine, method, reader, engineManager, logger);
 						if (methodObj != null) {
 							this.methodParser.registerMethod(name, methodObj, paramCountArray);
 							scriptEnabled++;
@@ -259,7 +259,7 @@ public class Message
 					String calls = values.getString("call");
 					int paramCount = values.getInt("parameters", 0);
 					if (calls != null) {
-						new AliasMethod(calls, paramCount, name).register(this.methodParser);
+						AliasMethod.create(calls, paramCount, name, this.methodParser).register();
 						aliasEnabled++;
 					} else {
 						this.logger.warning("No call definition for alias method '" + name + "'!");
@@ -290,7 +290,9 @@ public class Message
 			this.logger.info("Registered " + (redirectedEnabled + aliasEnabled + scriptEnabled) + " user defined methods (" + scriptEnabled + " scripts, " + aliasEnabled + " aliases, " + redirectedEnabled + " redirects)!");
 		}
 		addGeoipFail();
-		scheduleIntervals(event);
+		if (schedule) {
+			scheduleIntervals();
+		}
 	}
 
 	private static int[] getParamCounts(final ConfigurationNode node, final String name, final int... counts) {
@@ -329,9 +331,9 @@ public class Message
 		geoipFail.put("rname", config.getString("rnamefail", "Trollface"));
 	}
 	
-	public void scheduleIntervals(String event) {
+	public void scheduleIntervals() {
 		List<String> keys = message.getKeys("messages.interval");
-		if(keys != null && !event.equals("interval")) {
+		if(keys != null) {
 			for(String key : keys) {
 				if(!running.contains(key)) {
 					int interval = message.getInt("messages.interval." + key + ".interval", 300);
@@ -597,7 +599,7 @@ public class Message
 	 *            the event isn't <code>command</code>.
 	 */
 	private void preProcessMessage(final BukkitVariables variables) {
-		String[] messages;
+		final String[] messages;
 		if (variables instanceof CommandVariables) {
 			messages = new String[] { ((CommandVariables) variables).command };
 		} else {
@@ -627,8 +629,8 @@ public class Message
 		} else {
 			player = null;
 		}
-		if (player == null) {
-			return Bukkit.getPlayerExact(variables.offlinePlayer.getName());
+		if (player == null && variables instanceof PlayerVariables) {
+			return Bukkit.getPlayerExact(((PlayerVariables) variables).offlinePlayer.getName());
 		} else {
 			return player;
 		}
@@ -737,20 +739,6 @@ public class Message
 		return capital + trim;
 	}
 
-	public static String toCapitalCase(final String string, final boolean restToLowercase) {
-		final char[] chars = string.toCharArray();
-		boolean found = false;
-		for (int i = 0; i < chars.length; i++) {
-			if (Character.isLetter(chars[i]) && !found) {
-				chars[i] = Character.toUpperCase(chars[i]);
-				found = true;
-			} else if (restToLowercase) {
-				chars[i] = Character.toLowerCase(chars[i]);
-			}
-		}
-		return new String(chars);
-	}
-
 	public void finishMessage(String key, BukkitVariables variables) // Final touches - delay and cooldown
 	{
 		String[] lines = this.getLines(variables.name, key);
@@ -840,7 +828,7 @@ public class Message
 	public void onPlayerJoin(PlayerJoinEvent eventObject) {
 		final Player p = eventObject.getPlayer();
 		final BukkitVariables variables = existingPlayer(p.getName()) ? new LoginVariables(p) : new FirstLoginVariables(p);
-		load(variables.name);
+		load(false, true);
 		preProcessMessage(variables);
 
 		if (variables instanceof FirstLoginVariables) {
@@ -856,7 +844,7 @@ public class Message
 		Player p = event.getPlayer();
 		if (!this.kicked.remove(p.getName())) {
 			final BukkitVariables variables = new QuitVariables(p);
-			load(variables.name);
+			load(false, true);
 			data.storeLong(p, "laston", PlayerDataHandler.getTime());
 			preProcessMessage(variables);
 
@@ -870,7 +858,7 @@ public class Message
 		Player p = event.getPlayer();
 		KickVariables kick = new KickVariables(event.getReason(), p);
 		data.storeLong(p, "laston", PlayerDataHandler.getTime());
-		load(kick.name);
+		load(false, true);
 		this.kicked.add(p.getName());
 
 		preProcessMessage(kick);
@@ -881,12 +869,12 @@ public class Message
 	}
 
 	public void onIntervalCompletion(String key) {
-		load("interval");
+		load(false, false);
 		finishMessage(key, new IntervalVariables());
 	}
 
 	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
-		load(CommandVariables.NAME);
+		load(false, true);
 		Player sender = event.getPlayer();
 		String[] cmdargs = event.getMessage().substring(1).split(" ");
 		List<String> commands = message.getKeys("messages.command");
@@ -918,7 +906,7 @@ public class Message
 	}
 	
 	public void onPlayerDeath(PlayerDeathEvent event) {
-		load(DeathVariables.NAME);
+		load(false, true);
 		Map<String, List<String>> keyCauses = new HashMap<String, List<String>>();
 		Player p = (Player) event.getEntity();
 		DeathHandler handler = new DeathHandler(p, table);

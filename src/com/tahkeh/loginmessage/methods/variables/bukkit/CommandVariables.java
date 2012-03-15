@@ -3,7 +3,7 @@ package com.tahkeh.loginmessage.methods.variables.bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
-public class CommandVariables extends BukkitVariables {
+public class CommandVariables extends PlayerVariables {
 
 	public static final String NAME = "command";
 

@@ -1,11 +1,12 @@
 package com.tahkeh.loginmessage.methods.parameter;
 
 import com.tahkeh.loginmessage.methods.MethodParser;
+import com.tahkeh.loginmessage.methods.parameter.types.ParameterType;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
 public class OnceParsedParameter<V extends Variables> extends ParsedParameter<V> {
 
-	private String parsedParameter = null;
+	private ParameterType parsedParameter = null;
 	private boolean parsed = false;
 
 	public OnceParsedParameter(final MethodParser<? super V> parser, final String parameterValue, final V variable, final int depth) {
@@ -17,7 +18,7 @@ public class OnceParsedParameter<V extends Variables> extends ParsedParameter<V>
 	}
 
 	@Override
-	public String parse() {
+	public ParameterType parse() {
 		if (!this.parsed) {
 			this.parsedParameter = super.parse();
 			this.parsed = true;

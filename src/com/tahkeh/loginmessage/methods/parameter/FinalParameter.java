@@ -1,5 +1,8 @@
 package com.tahkeh.loginmessage.methods.parameter;
 
+import com.tahkeh.loginmessage.methods.parameter.types.ParameterType;
+import com.tahkeh.loginmessage.methods.parameter.types.StringParameterType;
+
 public class FinalParameter implements Parameter {
 
 	public static final FinalParameter EMPTY_PARAMETER = new FinalParameter("");
@@ -12,7 +15,12 @@ public class FinalParameter implements Parameter {
 	}
 
 	@Override
-	public String parse() {
+	public ParameterType parse() {
+		return new StringParameterType(this.parameterValue);
+	}
+
+	@Override
+	public String getText() {
 		return this.parameterValue;
 	}
 

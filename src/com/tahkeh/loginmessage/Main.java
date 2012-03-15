@@ -121,7 +121,7 @@ public class Main extends JavaPlugin {
 		}
 		table = new MaterialTable(tableFile, logger);
 		msg = new Message(this, config, message, list, logger, table);
-		msg.load("load");
+		msg.load(true, true);
 		cfg.setup();
 		config.load();
 		PluginManager pm = getServer().getPluginManager();
@@ -144,7 +144,7 @@ public class Main extends JavaPlugin {
 				if (args[0].equalsIgnoreCase("reload")) {
 					if (permissions.permission(sender, reload)) {
 						msg.unload();
-						msg.load("load");
+						msg.load(true, true);
 						sender.sendMessage(ChatColor.RED + "LoginMessage files reloaded.");
 						return true;
 					} else {

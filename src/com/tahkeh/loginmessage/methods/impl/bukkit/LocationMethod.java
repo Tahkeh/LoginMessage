@@ -5,19 +5,21 @@ import java.util.Arrays;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
-import com.tahkeh.loginmessage.methods.DefaultMethod;
-import com.tahkeh.loginmessage.methods.DefaultNamedMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
+import com.tahkeh.loginmessage.methods.parameter.types.ParameterType;
+import com.tahkeh.loginmessage.methods.parameter.types.StringParameterType;
+import com.tahkeh.loginmessage.methods.preset.DefaultCastedNamedMethod;
 import com.tahkeh.loginmessage.methods.variables.bukkit.BukkitVariables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.PlayerVariables;
 
-public class LocationMethod extends DefaultNamedMethod<BukkitVariables> {
+public class LocationMethod extends DefaultCastedNamedMethod<BukkitVariables, PlayerVariables> {
 
 	public LocationMethod() {
-		super(true, "location", 0, 1, 2, 3);
+		super("location", PlayerVariables.class, 0, 1, 2, 3);
 	}
 
 	@Override
-	public String call(Parameter[] parameters, BukkitVariables globalParameters) {
+	public ParameterType innerCall(Parameter[] parameters, PlayerVariables globalParameters) {
 		if (globalParameters.offlinePlayer instanceof Player) {
 			Location location = ((Player) globalParameters.offlinePlayer).getLocation();
 			String format = null;
@@ -27,7 +29,7 @@ public class LocationMethod extends DefaultNamedMethod<BukkitVariables> {
 				Arrays.fill(set, true);
 				break;
 			case 3 :
-				Boolean boolZ = DefaultMethod.parseAsBoolean(parameters[2].parse());
+				Boolean boolZ = parameters[2].parse().asBoolean();
 				if (boolZ == null) {
 					set = null;
 					break;
@@ -35,7 +37,7 @@ public class LocationMethod extends DefaultNamedMethod<BukkitVariables> {
 					set[2] = boolZ;
 				}
 			case 2 :
-				Boolean boolY = DefaultMethod.parseAsBoolean(parameters[1].parse());
+				Boolean boolY = parameters[1].parse().asBoolean();
 				if (boolY == null) {
 					set = null;
 					break;
@@ -43,9 +45,9 @@ public class LocationMethod extends DefaultNamedMethod<BukkitVariables> {
 					set[2] = boolY;
 				}
 			case 1 :
-				Boolean boolX = DefaultMethod.parseAsBoolean(parameters[0].parse());
+				Boolean boolX = parameters[0].parse().asBoolean();
 				if (boolX == null && parameters.length == 1) {
-					format = parameters[0].parse();
+					format = parameters[0].parse().asString();
 					set = null;
 					break;
 				} else if (set != null) {
@@ -71,7 +73,7 @@ public class LocationMethod extends DefaultNamedMethod<BukkitVariables> {
 			}
 			
 			if (format != null) {
-				return String.format(format, location.getBlockX(), location.getBlockY(), location.getBlockZ());
+				return new StringParameterType(String.format(format, location.getBlockX(), location.getBlockY(), location.getBlockZ()));
 			} else {
 				return null;
 			}

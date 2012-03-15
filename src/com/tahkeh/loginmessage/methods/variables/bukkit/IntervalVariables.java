@@ -5,7 +5,7 @@ public class IntervalVariables extends BukkitVariables {
 	public static final String NAME = "interval";
 
 	public IntervalVariables() {
-		super(false, IntervalVariables.NAME, null);
+		super(false, IntervalVariables.NAME);
 	}
 
 }

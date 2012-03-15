@@ -1,6 +1,6 @@
 package com.tahkeh.loginmessage.methods.impl;
 
-import com.tahkeh.loginmessage.methods.MinMaxMethod;
+import com.tahkeh.loginmessage.methods.preset.MinMaxMethod;
 
 public class MaximumMethod extends MinMaxMethod {
 
@@ -9,7 +9,7 @@ public class MaximumMethod extends MinMaxMethod {
 	}
 
 	@Override
-	protected boolean compare(int nHighest, int tested) {
+	protected boolean compare(long nHighest, long tested) {
 		return nHighest > tested;
 	}
 }

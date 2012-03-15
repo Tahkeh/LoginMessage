@@ -1,7 +1,8 @@
 package com.tahkeh.loginmessage.methods.impl;
 
-import com.tahkeh.loginmessage.methods.DefaultNamedMethod;
 import com.tahkeh.loginmessage.methods.parameter.Parameter;
+import com.tahkeh.loginmessage.methods.parameter.types.ParameterType;
+import com.tahkeh.loginmessage.methods.preset.DefaultNamedMethod;
 import com.tahkeh.loginmessage.methods.variables.Variables;
 
 import de.xzise.EqualCheck;
@@ -11,12 +12,12 @@ public class CaseCheckerMethod extends DefaultNamedMethod<Variables> {
 	private final EqualCheck<? super String> checker;
 
 	public CaseCheckerMethod(final EqualCheck<? super String> checker, final String name) {
-		super(true, name, -2);
+		super(name, -2);
 		this.checker = checker;
 	}
 
 	@Override
-	public String call(Parameter[] parameters, Variables globalParameters) {
+	public ParameterType call(Parameter[] parameters, int depth, Variables globalParameters) {
 		//@formatter:off
 	    /*
 	     * case(
@@ -39,7 +40,7 @@ public class CaseCheckerMethod extends DefaultNamedMethod<Variables> {
 		//@formatter:on
 		if (parameters.length >= 2) {
 			for (int i = 0; i < (parameters.length - 2) / 2; i++) {
-				if (this.checker.equals(parameters[0].parse(), parameters[i * 2 + 1].parse())) {
+				if (this.checker.equals(parameters[0].parse().asString(), parameters[i * 2 + 1].parse().asString())) {
 					return parameters[i * 2 + 2].parse();
 				}
 			}

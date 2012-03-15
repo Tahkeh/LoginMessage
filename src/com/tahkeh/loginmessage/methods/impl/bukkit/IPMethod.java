@@ -3,8 +3,9 @@ package com.tahkeh.loginmessage.methods.impl.bukkit;
 import org.bukkit.entity.Player;
 
 import com.tahkeh.loginmessage.Message;
-import com.tahkeh.loginmessage.methods.OriginalPlayerMethod;
-import com.tahkeh.loginmessage.methods.variables.bukkit.BukkitVariables;
+import com.tahkeh.loginmessage.methods.parameter.types.StringParameterType;
+import com.tahkeh.loginmessage.methods.preset.bukkit.OriginalPlayerMethod;
+import com.tahkeh.loginmessage.methods.variables.bukkit.PlayerVariables;
 
 public class IPMethod extends OriginalPlayerMethod {
 
@@ -16,8 +17,8 @@ public class IPMethod extends OriginalPlayerMethod {
 	}
 
 	@Override
-	protected String call(Player player, BukkitVariables globalParameters) {
-		return this.message.getIP(player);
+	protected StringParameterType call(Player player, PlayerVariables globalParameters) {
+		return new StringParameterType(this.message.getIP(player));
 	}
 
 }
