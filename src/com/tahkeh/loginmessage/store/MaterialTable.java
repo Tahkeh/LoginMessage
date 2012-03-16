@@ -25,7 +25,9 @@ public class MaterialTable extends PropertiesFile {
 			"81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91",
 			"92", "93", "94", "95", "96", "97", "97;1", "97;2", "98", "98;1",
 			"98;2", "99", "100", "101", "102", "103", "104", "105", "106",
-			"107", "108", "109" };
+			"107", "108", "109", "110", "111", "112", "113", "114", "115",
+			"116", "117", "118", "119", "120", "121", "122" };
+
 	public static String[] blockNames = { "nothing", "stone", "grass", "dirt",
 			"cobblestone", "planks", "a sapling", "a redwood sapling",
 			"a birch sapling", "bedrock", "water", "water", "lava", "lava",
@@ -62,7 +64,12 @@ public class MaterialTable extends PropertiesFile {
 			"a stone brick trap block", "stone brick", "moss stone brick",
 			"cracked stone brick", "mushrooms", "mushrooms", "iron bars",
 			"a glass pane", "a melon", "a stem", "a stem", "vines",
-			"a fence gate", "a brick stair", "a stone brick stair" };
+			"a fence gate", "a brick stair", "a stone brick stair", "mycelium",
+			"a lily pad", "nether brick", "a nether brick fence",
+			"a nether brick stair", "nether warts", "an enchantment table",
+			"a brewing stand", "a cauldron", "an end portal",
+			"an end portal frame", "end stone", "a dragon egg" };
+
 	public static String[] itemValues = { "256", "257", "258", "259", "260",
 			"261", "262", "263", "263;1", "264", "265", "266", "267", "268",
 			"269", "270", "271", "272", "273", "274", "275", "276", "277",
@@ -78,7 +85,11 @@ public class MaterialTable extends PropertiesFile {
 			"351;7", "351;8", "351;9", "351;10", "351;11", "351;12", "351;13",
 			"351;14", "351;15", "352", "353", "354", "355", "356", "357",
 			"358", "359", "360", "361", "362", "363", "364", "365", "366",
-			"367", "368", "2256", "2257" };
+			"367", "368", "369", "370", "371", "372", "373", "374", "375",
+			"376", "377", "378", "379", "380", "381", "382", "2256", "2257",
+			"2258", "2259", "2260", "2261", "2262", "2263", "2264", "2265",
+			"2266" };
+
 	public static String[] itemNames = { "an iron shovel", "an iron pickaxe",
 			"an iron axe", "flint and steel", "an apple", "a bow", "an arrow",
 			"coal", "charcoal", "a diamond", "an iron ingot", "a gold ingot",
@@ -113,7 +124,13 @@ public class MaterialTable extends PropertiesFile {
 			"a cookie", "a map", "shears", "a watermelon slice",
 			"pumpkin seeds", "watermelon seeds", "raw steak", "cooked steak",
 			"raw chicken", "cooked chicken", "rotten flesh", "an ender pearl",
-			"a 13 record", "a Cat record" };
+			"a blaze rod", "a ghast tear", "a gold nugget", "a nether wart",
+			"a potion", "a bottle", "a spider eye", "a fermented spider eye",
+			"blaze powder", "magma cream", "a brewing stand", "a cauldron",
+			"an eye of ender", "a glistering melon", "a 13 record",
+			"a Cat record", "a blocks record", "a chirp record",
+			"a far record", "a mall record", "a mellohi record",
+			"a stal record", "a strad record", "a ward record", "an 11 record" };
 
 	public MaterialTable(File file, XLogger logger) {
 		super(file, logger);

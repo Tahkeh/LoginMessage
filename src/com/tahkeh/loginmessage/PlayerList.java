@@ -1,6 +1,5 @@
 package com.tahkeh.loginmessage;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -68,10 +67,10 @@ public class PlayerList {
 		
 		return list;
 	}
-	
+
 	public List<OfflinePlayer> getPlayers() {
-		List<OfflinePlayer> players = new ArrayList<OfflinePlayer>();
-		List<OfflinePlayer> playerList = getAllPlayerList();
+		OfflinePlayer[] playerList = plugin.getServer().getOfflinePlayers();
+		List<OfflinePlayer> players = new ArrayList<OfflinePlayer>(playerList.length);
 		Set<Entry> entries = getEntries();
 		
 		for (OfflinePlayer p : playerList) {
@@ -81,35 +80,7 @@ public class PlayerList {
 		}
 		return players;
 	}
-	
-	public List<OfflinePlayer> getAllPlayerList() {
-		List<OfflinePlayer> playerList = new ArrayList<OfflinePlayer>();
-		for (Player p : plugin.getServer().getOnlinePlayers()) {
-			while(!playerList.contains(p)) {
-				playerList.add(p);
-			}
-		}
-		
-		if (trigger != null && online) {
-			playerList.remove(trigger);
-		}
-		
-		if (!online) {
-			File dir = new File(plugin.getServer().getWorlds().get(0).getName() + File.separator + "players");
-			String[] folders = dir.list();
-			for (String playerDat : folders) {
-				if (playerDat.endsWith(".dat")) {
-					OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(playerDat.substring(0, playerDat.length() - 4));
-					if (!playerList.contains(offlinePlayer)) {
-						playerList.add(offlinePlayer);
-					}
-				}
-			}
-		}
-		
-		return playerList;
-	}
-	
+
 	public Set<Entry> getEntries() {
 		return Message.getEntries(null, plugin, groups, users, permissions, worlds);
 	}

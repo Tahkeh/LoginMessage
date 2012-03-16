@@ -104,15 +104,15 @@ public class PlayerDataHandler {
 	public String getString(Player p, String type, String fail) {
 		return prop.getString(p.getName() + "." + type, fail);
 	}
-	
+
 	public void storeLong(Player p, String type, long value) {
 		prop.setLong(p.getName() + "." + type, value);
 	}
-	
+
 	public long getLong(Player p, String type, long fail) {
 		return prop.getLong(p.getName() + "." + type, fail);
 	}
-	
+
 	public String getIP(Player p) {
 		return isLocal(p) ? Main.getExternalIp().getHostAddress() : p.getAddress().getAddress().getHostAddress();
 	}

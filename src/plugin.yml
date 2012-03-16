@@ -1,18 +1,18 @@
 name: LoginMessage
 main: com.tahkeh.loginmessage.Main
-version: 0.9 methods b1
-author: Tahkeh
-authors: [xZise]
+version: 0.9 methods b2
+authors: [Tahkeh, xZise]
+
 commands:
     lmsg:
         aliases: [loginmessage, loginmsg, lmessage]
 
 permissions:
     loginmessage.*:
-        description: Give players permission for all LoginMessage permissions.
+        description: Gives permission for all LoginMessage permissions.
         default: op
         children:
             loginmessage.reload: true
     loginmessage.reload:
-        description: Allows players to reload LoginMessage files.
+        description: Gives permission to reload LoginMessage files.
         default: op

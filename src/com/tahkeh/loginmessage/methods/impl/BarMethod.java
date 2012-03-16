@@ -34,6 +34,20 @@ public class BarMethod extends DefaultNamedMethod<Variables> {
 		return parameters.length > index ? parameters[index].parse().asString() : def;
 	}
 
+	public static Character tryParseOptionalAsChar(final Parameter[] parameters, final int index, final char def) {
+		String str = tryParseOptionalAsString(parameters, index, Character.toString(def));
+		if (str.length() == 1) {
+			return str.charAt(0);
+		} else {
+			String trim = str.trim();
+			if (trim.length() == 1) {
+				return trim.charAt(0);
+			} else {
+				return null;
+			}
+		}
+	}
+
 	@Override
 	public ParameterType call(Parameter[] parameters, int depth, Variables globalParameters) {
 		if (parameters.length >= 2 && parameters.length <= 7) {
@@ -46,21 +60,21 @@ public class BarMethod extends DefaultNamedMethod<Variables> {
 				return null;
 			}
 			final Long width = tryParseOptionalAsInteger(parameters, 2, 100);
-			final Long leftColorCode = tryParseOptionalAsInteger(parameters, 3, ChatColor.GREEN.getCode());
+			final Character leftColorCode = tryParseOptionalAsChar(parameters, 3, ChatColor.GREEN.getChar());
 			if (leftColorCode == null) {
 				return null;
 			}
-			final ChatColor leftColor = ChatColor.getByCode(leftColorCode.intValue());
+			final ChatColor leftColor = ChatColor.getByChar(leftColorCode);
 			if (leftColor == null) {
 				return null;
 			}
 
-			final Long rightColorCode = tryParseOptionalAsInteger(parameters, 4, ChatColor.RED.getCode());
+			final Character rightColorCode = tryParseOptionalAsChar(parameters, 4, ChatColor.RED.getChar());
 			final ChatColor rightColor;
 			if (rightColorCode == null && parameters[4].parse().asString().equalsIgnoreCase("opaque")) {
 				rightColor = null;
 			} else {
-				rightColor = ChatColor.getByCode(rightColorCode.intValue());
+				rightColor = ChatColor.getByChar(rightColorCode);
 				if (rightColor == null) {
 					return null;
 				}

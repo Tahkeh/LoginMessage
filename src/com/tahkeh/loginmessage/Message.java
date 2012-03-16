@@ -8,6 +8,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -24,14 +25,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.util.config.Configuration;
-import org.bukkit.util.config.ConfigurationNode;
 
 import com.tahkeh.loginmessage.entries.DefaultEntry;
 import com.tahkeh.loginmessage.entries.Entry;
@@ -97,7 +98,9 @@ import com.tahkeh.loginmessage.timers.Delay;
 import com.tahkeh.loginmessage.timers.Cooldown.CooldownTask;
 import com.tahkeh.loginmessage.timers.Interval;
 
+import de.xzise.MinecraftUtil;
 import de.xzise.XLogger;
+import de.xzise.bukkit.util.MemorySectionFromMap;
 import de.xzise.wrappers.permissions.BufferPermission;
 
 public class Message
@@ -108,26 +111,26 @@ public class Message
 	private final static BufferPermission<String> SUFFIX_PERMISSION = BufferPermission.create("suffix", (String) null);
 
 	private final Main plugin;
-	private final Configuration config;
-	private final Configuration message;
-	private final Configuration list;
+
+	private final FileConfigurationPair<YamlConfiguration> config;
+	private final FileConfigurationPair<YamlConfiguration> message;
+	private final FileConfigurationPair<YamlConfiguration> list;
 	private final XLogger logger;
 	private final MaterialTable table;
 	private final MethodParser<BukkitVariables> methodParser;
 	private final PlayerDataHandler data;
-
 	Set<String> kicked = new HashSet<String>();
 	List<String> running = new ArrayList<String>();
 	Map<String, Integer> cycle = new HashMap<String, Integer>();
 	Map<String, String> geoipFail = new HashMap<String, String>();
-	
+
 	private final Cooldown cooldown;
-	
-	public Message(Main plugin, Configuration config, Configuration message, Configuration list, XLogger logger, MaterialTable table) {
+
+	public Message(Main plugin, FileConfigurationPair<YamlConfiguration> config, FileConfigurationPair<YamlConfiguration> message, FileConfigurationPair<YamlConfiguration> list, XLogger logger, MaterialTable table) {
 		this.plugin = plugin;
-		this.config = config;
-		this.message = message;
-		this.list = list;
+		this.config = config.load();
+		this.message = message.load();
+		this.list = list.load();
 		this.logger = logger;
 		this.cooldown = new Cooldown();
 		this.table = table;
@@ -136,10 +139,47 @@ public class Message
 		File geoip = new File(plugin.getDataFolder(), "GeoLiteCity.dat");
 		PropertiesFile store = new PropertiesFile(new File(plugin.getDataFolder(), "store.txt"), logger);
 		this.data = new PlayerDataHandler(store, geoip);
+	}
+
+	public void unload() {
+		plugin.getServer().getScheduler().cancelTasks(plugin);
+		running.clear();
+		cycle.clear();
+	}
+
+	public void addGeoipFail() {
+		geoipFail.clear();
+		geoipFail.put("city", config.fileConfiguration.getString("cityfail", "Ragetown"));
+		geoipFail.put("ccode", config.fileConfiguration.getString("ccodefail", "USL"));
+		geoipFail.put("cname", config.fileConfiguration.getString("cnamefail", "United States of Lulz"));
+		geoipFail.put("zip", config.fileConfiguration.getString("zipfail", "09001"));
+		geoipFail.put("rcode", config.fileConfiguration.getString("rcodefail", "TF"));
+		geoipFail.put("rname", config.fileConfiguration.getString("rnamefail", "Trollface"));
+	}
+
+	public void scheduleIntervals(String event) {
+		Set<String> keys = getKeys(message.fileConfiguration, "messages.interval");
+		if(keys != null && !event.equals("interval")) {
+			for(String key : keys) {
+				if(!running.contains(key)) {
+					int interval = message.fileConfiguration.getInt("messages.interval." + key + ".interval", 300);
+					plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, new Interval(this, key), interval * 20, interval * 20);
+					running.add(key);
+				}
+			}
 		}
+	}
+
+	private static <T> List<T> getNonNullList(final List<T> rawList) {
+		if (rawList == null) {
+			return new ArrayList<T>(0);
+		} else {
+			return rawList;
+		}
+	}
 
 	public void load(final boolean forceLoad, final boolean schedule) {
-		if(config.getBoolean("autoload", true) || forceLoad) {
+		if(config.fileConfiguration.getBoolean("autoload", true) || forceLoad) {
 			config.load();
 			message.load();
 			list.load();
@@ -200,15 +240,14 @@ public class Message
 			new MaximumPlayersMethod().register(this.methodParser);
 			new ServerTimeMethod(this).register(this.methodParser);
 
-			Configuration configuration = new Configuration(new File(this.plugin.getDataFolder(), "methods.yml"));
-			configuration.load();
-			Map<String, ConfigurationNode> scriptNodes = configuration.getNodes("script");
+			YamlConfiguration configuration = FileConfigurationPair.load(new File(this.plugin.getDataFolder(), "methods.yml"), new YamlConfiguration(), "methods", this.logger);
+			Map<String, MemorySectionFromMap> scriptNodes = MemorySectionFromMap.getNodes(configuration, "script");
 			int scriptEnabled = 0;
 			if (scriptNodes != null) {
 				ScriptEngineManager engineManager = new ScriptEngineManager();
-				for (Map.Entry<String, ConfigurationNode> scriptNode : scriptNodes.entrySet()) {
+				for (Map.Entry<String, MemorySectionFromMap> scriptNode : scriptNodes.entrySet()) {
 					String name = scriptNode.getKey();
-					ConfigurationNode values = scriptNode.getValue();
+					MemorySectionFromMap values = scriptNode.getValue();
 
 					String method = values.getString("method", "call");
 					String engine = values.getString("engine");
@@ -250,12 +289,12 @@ public class Message
 				}
 			}
 
-			Map<String, ConfigurationNode> aliasNodes = configuration.getNodes("alias");
+			Map<String, MemorySectionFromMap> aliasNodes = MemorySectionFromMap.getNodes(configuration, "alias");
 			int aliasEnabled = 0;
 			if (aliasNodes != null) {
-				for (Map.Entry<String, ConfigurationNode> aliasNode : aliasNodes.entrySet()) {
+				for (Map.Entry<String, MemorySectionFromMap> aliasNode : aliasNodes.entrySet()) {
 					String name = aliasNode.getKey();
-					ConfigurationNode values = aliasNode.getValue();
+					MemorySectionFromMap values = aliasNode.getValue();
 					String calls = values.getString("call");
 					int paramCount = values.getInt("parameters", 0);
 					if (calls != null) {
@@ -267,13 +306,13 @@ public class Message
 				}
 			}
 
-			Map<String, ConfigurationNode> redirectedNodes = configuration.getNodes("redirect");
+			Map<String, MemorySectionFromMap> redirectedNodes = MemorySectionFromMap.getNodes(configuration, "redirect");
 			int redirectedEnabled = 0;
 			if (redirectedNodes != null) {
 				List<MethodParser.RedirectedElement> redirectedElements = new ArrayList<MethodParser.RedirectedElement>(redirectedNodes.size() * 2);
-				for (Map.Entry<String, ConfigurationNode> redirectedNode : redirectedNodes.entrySet()) {
+				for (Map.Entry<String, MemorySectionFromMap> redirectedNode : redirectedNodes.entrySet()) {
 					String name = redirectedNode.getKey();
-					ConfigurationNode values = redirectedNode.getValue();
+					MemorySectionFromMap values = redirectedNode.getValue();
 					String calls = values.getString("call");
 					int[] paramCountArray = getParamCounts(values, "parameters", 0, -1);
 					if (calls != null) {
@@ -295,8 +334,8 @@ public class Message
 		}
 	}
 
-	private static int[] getParamCounts(final ConfigurationNode node, final String name, final int... counts) {
-		List<Integer> parameterCounts = node.getIntList(name, null);
+	private static int[] getParamCounts(final ConfigurationSection node, final String name, final int... counts) {
+		List<Integer> parameterCounts = getNonNullList(node.getIntegerList(name));
 		if (parameterCounts.size() == 0) {
 			parameterCounts = new ArrayList<Integer>();
 			for (Integer integer : counts) {
@@ -312,31 +351,15 @@ public class Message
 	}
 
 	public SimpleDateFormat getDateFormat(final String name, final String defaultFormat) {
-		return new SimpleDateFormat(this.config.getString("format." + name, defaultFormat));
+		return new SimpleDateFormat(this.config.fileConfiguration.getString("format." + name, defaultFormat));
 	}
 
-	public void unload() {
-		plugin.getServer().getScheduler().cancelTasks(plugin);
-		running.clear();
-		cycle.clear();
-	}
-	
-	public void addGeoipFail() {
-		geoipFail.clear();
-		geoipFail.put("city", config.getString("cityfail", "Ragetown"));
-		geoipFail.put("ccode", config.getString("ccodefail", "USL"));
-		geoipFail.put("cname", config.getString("cnamefail", "United States of Lulz"));
-		geoipFail.put("zip", config.getString("zipfail", "09001"));
-		geoipFail.put("rcode", config.getString("rcodefail", "TF"));
-		geoipFail.put("rname", config.getString("rnamefail", "Trollface"));
-	}
-	
 	public void scheduleIntervals() {
-		List<String> keys = message.getKeys("messages.interval");
+		Set<String> keys = getKeys(this.message.fileConfiguration, "messages.interval");
 		if(keys != null) {
 			for(String key : keys) {
 				if(!running.contains(key)) {
-					int interval = message.getInt("messages.interval." + key + ".interval", 300);
+					int interval = this.message.fileConfiguration.getInt("messages.interval." + key + ".interval", 300);
 					plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, new Interval(this, key), interval * 20, interval * 20);
 					running.add(key);
 				}
@@ -349,7 +372,7 @@ public class Message
 		Date end = Calendar.getInstance().getTime();
 		long difference = (end.getTime() - start) / 1000;
 		long date[] = new long[] {0, 0, 0, 0};
-		
+
 		if (difference == 0) {
 			lines.add("a moment");
 		} else {
@@ -376,10 +399,10 @@ public class Message
 				lines.add(String.format("%d second%s", seconds, seconds != 1 ? "s" : ""));
 			}
 		}
-		
+
 		return getFormattedString("", lines.toArray());
 	}
-	
+
 	public static String processColors(String string) {
 		return string.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
 	}
@@ -421,28 +444,9 @@ public class Message
 			}
 		}
 		
-		return sb.toString();	
+		return sb.toString();
 	}
-	
-	/**
-	 * Check the .dat files in the default world folder. If the given player is 
-	 * found, return true.
-	 * @param p
-	 * 			the name of the player to look for
-	 * @return whether or not player 'p' has joined the server before
-	 */
-	public boolean existingPlayer(String p) {
-		String pdir = getDefaultWorld().getName() + File.separator + "players";
-		File playerfile = new File(pdir);
-		String[] playerfiles = playerfile.list();
-		for(String player : playerfiles) {
-			if(player.contains(p)) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
+
 	/**
 	 * Get the first loaded, or default world.
 	 * @return the default world
@@ -459,13 +463,13 @@ public class Message
 		int modTime = (int) (rawtime % 24000);
 
 		if (modTime == 24000 || modTime <= 11999) {
-			return config.getString("day");
+			return config.fileConfiguration.getString("day");
 		} else if (modTime == 12000 || modTime <= 12999) {
-			return config.getString("sunset");
+			return config.fileConfiguration.getString("sunset");
 		} else if (modTime == 13000 || modTime <= 22999) {
-			return config.getString("night");
+			return config.fileConfiguration.getString("night");
 		} else if (modTime == 23000 || modTime <= 23999) {
-			return config.getString("sunrise");
+			return config.fileConfiguration.getString("sunrise");
 		} else {
 			return null;
 		}
@@ -483,7 +487,7 @@ public class Message
 	}
 
 	public String getGameModeText(final GameMode mode) {
-		return this.config.getString("mode." + mode.getValue(), getDefaultGameModeText(mode));
+		return this.config.fileConfiguration.getString("mode." + mode.getValue(), getDefaultGameModeText(mode));
 	}
 
 	public static String getPrefix(String group, String world) {
@@ -495,33 +499,34 @@ public class Message
 	}
 
 	public String booleanToName(boolean bool) {
-		return bool ? config.getString("istrue", "&2Yes") : config.getString("isfalse", "&4No");
+		return bool ? config.fileConfiguration.getString("istrue", "&2Yes") : config.fileConfiguration.getString("isfalse", "&4No");
 	}
 
 	public String getStatus(OfflinePlayer p) {
 		if (p.isOnline()) {
 			AFKHandler afkhandler = new AFKHandler(plugin);
 			if (afkhandler.isActive() && afkhandler.isAFK(plugin.getServer().getPlayerExact(p.getName()))) {
-				return config.getString("status.afk", "&6AFK");
+				return config.fileConfiguration.getString("status.afk", "&6AFK");
 			} else {
-				return config.getString("status.online", "&2Online");
+				return config.fileConfiguration.getString("status.online", "&2Online");
 			}
 		} else {
-			return config.getString("status.offline", "&7Offline");
+			return config.fileConfiguration.getString("status.offline", "&7Offline");
 		}
 	}
 
 	public String processOnlineList(final String name, final Player trigger) {
-		List<String> pub = new ArrayList<String>();
-		pub.add("pub");
-		ConfigurationNode node = this.list.getNode("lists." + name);
+		ConfigurationSection node = this.list.fileConfiguration.getConfigurationSection("lists." + name);
 		if (node != null) {
 			boolean online = node.getBoolean("online", true);
 			boolean formatted = node.getBoolean("formatted", false);
-			List<String> groups = node.getStringList("players.groups", pub);
-			List<String> users = node.getStringList("players.users", null);
-			List<String> permissions = node.getStringList("players.permissions", null);
-			List<String> worlds = node.getStringList("players.worlds", null);
+			List<String> groups = node.getStringList("players.groups");
+			if (groups == null) {
+				groups = Arrays.asList("pub");
+			}
+			List<String> users = getNonNullList(node.getStringList("players.users"));
+			List<String> permissions = getNonNullList(node.getStringList("players.permissions"));
+			List<String> worlds = getNonNullList(node.getStringList("players.worlds"));
 			String format = node.getString("format", "%nm");
 			String separator = node.getString("separator", ", ");
 			PlayerList playerList = new PlayerList(plugin, online, formatted, groups, users, permissions, worlds, format, separator, trigger);
@@ -548,10 +553,10 @@ public class Message
 		final String worldpath = keypath + ".worlds";
 		//@formatter:off
 		return getEntries(trigger, this.plugin, 
-				this.message.getStringList(grouppath, null), 
-				this.message.getStringList(userpath, null),
-				this.message.getStringList(permspath, null),
-				this.message.getStringList(worldpath, null));
+				getNonNullList(this.message.fileConfiguration.getStringList(grouppath)), 
+				getNonNullList(this.message.fileConfiguration.getStringList(userpath)),
+				getNonNullList(this.message.fileConfiguration.getStringList(permspath)),
+				getNonNullList(this.message.fileConfiguration.getStringList(worldpath)));
 		//@formatter:on
 	}
 
@@ -587,6 +592,14 @@ public class Message
 		return entries;
 	}
 
+	private static Set<String> getKeys(final ConfigurationSection section, final String path) {
+		ConfigurationSection subSection = section.getConfigurationSection(path);
+		if (subSection != null) {
+			return subSection.getKeys(false);
+		} else {
+			return null;
+		}
+	}
 	/**
 	 * Prints all messages which the player is triggering.
 	 * 
@@ -603,7 +616,7 @@ public class Message
 		if (variables instanceof CommandVariables) {
 			messages = new String[] { ((CommandVariables) variables).command };
 		} else {
-			List<String> keyList = message.getKeys("messages." + variables.name);
+			Set<String> keyList = getKeys(message.fileConfiguration, "messages." + variables.name);
 			if (keyList == null) {
 				messages = EMPTY_STRING_ARRAY;
 			} else {
@@ -650,6 +663,19 @@ public class Message
 		return match;
 	}
 
+	public static double toDouble(final Object object, final double def) {
+		if (object instanceof Number) {
+			return ((Number) object).doubleValue();
+		}
+
+		try {
+			return Double.valueOf(object.toString());
+		} catch (NumberFormatException e) {
+		} catch (NullPointerException e) {
+		}
+		return def;
+	}
+
 	/**
 	 * Returns the list of not empty message lines.
 	 * 
@@ -660,36 +686,44 @@ public class Message
 	 * @return the list of not empty message lines.
 	 */
 	private String[] getLines(String event, String name) {
-		List<ConfigurationNode> messages = this.message.getNodeList("messages." + event + "." + name + ".messages", null);
+		List<Map<?,?>> mapList = this.message.fileConfiguration.getMapList("messages." + event + "." + name + ".messages");
 		String[] lines = EMPTY_STRING_ARRAY;
-		if (messages != null && messages.size() > 0) {
+		if (MinecraftUtil.isSet(mapList)) {
 			// See: MinecraftUtil.getRandomFromChances
 			// Read chances
-			int length = messages.toArray().length;
+			int length = mapList.size();
 			double totalchance = 0;
-			double defChance = 1.0 / messages.size();
-			for (ConfigurationNode messageNode : messages) {
-				totalchance += messageNode.getDouble("chance", defChance);
+			double defChance = 1.0 / mapList.size();
+			for (Map<?, ?> messageNode : mapList) {
+				totalchance += toDouble(messageNode.get("chance"), defChance);
 			}
-			
 			double value = Math.random() * totalchance;
-			if (messages.get(0).getProperty("order") != null) {
+
+			if (mapList.get(0).get("order") != null) {
+				int idx;
 				if (!cycle.containsKey(name)) {
 					cycle.put(name, 0);
+					idx = 0;
+				} else {
+					idx = cycle.get(name);
+					if (idx >= length) {
+						idx = length - 1;
+						cycle.remove(name);
+					}
 				}
-				lines = getStringList(messages.get(cycle.get(name)), "order", EMPTY_STRING_ARRAY);
-				cycle.put(name, cycle.get(name) >= length - 1 ? 0 : cycle.get(name) + 1);
+				lines = getStringList(mapList.get(idx).get("order"), EMPTY_STRING_ARRAY);
+				cycle.put(name, (idx + 1) % length);
 			} else {
-				for (ConfigurationNode messageNode : messages) {
-					value -= messageNode.getDouble("chance", defChance);
+				for (Map<?, ?> messageNode : mapList) {
+					value -= toDouble(messageNode.get("chance"), defChance);
 					if (value < 0) {
-						lines = getStringList(messageNode, "random", EMPTY_STRING_ARRAY);
+						lines = getStringList(messageNode.get("random"), EMPTY_STRING_ARRAY);
 						break;
 					}
 				}
 			}
 		} else {
-			lines = getStringList(message, "messages." + event + "." + name + ".message", EMPTY_STRING_ARRAY);
+			lines = getStringList(message.fileConfiguration, "messages." + event + "." + name + ".message", EMPTY_STRING_ARRAY);
 		}
 		List<String> cleanedLines = new ArrayList<String>(lines.length);
 		for (int i = 0; i < lines.length; i++) {
@@ -713,8 +747,12 @@ public class Message
 	 *            default value.
 	 * @return a string list from a yml configuration node.
 	 */
-	public static String[] getStringList(ConfigurationNode node, String path, String[] def) {
-		Object property = node.getProperty(path);
+	public static String[] getStringList(ConfigurationSection node, String path, String[] def) {
+		Object property = node.get(path);
+		return getStringList(property, def);
+	}
+
+	public static String[] getStringList(final Object property, final String[] def) {
 		if (property instanceof List) {
 			@SuppressWarnings("unchecked")
 			List<Object> rawList = (List<Object>) property;
@@ -739,6 +777,20 @@ public class Message
 		return capital + trim;
 	}
 
+	public static String toCapitalCase(final String string, final boolean restToLowercase) {
+		final char[] chars = string.toCharArray();
+		boolean found = false;
+		for (int i = 0; i < chars.length; i++) {
+			if (Character.isLetter(chars[i]) && !found) {
+				chars[i] = Character.toUpperCase(chars[i]);
+				found = true;
+			} else if (restToLowercase) {
+				chars[i] = Character.toLowerCase(chars[i]);
+			}
+		}
+		return new String(chars);
+	}
+
 	public void finishMessage(String key, BukkitVariables variables) // Final touches - delay and cooldown
 	{
 		String[] lines = this.getLines(variables.name, key);
@@ -746,8 +798,8 @@ public class Message
 			this.logger.info("Empty message named '" + key + "' (Event: '" + variables.name + "') found.");
 		} else {
 			final String keypath = "messages." + variables.name + "." + key;
-			int cd = message.getInt(keypath + ".cooldown", 0) * 1000;
-			int dl = message.getInt(keypath + ".delay", 0);
+			int cd = message.fileConfiguration.getInt(keypath + ".cooldown", 0) * 1000;
+			int dl = message.fileConfiguration.getInt(keypath + ".delay", 0);
 
 			Player[] players = this.plugin.getServer().getOnlinePlayers();
 			List<Player> cooledDown = new ArrayList<Player>(players.length);
@@ -813,7 +865,10 @@ public class Message
 
 		for (Player receiver : possibleReceivers) {
 			for (String processedLine : processedLines) {
-				receiver.sendMessage(processedLine);
+				// Check again for an empty line after all the codes have been processed.
+				if (!processedLine.isEmpty()) {
+					receiver.sendMessage(processedLine);
+				}
 			}
 		}
 		if (task != null) {
@@ -827,15 +882,11 @@ public class Message
 
 	public void onPlayerJoin(PlayerJoinEvent eventObject) {
 		final Player p = eventObject.getPlayer();
-		final BukkitVariables variables = existingPlayer(p.getName()) ? new LoginVariables(p) : new FirstLoginVariables(p);
+		final BukkitVariables variables = p.hasPlayedBefore() ? new LoginVariables(p) : new FirstLoginVariables(p);
 		load(false, true);
 		preProcessMessage(variables);
 
-		if (variables instanceof FirstLoginVariables) {
-			data.storeLong(p, "laston", PlayerDataHandler.getTime());
-		}
-
-		if (config.getBoolean("clearjoinmsg", true)) {
+		if (config.fileConfiguration.getBoolean("clearjoinmsg", true)) {
 			eventObject.setJoinMessage(null);
 		}
 	}
@@ -845,10 +896,9 @@ public class Message
 		if (!this.kicked.remove(p.getName())) {
 			final BukkitVariables variables = new QuitVariables(p);
 			load(false, true);
-			data.storeLong(p, "laston", PlayerDataHandler.getTime());
 			preProcessMessage(variables);
 
-			if (config.getBoolean("clearquitmsg", true)) {
+			if (config.fileConfiguration.getBoolean("clearquitmsg", true)) {
 				event.setQuitMessage(null);
 			}
 		}
@@ -857,13 +907,12 @@ public class Message
 	public void onPlayerKick(PlayerKickEvent event) {
 		Player p = event.getPlayer();
 		KickVariables kick = new KickVariables(event.getReason(), p);
-		data.storeLong(p, "laston", PlayerDataHandler.getTime());
 		load(false, true);
 		this.kicked.add(p.getName());
 
 		preProcessMessage(kick);
 
-		if (config.getBoolean("clearkickmsg", true)) {
+		if (config.fileConfiguration.getBoolean("clearkickmsg", true)) {
 			event.setLeaveMessage(null);
 		}
 	}
@@ -877,24 +926,26 @@ public class Message
 		load(false, true);
 		Player sender = event.getPlayer();
 		String[] cmdargs = event.getMessage().substring(1).split(" ");
-		List<String> commands = message.getKeys("messages.command");
+		final String path = "messages." + CommandVariables.NAME;
+		Set<String> commands = getKeys(message.fileConfiguration, path);
 
 		final String command = cmdargs[0];
 		if (commands != null) {
 			for (String key : commands) {
+				
 				if (key.equalsIgnoreCase(cmdargs[0])) {
 					event.setCancelled(true);
 					if (cmdargs.length == 1) {
 						preProcessMessage(new CommandVariables(command, null, sender));
 					} else {
 						OfflinePlayer target = plugin.getServer().getOfflinePlayer(cmdargs[1]);
-						List<String> msgargs = message.getStringList("messages.command." + key + ".args", null);
+						List<String> msgargs = getNonNullList(message.fileConfiguration.getStringList(path + "." + key + ".args"));
 						if (msgargs.contains("player")) {
-							if (existingPlayer(target.getName())) {
+							if (target.hasPlayedBefore()) {
 								preProcessMessage(new CommandVariables(command, sender, target));
 							} else {
-								String noplayerfound = config.getString("noplayerfound", "&cPlayer \"%target()\" does not exist!");
-								sender.sendMessage(processLine(noplayerfound, new PlayerNotFoundVariables(cmdargs[1], sender)));
+								final String npf = config.fileConfiguration.getString("noplayerfound", "&cPlayer \"%nm\" does not exist!");
+								sender.sendMessage(processLine(npf, new PlayerNotFoundVariables(cmdargs[1], sender)));
 							}
 						} else {
 							preProcessMessage(new CommandVariables(command, null, sender));
@@ -910,11 +961,12 @@ public class Message
 		Map<String, List<String>> keyCauses = new HashMap<String, List<String>>();
 		Player p = (Player) event.getEntity();
 		DeathHandler handler = new DeathHandler(p, table);
-		List<String> keys = message.getKeys("messages." + DeathVariables.NAME);
+		final String path = "messages." + DeathVariables.NAME;
+		Set<String> keys = getKeys(message.fileConfiguration, path);
 		
 		if (keys != null) {
 			for (String key : keys) {
-				List<String> triggerCauses = message.getStringList("messages." + DeathVariables.NAME + "." + key + ".causes", null);
+				List<String> triggerCauses = getNonNullList(message.fileConfiguration.getStringList(path + "." + key + ".causes"));
 				Set<Cause> possibleCauses = handler.getCauses();
 				if (triggerCauses != null) {
 					keyCauses.put(key, triggerCauses);
@@ -927,7 +979,7 @@ public class Message
 			}
 		}
 		
-		if (config.getBoolean("cleardeathmsg", true)) {
+		if (config.fileConfiguration.getBoolean("cleardeathmsg", true)) {
 			event.setDeathMessage(null);
 		}
 	}

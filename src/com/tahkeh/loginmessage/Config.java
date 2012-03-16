@@ -50,6 +50,9 @@ public class Config //For all your configuration needs
 				o.write("#autoload: When true, LoginMessage will automatically reload its files when an event is called.\n");
 				o.write("autoload: true\n");
 				o.write("\n");
+//				o.write("#priority: Change the event priority. For advanced users only. See the wiki configuration page for details.\n");
+//				o.write("priority: normal\n");
+//				o.write("\n");
 				o.write("#separator: This is what will be used to separate advanced %ol codes.\n");
 				o.write("#Keep all text within the single quotes.\n");
 				o.write("separator: '%&%&'\n");
@@ -88,7 +91,7 @@ public class Config //For all your configuration needs
 				o.write("\n");
 				o.write("#noplayerfound: What to return when a player types in a player name that does not exist (as a command argument).\n");
 				o.write("#Keep all text within the single quotes. You may use color codes and the %nm code to return the non-existant player.\n");
-				o.write("noplayerfound: '&cPlayer \"%nm\" does not exist!'"); // Add \n if more text is added past this point
+				o.write("noplayerfound: '&cPlayer \"%nm\" does not exist!'\n"); // Add \n if more text is added past this point
 				o.write("\n");
 				o.write("mode:\n");
 				o.write("    '0': 'Survival'");
@@ -127,7 +130,7 @@ public class Config //For all your configuration needs
 				o.write("            delay: 500\n");
 				o.write("            message:\n");
 				o.write("                - 'Welcome back, %nm!'\n");
-				o.write("                - 'Players online: %ol%&%&n:&f:&f'\n");
+				o.write("                - 'Players online: %ol'\n");
 				o.write("        bc:\n");
 				o.write("            receivers:\n");
 				o.write("                groups: [-pub]\n");
@@ -159,7 +162,7 @@ public class Config //For all your configuration needs
 				o.write("            delay: 500\n");
 				o.write("            message:\n");
 				o.write("                - 'Welcome to the server, %nm!'\n");
-				o.write("                - 'Players online: %ol%&%&n:&f:&f'\n");
+				o.write("                - 'Players online: %ol'\n");
 				o.write("        bc:\n");
 				o.write("            receivers:\n");
 				o.write("                groups: [-pub]\n");
@@ -256,7 +259,7 @@ public class Config //For all your configuration needs
 				o.write("                groups: [pub]\n");
 				o.write("            receivers:\n");
 				o.write("                groups: [pub]\n");
-				o.write("            causes: [player]\n");
+				o.write("            causes: [Player]\n");
 				o.write("            message:\n");
 				o.write("                - '%dentity (carrying %ditem) killed %nm!'\n");
 				o.write("        entity:\n");
@@ -264,7 +267,7 @@ public class Config //For all your configuration needs
 				o.write("                groups: [pub]\n");
 				o.write("            receivers:\n");
 				o.write("                groups: [pub]\n");
-				o.write("            causes: [livingentity, -player]\n");
+				o.write("            causes: [LivingEntity, -Player]\n");
 				o.write("            message:\n");
 				o.write("                - '%nm was killed by %an% %dentity!'\n");
 				o.write("        fall:\n");
