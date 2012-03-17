@@ -7,7 +7,7 @@ public class OtherCause extends DefaultCause {
 	}
 
 	public boolean match(String cause) {
-		return this.value.toLowerCase().equals(cause.toLowerCase());
+		return this.signedTextData.unsignedText.toLowerCase().equals(cause.toLowerCase());
 	}
 
 }

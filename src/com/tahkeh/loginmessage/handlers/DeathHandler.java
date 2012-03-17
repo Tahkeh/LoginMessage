@@ -60,7 +60,7 @@ public class DeathHandler {
 		}
 		return match;
 	}
-	
+
 	public Set<Cause> getCauses() {
 		Set<Cause> causes = new HashSet<Cause>();
 		EntityDamageEvent event = victim.getLastDamageCause();

@@ -24,18 +24,18 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import com.tahkeh.loginmessage.entries.DefaultEntry;
-import com.tahkeh.loginmessage.entries.Entry;
-import com.tahkeh.loginmessage.entries.Group;
-import com.tahkeh.loginmessage.entries.Op;
-import com.tahkeh.loginmessage.entries.Permission;
-import com.tahkeh.loginmessage.entries.Pri;
-import com.tahkeh.loginmessage.entries.Pub;
-import com.tahkeh.loginmessage.entries.User;
 import com.tahkeh.loginmessage.entries.causes.Cause;
 import com.tahkeh.loginmessage.handlers.AFKHandler;
 import com.tahkeh.loginmessage.handlers.DeathHandler;
 import com.tahkeh.loginmessage.handlers.PlayerDataHandler;
+import com.tahkeh.loginmessage.matcher.DefaultMatcher.SignedTextData;
+import com.tahkeh.loginmessage.matcher.entries.Entry;
+import com.tahkeh.loginmessage.matcher.entries.Group;
+import com.tahkeh.loginmessage.matcher.entries.Op;
+import com.tahkeh.loginmessage.matcher.entries.Permission;
+import com.tahkeh.loginmessage.matcher.entries.Pri;
+import com.tahkeh.loginmessage.matcher.entries.Pub;
+import com.tahkeh.loginmessage.matcher.entries.User;
 import com.tahkeh.loginmessage.store.MaterialTable;
 import com.tahkeh.loginmessage.store.PropertiesFile;
 import com.tahkeh.loginmessage.timers.Cooldown;
@@ -609,16 +609,15 @@ public class Message
 		final String permspath = keypath + ".permissions";
 		final String worldpath = keypath + ".worlds";
 		for (String group : getNonNullList(message.fileConfiguration.getStringList(grouppath))) {
-			boolean positive = DefaultEntry.isPositive(group);
-			String unsignedGroup = DefaultEntry.getUnsignedText(group);
-			if (unsignedGroup.equalsIgnoreCase("pub")) {
-				entries.add(new Pub(positive ? null : trigger));
-			} else if (unsignedGroup.equalsIgnoreCase("op")) {
-				entries.add(new Op(positive));
-			} else if (unsignedGroup.equalsIgnoreCase("pri")) {
-				entries.add(new Pri(positive, trigger));
+			final SignedTextData signedTextData = new SignedTextData(group);
+			if (signedTextData.unsignedText.equalsIgnoreCase("pub")) {
+				entries.add(new Pub(signedTextData.positive ? null : trigger));
+			} else if (signedTextData.unsignedText.equalsIgnoreCase("op")) {
+				entries.add(new Op(signedTextData.positive));
+			} else if (signedTextData.unsignedText.equalsIgnoreCase("pri")) {
+				entries.add(new Pri(signedTextData.positive, trigger));
 			} else {
-				entries.add(new Group(group, Main.getPermissions(), plugin));
+				entries.add(new Group(signedTextData, Main.getPermissions(), plugin));
 			}
 		}
 
@@ -631,7 +630,7 @@ public class Message
 		}
 		
 		for (String world : getNonNullList(message.fileConfiguration.getStringList(worldpath))) {
-			entries.add(new com.tahkeh.loginmessage.entries.World(world, plugin));
+			entries.add(new com.tahkeh.loginmessage.matcher.entries.World(world, plugin));
 		}
 		return entries;
 	}
@@ -988,7 +987,7 @@ public class Message
 			}
 		}
 	}
-	
+
 	public void onPlayerDeath(PlayerDeathEvent event) {
 		load("death");
 		Map<String, String> args = new HashMap<String, String>();

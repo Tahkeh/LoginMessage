@@ -8,14 +8,14 @@ import java.util.Set;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
-import com.tahkeh.loginmessage.entries.DefaultEntry;
-import com.tahkeh.loginmessage.entries.Entry;
-import com.tahkeh.loginmessage.entries.Group;
-import com.tahkeh.loginmessage.entries.Op;
-import com.tahkeh.loginmessage.entries.Permission;
-import com.tahkeh.loginmessage.entries.Pub;
-import com.tahkeh.loginmessage.entries.User;
-import com.tahkeh.loginmessage.entries.World;
+import com.tahkeh.loginmessage.matcher.DefaultMatcher.SignedTextData;
+import com.tahkeh.loginmessage.matcher.entries.Entry;
+import com.tahkeh.loginmessage.matcher.entries.Group;
+import com.tahkeh.loginmessage.matcher.entries.Op;
+import com.tahkeh.loginmessage.matcher.entries.Permission;
+import com.tahkeh.loginmessage.matcher.entries.Pub;
+import com.tahkeh.loginmessage.matcher.entries.User;
+import com.tahkeh.loginmessage.matcher.entries.World;
 
 public class PlayerList {
 	private final Main plugin;
@@ -88,14 +88,13 @@ public class PlayerList {
 	public Set<Entry> getEntries() {
 		Set<Entry> entries = new HashSet<Entry>();
 		for (String group : groups) {
-			boolean positive = DefaultEntry.isPositive(group);
-			String unsignedGroup = DefaultEntry.getUnsignedText(group);
-			if (unsignedGroup.equalsIgnoreCase("pub")) {
+			final SignedTextData signedTextData = new SignedTextData(group);
+			if (signedTextData.unsignedText.equalsIgnoreCase("pub")) {
 				entries.add(new Pub(null));
-			} else if (unsignedGroup.equalsIgnoreCase("op")) {
-				entries.add(new Op(positive));
+			} else if (signedTextData.unsignedText.equalsIgnoreCase("op")) {
+				entries.add(new Op(signedTextData.positive));
 			} else {
-				entries.add(new Group(group, Main.getPermissions(), plugin));
+				entries.add(new Group(signedTextData, Main.getPermissions(), plugin));
 			}
 		}
 

@@ -1,4 +1,4 @@
-package com.tahkeh.loginmessage.entries;
+package com.tahkeh.loginmessage.matcher.entries;
 
 import org.bukkit.OfflinePlayer;
 
@@ -16,11 +16,17 @@ public class Group extends DefaultEntry {
 		this.plugin = plugin;
 	}
 
+	public Group(final SignedTextData signedTextData, PermissionsHandler handler, Main plugin) {
+		super(signedTextData);
+		this.handler = handler;
+		this.plugin = plugin;
+	}
+
 	public boolean match(OfflinePlayer player) {
 		if (player.isOnline()) {
-			String[] groups = this.handler.getGroup(plugin.getServer().getPlayerExact(player.getName()).getWorld().getName(), player.getName());
+			String[] groups = this.handler.getGroup(this.plugin.getServer().getPlayerExact(player.getName()).getWorld().getName(), player.getName());
 			for (String group : groups) {
-				if (group.equalsIgnoreCase(this.value)) {
+				if (group.equalsIgnoreCase(this.signedTextData.unsignedText)) {
 					return true;
 				}
 			}

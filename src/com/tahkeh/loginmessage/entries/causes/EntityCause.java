@@ -10,7 +10,7 @@ public class EntityCause extends DefaultCause {
 		cause = "Craft" + cause;
 		String path = "org.bukkit.craftbukkit.entity.";
 		try {
-			return Class.forName(path + cause).isAssignableFrom(Class.forName(path + this.value));
+			return Class.forName(path + cause).isAssignableFrom(Class.forName(path + this.signedTextData.unsignedText));
 		} catch (ClassNotFoundException e) {
 			return false;
 		}
