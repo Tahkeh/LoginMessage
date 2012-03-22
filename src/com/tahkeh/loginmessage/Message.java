@@ -704,6 +704,20 @@ public class Message
 		return match;
 	}
 
+	public static Integer toInt(final Object object) {
+		if (object instanceof Number) {
+			return ((Number) object).intValue();
+		} else if (object == null) {
+			return null;
+		}
+
+		try {
+			return Integer.valueOf(object.toString());
+		} catch (NumberFormatException e) {
+		}
+		return null;
+	}
+
 	public static double toDouble(final Object object, final double def) {
 		if (object instanceof Number) {
 			return ((Number) object).doubleValue();
@@ -730,38 +744,71 @@ public class Message
 		List<Map<?,?>> mapList = this.message.fileConfiguration.getMapList("messages." + event + "." + name + ".messages");
 		String[] lines = EMPTY_STRING_ARRAY;
 		if (MinecraftUtil.isSet(mapList)) {
-			// See: MinecraftUtil.getRandomFromChances
-			// Read chances
-			int length = mapList.size();
-			double totalchance = 0;
-			double defChance = 1.0 / mapList.size();
-			for (Map<?, ?> messageNode : mapList) {
-				totalchance += toDouble(messageNode.get("chance"), defChance);
-			}
-			double value = Math.random() * totalchance;
-
-			if (mapList.get(0).get("order") != null) {
-				int idx;
-				if (!cycle.containsKey(name)) {
-					cycle.put(name, 0);
-					idx = 0;
+			// if everything has a order it is ordered
+			final int idx;
+			boolean ordered = true;
+			Integer buffer = null;
+			for (Map<?,?> mapItem : mapList) {
+				final Integer orderFromItem = toInt(mapItem.get("order"));
+				if (orderFromItem != null) {
+					if (buffer == null || buffer < orderFromItem) {
+						buffer = orderFromItem;
+					}
 				} else {
-					idx = cycle.get(name);
-					if (idx >= mapList.size()) {
-						idx = 0;
-						cycle.remove(name);
+					ordered = false;
+					break;
+				}
+			}
+			if (buffer == null) {
+				ordered = false;
+				idx = 0;
+			} else if (this.cycle.get(name) == null) {
+				idx = buffer;
+			} else {
+				idx = this.cycle.get(name);
+			}
+			Map<?, ?> selected = null;
+			int selectedOrder = 0;
+			if (ordered) {
+				int next = idx;
+				boolean found = false;
+				for (Map<?,?> mapItem : mapList) {
+					final Integer orderFromItem = toInt(mapItem.get("order"));
+					if (orderFromItem != null) {
+						if (orderFromItem == idx) {
+							selected = mapItem;
+							selectedOrder = orderFromItem;
+							found = true;
+						} else if (selected == null || (!found && selectedOrder > orderFromItem)) {
+							selected = mapItem;
+							selectedOrder = orderFromItem;
+						}
+						if (orderFromItem > idx && orderFromItem < next) {
+							next = orderFromItem;
+						}
 					}
 				}
-				lines = getStringList(mapList.get(idx).get("order"), EMPTY_STRING_ARRAY);
-				cycle.put(name, cycle.get(name) >= length - 1 ? 0 : cycle.get(name) + 1);
+				this.cycle.put(name, next);
 			} else {
+				// See: MinecraftUtil.getRandomFromChances
+				// Read chances
+				double totalchance = 0;
+				final double defChance = 1.0 / mapList.size();
+				for (Map<?, ?> messageNode : mapList) {
+					totalchance += toDouble(messageNode.get("chance"), defChance);
+				}
+				double value = Math.random() * totalchance;
+
 				for (Map<?, ?> messageNode : mapList) {
 					value -= toDouble(messageNode.get("chance"), defChance);
 					if (value < 0) {
-						lines = getStringList(messageNode.get("random"), EMPTY_STRING_ARRAY);
+						selected = messageNode;
 						break;
 					}
 				}
+			}
+			if (selected != null) {
+				lines = getStringList(selected.get("message"), EMPTY_STRING_ARRAY);
 			}
 		} else {
 			lines = getStringList(message.fileConfiguration, "messages." + event + "." + name + ".message", EMPTY_STRING_ARRAY);
