@@ -3,7 +3,7 @@ package com.tahkeh.loginmessage.methods.variables.bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
-public class CommandVariables extends PlayerVariables {
+public class CommandVariables extends PlayerVariables implements KeyVariables {
 
 	public static final String NAME = "command";
 
@@ -16,4 +16,8 @@ public class CommandVariables extends PlayerVariables {
 		this.trigger = trigger;
 	}
 
+	@Override
+	public String[] getKeys() {
+		return new String[] { command };
+	}
 }

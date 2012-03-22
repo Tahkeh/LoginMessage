@@ -22,30 +22,42 @@ import java.util.Timer;
 import javax.script.ScriptEngineManager;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.event.entity.EntityDamageByBlockEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import com.tahkeh.loginmessage.entries.DefaultEntry;
-import com.tahkeh.loginmessage.entries.Entry;
-import com.tahkeh.loginmessage.entries.Group;
-import com.tahkeh.loginmessage.entries.Op;
-import com.tahkeh.loginmessage.entries.Permission;
-import com.tahkeh.loginmessage.entries.Pri;
-import com.tahkeh.loginmessage.entries.Pub;
-import com.tahkeh.loginmessage.entries.User;
-import com.tahkeh.loginmessage.entries.causes.Cause;
 import com.tahkeh.loginmessage.handlers.AFKHandler;
 import com.tahkeh.loginmessage.handlers.DeathHandler;
 import com.tahkeh.loginmessage.handlers.PlayerDataHandler;
+import com.tahkeh.loginmessage.matcher.DefaultMatcher;
+import com.tahkeh.loginmessage.matcher.DefaultMatcher.SignedTextData;
+import com.tahkeh.loginmessage.matcher.causes.Cause;
+import com.tahkeh.loginmessage.matcher.causes.EntityCause;
+import com.tahkeh.loginmessage.matcher.causes.EnumCause;
+import com.tahkeh.loginmessage.matcher.causes.ProjectileCause;
+import com.tahkeh.loginmessage.matcher.entries.Entry;
+import com.tahkeh.loginmessage.matcher.entries.Group;
+import com.tahkeh.loginmessage.matcher.entries.Op;
+import com.tahkeh.loginmessage.matcher.entries.Permission;
+import com.tahkeh.loginmessage.matcher.entries.Pri;
+import com.tahkeh.loginmessage.matcher.entries.Pub;
+import com.tahkeh.loginmessage.matcher.entries.User;
 import com.tahkeh.loginmessage.store.MaterialTable;
 import com.tahkeh.loginmessage.store.PropertiesFile;
 import com.tahkeh.loginmessage.methods.MethodParser;
@@ -88,6 +100,7 @@ import com.tahkeh.loginmessage.methods.variables.bukkit.CommandVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.DeathVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.FirstLoginVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.IntervalVariables;
+import com.tahkeh.loginmessage.methods.variables.bukkit.KeyVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.KickVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.LoginVariables;
 import com.tahkeh.loginmessage.methods.variables.bukkit.PlayerNotFoundVariables;
@@ -99,13 +112,14 @@ import com.tahkeh.loginmessage.timers.Cooldown.CooldownTask;
 import com.tahkeh.loginmessage.timers.Interval;
 
 import de.xzise.MinecraftUtil;
+import de.xzise.MinecraftUtil.ChanceElement;
+import de.xzise.MinecraftUtil.DefaultChanceElement;
 import de.xzise.XLogger;
 import de.xzise.bukkit.util.MemorySectionFromMap;
 import de.xzise.wrappers.permissions.BufferPermission;
 
 public class Message
 {
-	public final static char SECTION_SIGN = '\u00A7';
 	private final static String[] EMPTY_STRING_ARRAY = new String[0];
 	private final static BufferPermission<String> PREFIX_PERMISSION = BufferPermission.create("prefix", (String) null);
 	private final static BufferPermission<String> SUFFIX_PERMISSION = BufferPermission.create("suffix", (String) null);
@@ -119,7 +133,7 @@ public class Message
 	private final MaterialTable table;
 	private final MethodParser<BukkitVariables> methodParser;
 	private final PlayerDataHandler data;
-	Set<String> kicked = new HashSet<String>();
+	private final Set<String> kicked = new HashSet<String>();
 	List<String> running = new ArrayList<String>();
 	Map<String, Integer> cycle = new HashMap<String, Integer>();
 	Map<String, String> geoipFail = new HashMap<String, String>();
@@ -335,19 +349,17 @@ public class Message
 	}
 
 	private static int[] getParamCounts(final ConfigurationSection node, final String name, final int... counts) {
-		List<Integer> parameterCounts = getNonNullList(node.getIntegerList(name));
+		final List<Integer> parameterCounts = getNonNullList(node.getIntegerList(name));
 		if (parameterCounts.size() == 0) {
-			parameterCounts = new ArrayList<Integer>();
-			for (Integer integer : counts) {
-				parameterCounts.add(integer);
+			return counts;
+		} else {
+			final int[] paramCountArray = new int[parameterCounts.size()];
+			int idx = 0;
+			for (Integer integer : parameterCounts) {
+				paramCountArray[idx++] = integer;
 			}
+			return paramCountArray;
 		}
-		int[] paramCountArray = new int[parameterCounts.size()];
-		int idx = 0;
-		for (Integer integer : parameterCounts) {
-			paramCountArray[idx++] = integer;
-		}
-		return paramCountArray;
 	}
 
 	public SimpleDateFormat getDateFormat(final String name, final String defaultFormat) {
@@ -404,7 +416,7 @@ public class Message
 	}
 
 	public static String processColors(String string) {
-		return string.replaceAll("(&([a-z0-9]))", SECTION_SIGN + "$2");
+		return string.replaceAll("(&([a-fkA-FK0-9]))", ChatColor.COLOR_CHAR + "$2");
 	}
 
 	public static Player getPlayer(OfflinePlayer player) {
@@ -563,18 +575,17 @@ public class Message
 	public static Set<Entry> getEntries(final Player trigger, final Main plugin, final List<String> groups, final List<String> users, final List<String> permissions, final List<String> worlds) {
 		Set<Entry> entries = new HashSet<Entry>();
 		for (String group : groups) {
-			boolean positive = DefaultEntry.isPositive(group);
-			String unsignedGroup = DefaultEntry.getUnsignedText(group);
-			if (unsignedGroup.equalsIgnoreCase("pub")) {
-				entries.add(new Pub(positive ? null : trigger));
-			} else if (unsignedGroup.equalsIgnoreCase("op")) {
-				entries.add(new Op(positive));
-			} else if (unsignedGroup.equalsIgnoreCase("pri")) {
+			final SignedTextData signedTextData = new SignedTextData(group);
+			if (signedTextData.unsignedText.equalsIgnoreCase("pub")) {
+				entries.add(new Pub(signedTextData.positive ? null : trigger));
+			} else if (signedTextData.unsignedText.equalsIgnoreCase("op")) {
+				entries.add(new Op(signedTextData.positive));
+			} else if (signedTextData.unsignedText.equalsIgnoreCase("pri")) {
 				if (trigger != null) {
-					entries.add(new Pri(positive, trigger));
+					entries.add(new Pri(signedTextData.positive, trigger));
 				}
 			} else {
-				entries.add(new Group(group, Main.getPermissions(), plugin));
+				entries.add(new Group(signedTextData, Main.getPermissions(), plugin));
 			}
 		}
 
@@ -585,9 +596,9 @@ public class Message
 		for (String perm : permissions) {
 			entries.add(new Permission(perm, Main.getPermissions(), plugin));
 		}
-		
+
 		for (String world : worlds) {
-			entries.add(new com.tahkeh.loginmessage.entries.World(world, plugin));
+			entries.add(new com.tahkeh.loginmessage.matcher.entries.World(world, plugin));
 		}
 		return entries;
 	}
@@ -612,24 +623,21 @@ public class Message
 	 *            the event isn't <code>command</code>.
 	 */
 	private void preProcessMessage(final BukkitVariables variables) {
-		final String[] messages;
-		if (variables instanceof CommandVariables) {
-			messages = new String[] { ((CommandVariables) variables).command };
+		final String[] messageKeys;
+		if (variables instanceof KeyVariables) {
+			messageKeys = ((KeyVariables) variables).getKeys();
 		} else {
 			Set<String> keyList = getKeys(message.fileConfiguration, "messages." + variables.name);
 			if (keyList == null) {
-				messages = EMPTY_STRING_ARRAY;
+				messageKeys = EMPTY_STRING_ARRAY;
 			} else {
-				messages = keyList.toArray(EMPTY_STRING_ARRAY);
+				messageKeys = keyList.toArray(EMPTY_STRING_ARRAY);
 			}
 		}
-		for (String key : messages) {
-			if (!(variables instanceof DeathVariables) || !((DeathVariables) variables).key.equals(key)) {
-				break;
-			}
+		for (String key : messageKeys) {
 			final Player trueTrigger = getTrueTrigger(variables);
 			final Set<Entry> triggers = getEntries(trueTrigger, key, variables.name, "triggers");
-			if (matchEntries(trueTrigger, triggers)) {
+			if (DefaultMatcher.match(trueTrigger, triggers)) {
 				finishMessage(key, variables);
 			}
 		}
@@ -647,20 +655,6 @@ public class Message
 		} else {
 			return player;
 		}
-	}
-
-	public static boolean matchEntries(OfflinePlayer player, Collection<Entry> entries) {
-		boolean match = false;
-		for (Entry entry : entries) {
-			if (entry.match(player)) {
-				if (!entry.isPositive()) {
-					return false;
-				} else {
-					match = true;
-				}
-			}
-		}
-		return match;
 	}
 
 	public static double toDouble(final Object object, final double def) {
@@ -686,41 +680,64 @@ public class Message
 	 * @return the list of not empty message lines.
 	 */
 	private String[] getLines(String event, String name) {
-		List<Map<?,?>> mapList = this.message.fileConfiguration.getMapList("messages." + event + "." + name + ".messages");
+		List<MemorySectionFromMap> linesList = MemorySectionFromMap.getSectionList(this.message.fileConfiguration, "messages." + event + "." + name + ".messages");
 		String[] lines = EMPTY_STRING_ARRAY;
-		if (MinecraftUtil.isSet(mapList)) {
-			// See: MinecraftUtil.getRandomFromChances
-			// Read chances
-			int length = mapList.size();
-			double totalchance = 0;
-			double defChance = 1.0 / mapList.size();
-			for (Map<?, ?> messageNode : mapList) {
-				totalchance += toDouble(messageNode.get("chance"), defChance);
-			}
-			double value = Math.random() * totalchance;
-
-			if (mapList.get(0).get("order") != null) {
-				int idx;
-				if (!cycle.containsKey(name)) {
-					cycle.put(name, 0);
-					idx = 0;
-				} else {
-					idx = cycle.get(name);
-					if (idx >= length) {
-						idx = length - 1;
-						cycle.remove(name);
+		if (MinecraftUtil.isSet(linesList)) {
+			// if everything has a order it is ordered
+			final int idx;
+			boolean ordered = true;
+			Integer buffer = null;
+			for (MemorySectionFromMap memorySectionFromMap : linesList) {
+				if (memorySectionFromMap.isInt("order")) {
+					final int order = memorySectionFromMap.getInt("order");
+					if (buffer == null || buffer < order) {
+						buffer = order;
 					}
+				} else {
+					ordered = false;
+					break;
 				}
-				lines = getStringList(mapList.get(idx).get("order"), EMPTY_STRING_ARRAY);
-				cycle.put(name, (idx + 1) % length);
+			}
+			if (buffer == null) {
+				ordered = false;
+				idx = 0;
+			} else if (this.cycle.get(name) == null) {
+				idx = buffer;
 			} else {
-				for (Map<?, ?> messageNode : mapList) {
-					value -= toDouble(messageNode.get("chance"), defChance);
-					if (value < 0) {
-						lines = getStringList(messageNode.get("random"), EMPTY_STRING_ARRAY);
+				idx = this.cycle.get(name);
+			}
+			MemorySectionFromMap selected = null;
+			if (ordered) {
+				int next = idx;
+				boolean found = false;
+				for (MemorySectionFromMap memorySectionFromMap : linesList) {
+					if (memorySectionFromMap.isInt("order")) {
+						final int order = memorySectionFromMap.getInt("order");
+						if (order == idx) {
+							selected = memorySectionFromMap;
+							found = true;
+						} else if (selected == null || (!found && selected.getInt("order") > order)) {
+							selected = memorySectionFromMap;
+						}
+						if (order > idx && order < next) {
+							next = order;
+						}
+					} else {
+						ordered = false;
 						break;
 					}
 				}
+				this.cycle.put(name, next);
+			} else {
+				final double defChance = 1.0 / linesList.size();
+				List<ChanceElement<MemorySectionFromMap>> chances = new ArrayList<ChanceElement<MemorySectionFromMap>>(linesList.size());
+				for (MemorySectionFromMap memorySectionFromMap : linesList) {
+					chances.add(new DefaultChanceElement<MemorySectionFromMap>(memorySectionFromMap.getDouble("chance", defChance), memorySectionFromMap));
+				}
+				selected = MinecraftUtil.getRandomFromChances(chances);
+			}
+			if (selected != null) {
+				lines = getStringList(selected.get("message"), EMPTY_STRING_ARRAY);
 			}
 		} else {
 			lines = getStringList(message.fileConfiguration, "messages." + event + "." + name + ".message", EMPTY_STRING_ARRAY);
@@ -812,7 +829,7 @@ public class Message
 			if (cd > 0) {
 				List<String> cdstrs = new ArrayList<String>(players.length);
 				for (Player player : players) {
-					if (this.cooldown.isCooledDown(player, key, variables.name) && matchEntries(player, receivers)) {
+					if (this.cooldown.isCooledDown(player, key, variables.name) && DefaultMatcher.match(player, receivers)) {
 						cooledDown.add(player);
 						cdstrs.add(Cooldown.createKey(player, key, variables.name));
 					}
@@ -820,7 +837,7 @@ public class Message
 				task = this.cooldown.createTask(cdstrs, this.cooldown, cd);
 			} else {
 				for (Player player : players) {
-					if (matchEntries(player, receivers)) {
+					if (DefaultMatcher.match(player, receivers)) {
 						cooledDown.add(player);
 					}
 				}
@@ -955,28 +972,135 @@ public class Message
 			}
 		}
 	}
-	
+
+	private static List<Cause> getCauses(final YamlConfiguration message, final String path, final XLogger logger) {
+		final List<Cause> causes = new ArrayList<Cause>();
+		final String causesPath = path + ".causes";
+		List<MemorySectionFromMap> projectiles = MemorySectionFromMap.getSectionList(message, causesPath + ".projectiles");
+		for (MemorySectionFromMap projectile : projectiles) {
+			if (projectile.isString("shooter") && projectile.isString("damager")) {
+				causes.add(new ProjectileCause(projectile.getString("shooter"), projectile.getString("damager"), projectile.getBoolean("positive", true), logger));
+			}
+		}
+		for (String entity : getNonNullList(message.getStringList(causesPath + ".entity"))) {
+			if (entity != null) {
+				causes.add(new EntityCause(entity, logger));
+			}
+		}
+		for (String other : getNonNullList(message.getStringList(causesPath + ".other"))) {
+			if (other != null) {
+				final EnumCause cause = EnumCause.create(other);
+				if (cause != null) {
+					causes.add(cause);
+				}
+			}
+		}
+		return causes;
+	}
+
+	private static String getEntityName(final Entity entity) {
+		if (entity instanceof Player) {
+			return ((Player) entity).getName();
+		} else {
+			final String className = entity.getClass().getSimpleName();
+			if (className.startsWith("Craft")) {
+				return className.substring(5);
+			} else {
+				return className;
+			}
+		}
+	}
+
+	//@formatter:off
+	// 1st "cause" generation
+	/*
+	 * causes:
+	 *   - CraftSkeleton
+	 *   - CraftGhast
+	 *   - CraftZombie
+	 *   - Lava
+	 */
+	// 2nd "cause" generation
+	/*
+	 * # B: for org.bukkit.entity
+	 * # C: for org.bukkit.craftbukkit.entity
+	 * gen: 2 # to show, that the causes are working with the 2nd generation
+	 * causes:
+	 *   projectiles:
+	 *     - shooter: B:Skeleton
+	 *       damager: B:Projectile
+	 *     - shooter: B:Ghast
+	 *       damager: B:Fireball
+	 *     - shooter: *
+	 *       damager: B:SmallFireball
+	 *       positive: false
+	 *   entity:
+	 *     - B:Zombie
+	 *   other:
+	 *     - Lava
+	 */
+	//@formatter:on
 	public void onPlayerDeath(PlayerDeathEvent event) {
 		load(false, true);
 		Map<String, List<String>> keyCauses = new HashMap<String, List<String>>();
 		Player p = (Player) event.getEntity();
 		DeathHandler handler = new DeathHandler(p, table);
 		final String path = "messages." + DeathVariables.NAME;
-		Set<String> keys = getKeys(message.fileConfiguration, path);
+		final Set<String> keys = getKeys(message.fileConfiguration, path);
+		final Set<String> matchedKeys = new HashSet<String>(keys.size());
 		
 		if (keys != null) {
 			for (String key : keys) {
-				List<String> triggerCauses = getNonNullList(message.fileConfiguration.getStringList(path + "." + key + ".causes"));
-				Set<Cause> possibleCauses = handler.getCauses();
-				if (triggerCauses != null) {
-					keyCauses.put(key, triggerCauses);
-				}
-				if (DeathHandler.matchCauses(keyCauses.get(key), possibleCauses)) {
-					final String item = handler.isKillerPlayer() ? handler.getItem(plugin.getServer().getPlayerExact(handler.getKiller()).getItemInHand()) : "?";
-					DeathVariables variables = new DeathVariables(item, handler.getKiller(), key, p);
-					preProcessMessage(variables);
+				final int generation = message.fileConfiguration.getInt(path + "." + key + ".gen", 0);
+				if (generation == 2) {
+					final List<Cause> causes = getCauses(this.message.fileConfiguration, path + "." + key, this.logger);
+					if (DefaultMatcher.match(p.getLastDamageCause(), causes)) {
+						matchedKeys.add(key);
+					}
+				} else {
+					// Old way to handle this
+					List<String> triggerCauses = getNonNullList(message.fileConfiguration.getStringList(path + "." + key + ".causes"));
+					Set<com.tahkeh.loginmessage.entries.causes.Cause> possibleCauses = handler.getCauses();
+					if (triggerCauses != null) {
+						keyCauses.put(key, triggerCauses);
+					}
+					if (DeathHandler.matchCauses(keyCauses.get(key), possibleCauses)) {
+						final String item = handler.isKillerPlayer() ? handler.getItem(plugin.getServer().getPlayerExact(handler.getKiller()).getItemInHand()) : "?";
+						DeathVariables variables = new DeathVariables(item, handler.getKiller(), new String[] { key }, p);
+						preProcessMessage(variables);
+					}
 				}
 			}
+		}
+
+		if (matchedKeys.size() > 0) {
+			final EntityDamageEvent damageEvent = p.getLastDamageCause();
+			final String killer;
+			String item = null;
+			if (damageEvent instanceof EntityDamageByEntityEvent) {
+				final Entity damager = ((EntityDamageByEntityEvent) damageEvent).getDamager();
+				final Entity killerObject;
+				if (damager instanceof Projectile) {
+					killerObject = ((Projectile) damager).getShooter();
+				} else {
+					killerObject = damager;
+				}
+				killer = getEntityName(killerObject);
+				if (killerObject instanceof Player) {
+					item = this.table.getMaterialName(((Player) killerObject).getItemInHand().getData());
+				}
+			} else if (damageEvent instanceof EntityDamageByBlockEvent) {
+				final Block damager = ((EntityDamageByBlockEvent) damageEvent).getDamager();
+				if (damager != null) {
+					killer = this.table.getMaterialName(damager.getTypeId(), damager.getData());
+				} else {
+					killer = this.table.getMaterialName(Material.AIR);
+				}
+			} else {
+				killer = damageEvent.getCause().name();
+			}
+			DeathVariables variables = new DeathVariables(item, killer, matchedKeys.toArray(new String[0]), p);
+			preProcessMessage(variables);
 		}
 		
 		if (config.fileConfiguration.getBoolean("cleardeathmsg", true)) {

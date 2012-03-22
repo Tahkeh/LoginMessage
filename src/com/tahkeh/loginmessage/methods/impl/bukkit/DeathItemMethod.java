@@ -14,7 +14,12 @@ public class DeathItemMethod extends OriginalMethod<Variables> {
 	@Override
 	protected StringParameterType call(Variables globalParameters) {
 		if (globalParameters instanceof DeathVariables) {
-			return new StringParameterType(((DeathVariables) globalParameters).item);
+			final String item = ((DeathVariables) globalParameters).item;
+			if (item != null) {
+				return new StringParameterType(item);
+			} else {
+				return null;
+			}
 		} else {
 			return null;
 		}

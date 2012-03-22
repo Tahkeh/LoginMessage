@@ -23,8 +23,8 @@ import de.xzise.MinecraftUtil;
  */
 public class OnlistMethod extends DefaultNamedMethod<BukkitVariables> {
 
-	public final static String PREFIX = "&" + ChatColor.WHITE;
-	public final static String SUFFIX = "&" + ChatColor.WHITE;
+	public final static String PREFIX = ChatColor.WHITE.toString();
+	public final static String SUFFIX = ChatColor.WHITE.toString();
 	public final static String DELIMITER = ", ";
 
 	private final Message message;
@@ -35,12 +35,14 @@ public class OnlistMethod extends DefaultNamedMethod<BukkitVariables> {
 	}
 
 	private static String maybeColored(final String string) {
-		if (string.matches("[0-9a-fA-F]{1}")) {
-			return "&" + string;
+		ChatColor color = ColorMethod.getColor(string);
+		if (color != null) {
+			return color.toString();
 		} else {
 			return string;
 		}
 	}
+
 	@Override
 	public ParameterType call(Parameter[] parameters, int depth, BukkitVariables globalParameters) {
 		String prefix = PREFIX;

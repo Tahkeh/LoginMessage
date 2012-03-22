@@ -1,6 +1,7 @@
 package com.tahkeh.loginmessage.entries.causes;
 
-public interface Cause {
-	boolean isPositive();
-	boolean match(String cause);
+import com.tahkeh.loginmessage.matcher.Matcher;
+
+// Old cause generation! Don't move to com.tahkeh.loginmessage.matcher.*
+public interface Cause extends Matcher<String> {
 }

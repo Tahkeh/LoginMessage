@@ -1,11 +1,11 @@
-package com.tahkeh.loginmessage.entries;
+package com.tahkeh.loginmessage.matcher.entries;
 
 import org.bukkit.OfflinePlayer;
 
 import com.tahkeh.loginmessage.Main;
 
 public class World extends DefaultEntry {
-	
+
 	private final Main plugin;
 
 	public World(String text, Main plugin) {
@@ -15,6 +15,6 @@ public class World extends DefaultEntry {
 
 	@Override
 	public boolean match(OfflinePlayer player) {
-		return player.isOnline() ? plugin.getServer().getPlayerExact(player.getName()).getWorld().getName().equalsIgnoreCase(this.value) : false;
+		return player.isOnline() ? this.plugin.getServer().getPlayerExact(player.getName()).getWorld().getName().equalsIgnoreCase(this.signedTextData.unsignedText) : false;
 	}
 }

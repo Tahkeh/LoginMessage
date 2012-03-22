@@ -7,8 +7,8 @@ import java.util.Set;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
-import com.tahkeh.loginmessage.entries.Entry;
-import com.tahkeh.loginmessage.methods.variables.bukkit.BukkitVariables;
+import com.tahkeh.loginmessage.matcher.DefaultMatcher;
+import com.tahkeh.loginmessage.matcher.entries.Entry;
 import com.tahkeh.loginmessage.methods.variables.bukkit.ListVariables;
 
 public class PlayerList {
@@ -49,7 +49,7 @@ public class PlayerList {
 		}
 		
 		for (OfflinePlayer p : players) {
-			final BukkitVariables variables = new ListVariables(p);
+			final ListVariables variables = new ListVariables(p);
 			String processedFormat = plugin.msg.processLine(format, variables);
 			String processedSeparator = plugin.msg.processLine(separator, variables);
 			s = processedSeparator;
@@ -74,7 +74,7 @@ public class PlayerList {
 		Set<Entry> entries = getEntries();
 		
 		for (OfflinePlayer p : playerList) {
-			if(Message.matchEntries(p, entries)) {
+			if(DefaultMatcher.match(p, entries)) {
 				players.add(p);
 			}
 		}

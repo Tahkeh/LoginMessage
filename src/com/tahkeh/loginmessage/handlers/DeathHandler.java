@@ -61,7 +61,7 @@ public class DeathHandler {
 		}
 		return match;
 	}
-	
+
 	public Set<Cause> getCauses() {
 		Set<Cause> causes = new HashSet<Cause>();
 		EntityDamageEvent event = victim.getLastDamageCause();
@@ -104,11 +104,7 @@ public class DeathHandler {
 	}
 	
 	public String getItem(ItemStack material) {
-		int id = material.getTypeId();
-		byte data = material.getData().getData();
-		String item = table.getMaterialName(id, data);
-		
-		return item;
+		return this.table.getMaterialName(material.getData());
 	}
 	
 	public String getKiller() {

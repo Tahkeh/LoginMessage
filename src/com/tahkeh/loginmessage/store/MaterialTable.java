@@ -6,6 +6,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.bukkit.Material;
+import org.bukkit.material.MaterialData;
+
 import de.xzise.XLogger;
 
 public class MaterialTable extends PropertiesFile {
@@ -185,5 +189,13 @@ public class MaterialTable extends PropertiesFile {
 		}
 
 		return name;
+	}
+
+	public String getMaterialName(final Material material) {
+		return this.getMaterialName(material.getId(), (byte) 0);
+	}
+
+	public String getMaterialName(final MaterialData materialData) {
+		return this.getMaterialName(materialData.getItemTypeId(), materialData.getData());
 	}
 }
