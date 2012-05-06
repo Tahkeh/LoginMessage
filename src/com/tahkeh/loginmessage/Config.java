@@ -7,26 +7,25 @@ import java.io.IOException;
 
 import de.xzise.XLogger;
 
-public class Config //For all your configuration needs
+public class Config // For all your configuration needs
 {
 
 	private File folder;
 	private XLogger log;
 
-	public Config(File folder, Main instance, XLogger log)
-	{
+	public Config(File folder, Main instance, XLogger log) {
 		this.folder = folder;
 		this.log = log;
-		}
-	
-	public void setup(){
+	}
+
+	public void setup() {
 		File cfg = new File(folder, "config.yml");
 		File msg = new File(folder, "messages.yml");
 		File list = new File(folder, "lists.yml");
-		if(!cfg.exists()) //If, for some reason, the player decides to delete their .yml files, LM will create defaults
+		if (!cfg.exists()) // If, for some reason, the player decides to delete
+							// their .yml files, LM will create defaults
 		{
-			try
-			{
+			try {
 				cfg.createNewFile();
 				FileWriter fw = new FileWriter(cfg);
 				BufferedWriter o = new BufferedWriter(fw);
@@ -49,9 +48,6 @@ public class Config //For all your configuration needs
 				o.write("\n");
 				o.write("#autoload: When true, LoginMessage will automatically reload its files when an event is called.\n");
 				o.write("autoload: true\n");
-				o.write("\n");
-				o.write("#priority: Change the event priority. For advanced users only. See the wiki configuration page for details.\n");
-				o.write("priority: normal\n");
 				o.write("\n");
 				o.write("#separator: This is what will be used to separate advanced %ol codes.\n");
 				o.write("#Keep all text within the single quotes.\n");
@@ -92,21 +88,27 @@ public class Config //For all your configuration needs
 				o.write("\n");
 				o.write("#noplayerfound: What to return when a player types in a player name that does not exist (as a command argument).\n");
 				o.write("#Keep all text within the single quotes. You may use color codes and the %nm code to return the non-existant player.\n");
-				o.write("noplayerfound: '&cPlayer \"%nm\" does not exist!'"); // Add \n if more text is added past this point
-				
+				o.write("noplayerfound: '&cPlayer \"%nm\" does not exist!'\n");
+				o.write("#groups: If you are using Bukkit's built-in permissions for groups, you may configure this so that the %group code will work.\n");
+				o.write("#Format your group names in descending order with the permission required for that group following it (can be made up, they just have to be assigned it), i.e. the most powerful group is at the top of the list.\n");
+				o.write("#For example, an admin player might have the same permission required for the Mod group, but because the Admin group is listed before Mod, %group will give him the Admin group.\n");
+				o.write("#Also, for default players (as in, the permission/group players are assigned when they first login to your server), do not give them any permission. See the example below.\n");
+				o.write("groups:\n");
+				o.write("    Owner: loginmessage.*\n");
+				o.write("    Admin: loginmessage.admin\n");
+				o.write("    Mod: loginmessage.mod\n");
+				o.write("    Player: loginmessage.player\n");
+				o.write("    Guest: ''"); //Add \n if more text is added past this point
+
 				o.close();
 				fw.close();
-				
-			}
-			catch (IOException e)
-			{
+
+			} catch (IOException e) {
 				log.severe("Error creating config.yml file.");
 			}
 		}
-		if(!msg.exists())
-		{
-			try
-			{
+		if (!msg.exists()) {
+			try {
 				msg.createNewFile();
 				FileWriter fw = new FileWriter(msg);
 				BufferedWriter o = new BufferedWriter(fw);
@@ -308,6 +310,14 @@ public class Config //For all your configuration needs
 				o.write("            causes: [lightning]\n");
 				o.write("            message:\n");
 				o.write("                - '%nm got struck by lightning!'\n");
+				o.write("        magic:\n");
+				o.write("            triggers:\n");
+				o.write("                groups: [pub]\n");
+				o.write("            receivers:\n");
+				o.write("                groups: [pub]\n");
+				o.write("            causes: [magic]\n");
+				o.write("            message:\n");
+				o.write("                - '%nm was killed by magic!'\n");
 				o.write("        projectile:\n");
 				o.write("            triggers:\n");
 				o.write("                groups: [pub]\n");
@@ -348,20 +358,16 @@ public class Config //For all your configuration needs
 				o.write("            causes: [void]\n");
 				o.write("            message:\n");
 				o.write("                - '%nm fell far below bedrock!'");
-				//Add \n if more text is added past this point
-				
+				// Add \n if more text is added past this point
+
 				o.close();
 				fw.close();
-			}
-			catch (IOException e)
-			{
+			} catch (IOException e) {
 				log.severe("Error creating messages.yml file.");
 			}
 		}
-		if(!list.exists())
-		{
-			try
-			{
+		if (!list.exists()) {
+			try {
 				list.createNewFile();
 				FileWriter fw = new FileWriter(list);
 				BufferedWriter o = new BufferedWriter(fw);
@@ -396,16 +402,15 @@ public class Config //For all your configuration needs
 				o.write("        format: '&f[%Status&f] %nm'\n");
 				o.write("        separator: ', '\n");
 				o.write("        formatted: false\n");
-				o.write("        online: false"); //Add \n if more text is added past this point
-				
+				o.write("        online: false"); // Add \n if more text is
+													// added past this point
+
 				o.close();
 				fw.close();
-			}
-			catch (IOException e)
-			{
+			} catch (IOException e) {
 				log.severe("Error creating list.yml file.");
 			}
+		}
 	}
-	}
-	
+
 }

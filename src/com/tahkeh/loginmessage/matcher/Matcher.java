@@ -5,7 +5,7 @@ package com.tahkeh.loginmessage.matcher;
  * implementation. Any matcher could be positive or negative. If the matcher is
  * matching the parameter and is positive, than the parameter is meant by the
  * matcher. If the matcher is matching and negative, than it wasn't meant by the
- * matcher and should be skiped (no other matching positive node override a
+ * matcher and should be skipped (no other matching positive node override a
  * matching negative one).
  * 
  * @author Tahkeh

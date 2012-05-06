@@ -53,25 +53,6 @@ public class Main extends JavaPlugin {
 	private static PermissionsHandler permissions;
 	private static EconomyHandler economy;
 
-	//@formatter:off
-//	public Event.Priority getPriority() {
-//		String p = config.getString("priority", "normal");
-//		if (p.equalsIgnoreCase("monitor")) {
-//			return Event.Priority.Monitor;
-//		} else if (p.equalsIgnoreCase("lowest")) {
-//			return Event.Priority.Lowest;
-//		} else if (p.equalsIgnoreCase("low")) {
-//			return Event.Priority.Low;
-//		} else if (p.equalsIgnoreCase("high")) {
-//			return Event.Priority.High;
-//		} else if (p.equalsIgnoreCase("highest")) {
-//			return Event.Priority.Highest;
-//		} else {
-//			return Event.Priority.Normal;
-//		}
-//	}
-	//@formatter:on
-
 	@Override
 	public void onDisable() {
 		getServer().getScheduler().cancelTasks(this);
@@ -136,7 +117,7 @@ public class Main extends JavaPlugin {
 		if (sender instanceof Player) {
 			player = true;
 		}
-		String alias = label.toLowerCase() + String.format("%s", player ? "/" : "");
+		String alias = String.format("%s", player ? "/" : "") + label.toLowerCase();
 		if (command.getName().equalsIgnoreCase("lmsg")) {
 			if (args.length >= 1) {
 				if (args[0].equalsIgnoreCase("reload")) {

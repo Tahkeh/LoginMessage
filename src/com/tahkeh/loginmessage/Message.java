@@ -24,7 +24,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import com.tahkeh.loginmessage.entries.causes.Cause;
 import com.tahkeh.loginmessage.handlers.AFKHandler;
 import com.tahkeh.loginmessage.handlers.DeathHandler;
 import com.tahkeh.loginmessage.handlers.PlayerDataHandler;
@@ -110,6 +109,18 @@ public class Message
 		geoipFail.put("zip", config.fileConfiguration.getString("zipfail", "09001"));
 		geoipFail.put("rcode", config.fileConfiguration.getString("rcodefail", "TF"));
 		geoipFail.put("rname", config.fileConfiguration.getString("rnamefail", "Trollface"));
+	}
+	
+	public String getGroupName(Player p) {
+		PermissionsHandler permissions = Main.getPermissions();
+		String[] groups = getKeys(config.fileConfiguration, "groups").toArray(new String[0]);
+		for (int i=0;i<groups.length;i++) {
+			String perm = config.fileConfiguration.getString("groups." + groups[i]);
+			if (permissions.permission(p, BufferPermission.create(perm, false))) {
+				return groups[i];
+			}
+		}
+		return groups[groups.length-1];
 	}
 
 	public void scheduleIntervals(String event) {
@@ -527,6 +538,7 @@ public class Message
 		EconomyHandler economy = Main.getEconomy();
 		PermissionsHandler permissions = Main.getPermissions();
 		String ip = getIP(p);
+		String groupname = getGroupName(p);
 		Long rawtime = p.getWorld().getTime();
 
 		str = eventProcess(str, p, event, args);
@@ -558,8 +570,7 @@ public class Message
 		
 		if (permissions.isActive()) {
 			String world = p.getWorld().getName();
-			String groupname = getFirst(permissions.getGroup(world, p.getName()));
-			str = str.replaceAll("%group", groupname);
+			groupname = getFirst(permissions.getGroup(world, p.getName()));
 			if (getPrefix(groupname, world) != null) {
 				str = str.replaceAll("%prefix", getPrefix(groupname, world));
 			}
@@ -567,6 +578,7 @@ public class Message
 				str = str.replaceAll("%suffix", getSuffix(groupname, world));
 			}
 		}
+		str = str.replaceAll("%group", groupname);
 
 		return str;
 	}
@@ -1038,22 +1050,17 @@ public class Message
 	public void onPlayerDeath(PlayerDeathEvent event) {
 		load("death");
 		Map<String, String> args = new HashMap<String, String>();
-		Map<String, List<String>> keyCauses = new HashMap<String, List<String>>();
 		Player p = (Player) event.getEntity();
-		DeathHandler handler = new DeathHandler(p, table);
 		Set<String> keys = getKeys(message.fileConfiguration, "messages.death");
 		
 		if (keys != null) {
 			for (String key : keys) {
 				List<String> triggerCauses = getNonNullList(message.fileConfiguration.getStringList("messages.death." + key + ".causes"));
-				Set<Cause> possibleCauses = handler.getCauses();
-				if (triggerCauses != null) {
-					keyCauses.put(key, triggerCauses);
-				}
-				if (DeathHandler.matchCauses(keyCauses.get(key), possibleCauses)) {
+				DeathHandler handler = new DeathHandler(p, table);
+				if (handler.matchCauses(triggerCauses)) {
 					args.put("key", key);
-					args.put("entity", handler.getKiller());
-					args.put("item", handler.isKillerPlayer() ? handler.getItem(plugin.getServer().getPlayerExact(handler.getKiller()).getItemInHand()) : "?");
+					args.put("entity", handler.getKillerName());
+					args.put("item", handler.killerIsPlayer() ? handler.getItem(plugin.getServer().getPlayerExact(handler.getKillerName()).getItemInHand()) : "?");
 					preProcessMessage(p, "death", args);
 				}
 			}

@@ -1,6 +1,7 @@
 package com.tahkeh.loginmessage.handlers;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -9,22 +10,22 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.ItemStack;
 
-import com.tahkeh.loginmessage.entries.causes.Cause;
-import com.tahkeh.loginmessage.entries.causes.EntityCause;
-import com.tahkeh.loginmessage.entries.causes.OtherCause;
+import com.tahkeh.loginmessage.matcher.deathcauses.DeathCause;
+import com.tahkeh.loginmessage.matcher.deathcauses.EntityDeathCause;
+import com.tahkeh.loginmessage.matcher.deathcauses.NonEntityDeathCause;
 import com.tahkeh.loginmessage.store.MaterialTable;
 
 public class DeathHandler {
 	
 	private final Player victim;
 	private final MaterialTable table;
-	private String killer = "?";
-	private boolean killerIsPlayer = false;
+	private Entity killer = null;
+	private String killerName = "?";
 	
 	public DeathHandler(Player victim, MaterialTable table) {
 		this.victim = victim;
@@ -40,64 +41,57 @@ public class DeathHandler {
 		return table.getMaterialName(b.getType().getId(), b.getData());
 	}
 	
-	public static boolean matchCauses(List<String> possibleCauses, Collection<Cause> causes) {
+	public boolean matchCauses(List<String> triggerCauses) {
+		Set<DeathCause> causes = getCauses(triggerCauses);
+		DamageCause damageCause = victim.getLastDamageCause().getCause();
 		boolean match = false;
-		for (String causeString : possibleCauses) {
-			boolean negative = causeString.charAt(0) == '-';
-			if (negative) {
-				causeString = causeString.substring(1);
-			}
-			for (Cause cause : causes) {
-				if (cause.match(causeString)) {
-					if (negative) {
-						match = false;
-						break;
-					} else {
-						match = true;
-					}
+		for (DeathCause cause : causes) {
+			if (cause.match(damageCause)) {
+				if (!cause.isPositive()) {
+					return false;
+				} else {
+					match = true;
 				}
 			}
 		}
 		return match;
 	}
-
-	public Set<Cause> getCauses() {
-		Set<Cause> causes = new HashSet<Cause>();
-		EntityDamageEvent event = victim.getLastDamageCause();
-		DamageCause damageCause = event.getCause();
-		String cause = damageCause.name().toLowerCase();
-		if (damageCause == DamageCause.ENTITY_ATTACK || damageCause == DamageCause.ENTITY_EXPLOSION) {
-			Entity attacker = ((EntityDamageByEntityEvent)event).getDamager();
-			String attackerClass = attacker.getClass().getSimpleName();
-			
-			//Special cases for mobs with projectiles
-			if (attackerClass.equals("CraftProjectile")) {
-				attackerClass = "CraftSkeleton";
-			}
-			if (attackerClass.equals("CraftFireball")) {
-				attackerClass = "CraftGhast";
-			}
-			if (attackerClass.equals("CraftSmallFireball")) {
-				attackerClass = "CraftBlaze";
-			}
-			causes.add(new EntityCause(attackerClass));
-			if (attacker instanceof Player) {
-				killer = ((Player) attacker).getName();
-				killerIsPlayer = true;
-			} else {
-				killer = attacker.toString().substring(5).toLowerCase();
-			}
-		} else {
+	
+	public Set<DeathCause> getCauses(List<String> triggerCauses) {
+		List<String> entityCauses = new ArrayList<String>();
+		Collections.addAll(entityCauses, "projectile", "entity_attack", "entity_explode");
+		Set<DeathCause> causes = new HashSet<DeathCause>();
+		for (String cause : triggerCauses) {
 			if (inLava()) {
 				cause = "lava";
 			}
-			causes.add(new OtherCause(cause));
-		}
-		if (damageCause == DamageCause.PROJECTILE) {
-			killer = ((EntityDamageByEntityEvent)event).getDamager().toString().substring(5).toLowerCase();
-		}
-		if (damageCause == DamageCause.SUFFOCATION) {
-			killer = getSuffocator();
+			DamageCause damageCause = null;
+			try {
+				damageCause = DamageCause.valueOf(cause.toUpperCase());
+			} catch (IllegalArgumentException e) {
+			}
+			if ((damageCause != null) && !entityCauses.contains(cause.toLowerCase())) {
+				if (cause.toLowerCase().equals("suffocation")) {
+					killerName = getSuffocator();
+				}
+				causes.add(new NonEntityDeathCause(cause));
+			} else {
+				Entity attacker = null;
+				try {
+					attacker = ((EntityDamageByEntityEvent)victim.getLastDamageCause()).getDamager();
+				} catch (ClassCastException e) {
+				}
+				if (attacker != null) {
+					killer = attacker;
+					if (killer instanceof Projectile) {
+						Projectile proj = (Projectile) killer;
+						killer = proj.getShooter();
+					}
+					killerName = killerIsPlayer() ? ((Player)killer).getName() : killer.getType().getName().toLowerCase();
+					killer = attacker;
+				}
+				causes.add(new EntityDeathCause(cause, killer));
+			}
 		}
 		return causes;
 	}
@@ -110,11 +104,15 @@ public class DeathHandler {
 		return item;
 	}
 	
-	public String getKiller() {
+	public Entity getKiller() {
 		return killer;
 	}
 	
-	public boolean isKillerPlayer() {
-		return killerIsPlayer;
+	public String getKillerName() {
+		return killerName;
+	}
+	
+	public boolean killerIsPlayer() {
+		return killer instanceof Player;
 	}
 }
