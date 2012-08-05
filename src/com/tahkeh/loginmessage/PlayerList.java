@@ -18,7 +18,7 @@ import com.tahkeh.loginmessage.matcher.entries.User;
 import com.tahkeh.loginmessage.matcher.entries.World;
 
 public class PlayerList {
-	private final Main plugin;
+	private final LoginMessage plugin;
 	private final boolean online;
 	private final boolean formatted;
 	private final List<String> groups;
@@ -29,7 +29,7 @@ public class PlayerList {
 	private final String separator;
 	private final Player trigger;
 	
-	public PlayerList(Main plugin, boolean online, boolean formatted, List<String> groups, List<String> users, List<String> permissions, List<String> worlds, String format, String separator, Player trigger) {
+	public PlayerList(LoginMessage plugin, boolean online, boolean formatted, List<String> groups, List<String> users, List<String> permissions, List<String> worlds, String format, String separator, Player trigger) {
 		this.plugin = plugin;
 		this.online = online;
 		this.formatted = formatted;
@@ -55,8 +55,8 @@ public class PlayerList {
 		}
 		
 		for (OfflinePlayer p : players) {
-			String processedFormat = plugin.msg.processLine(format, p, "list", null);
-			String processedSeparator = plugin.msg.processLine(separator, p, "list", null);
+			String processedFormat = plugin.main.msg.processLine(format, p, "list", null);
+			String processedSeparator = plugin.main.msg.processLine(separator, p, "list", null);
 			s = processedSeparator;
 			if (!formatted) {
 				list = list + (on >= length ? processedFormat : processedFormat + processedSeparator);
@@ -76,8 +76,14 @@ public class PlayerList {
 	public List<OfflinePlayer> getPlayers() {
 		List<OfflinePlayer> players = new ArrayList<OfflinePlayer>();
 		Set<Entry> entries = getEntries();
+		OfflinePlayer[] offplayers = null;
+		if (!online) {
+			offplayers = plugin.getServer().getOfflinePlayers();
+		} else {
+			offplayers = plugin.getServer().getOnlinePlayers();
+		}
 		
-		for (OfflinePlayer p : plugin.getServer().getOfflinePlayers()) {
+		for (OfflinePlayer p : offplayers) {
 			if(Message.matchEntries(p, entries)) {
 				players.add(p);
 			}

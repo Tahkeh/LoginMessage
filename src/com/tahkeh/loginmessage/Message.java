@@ -55,7 +55,7 @@ public class Message
 	private final static BufferPermission<String> PREFIX_PERMISSION = BufferPermission.create("prefix", (String) null);
 	private final static BufferPermission<String> SUFFIX_PERMISSION = BufferPermission.create("suffix", (String) null);
 
-	private final Main plugin;
+	private final LoginMessage plugin;
 	private final FileConfigurationPair<YamlConfiguration> config;
 	private final FileConfigurationPair<YamlConfiguration> message;
 	private final FileConfigurationPair<YamlConfiguration> list;
@@ -70,7 +70,7 @@ public class Message
 	
 	private final Cooldown cooldown;
 
-	public Message(Main plugin, FileConfigurationPair<YamlConfiguration> config, FileConfigurationPair<YamlConfiguration> message, FileConfigurationPair<YamlConfiguration> list, XLogger logger, MaterialTable table) {
+	public Message(LoginMessage plugin, FileConfigurationPair<YamlConfiguration> config, FileConfigurationPair<YamlConfiguration> message, FileConfigurationPair<YamlConfiguration> list, XLogger logger, MaterialTable table) {
 		this.plugin = plugin;
 		this.config = config.load();
 		this.message = message.load();

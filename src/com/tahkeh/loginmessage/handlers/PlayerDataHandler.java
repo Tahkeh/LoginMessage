@@ -64,28 +64,46 @@ public class PlayerDataHandler {
 				Location l = ls.getLocation(getIP(p));
 				//TODO: Find more efficient way of doing next part.
 				if (type.equals("city")) {
-					String city = l.city;
-					result = city != null ? city : geoipFail.get("city");
+					if (l.city == null) {
+						result = geoipFail.get("city");
+					} else {
+						result = l.city;
+					}
 				}
 				if (type.equals("ccode")) {
-					String countryCode = l.countryCode;
-					result = countryCode != null ? countryCode : geoipFail.get("ccode");
+					if (l.countryCode == null) {
+						result = geoipFail.get("ccode");
+					} else {
+						result = l.countryCode;
+					}
 				}
 				if (type.equals("cname")) {
-					String countryName = l.countryName;
-					result = countryName != null ? countryName : geoipFail.get("cname");
+					if (l.countryName == null) {
+						result = geoipFail.get("cname");
+					} else {
+						result = l.countryName;
+					}
 				}
 				if (type.equals("zip")) {
-					String postalCode = l.postalCode;
-					result = postalCode != null ? postalCode : geoipFail.get("zip");
+					if (l.postalCode == null) {
+						result = geoipFail.get("zip");
+					} else {
+						result = l.postalCode;
+					}
 				}
 				if (type.equals("rcode")) {
-					String region = l.region;
-					result = region != null ? region : geoipFail.get("rcode");
+					if (l.region == null) {
+						result = geoipFail.get("rcode");
+					} else {
+						result = l.region;
+					}
 				}
 				if (type.equals("rname")) {
-					String regionName = getRegionName(p, l, geoipFail);
-					result = regionName != null ? regionName : geoipFail.get("rname");
+					if (getRegionName(p, l, geoipFail) == null) {
+						result = geoipFail.get("rname");
+					} else {
+						result = getRegionName(p, l, geoipFail);
+					}
 				}
 			} catch (IOException e) {
 				result = getString(p, type, geoipFail.get(type));

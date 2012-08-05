@@ -11,13 +11,14 @@ import org.bukkit.entity.Player;
 import com.maxmind.geoip.Location;
 import com.maxmind.geoip.LookupService;
 import com.maxmind.geoip.regionName;
+import com.tahkeh.loginmessage.LoginMessage;
 import com.tahkeh.loginmessage.Main;
 
 public class Store {
-	private final Main plugin;
+	private final LoginMessage plugin;
 	private final PropertiesFile prop;
 	
-	public Store(Main plugin, PropertiesFile file) {
+	public Store(LoginMessage plugin, PropertiesFile file) {
 		this.plugin = plugin;
 		this.prop = file;
 	}
@@ -75,8 +76,8 @@ public class Store {
 	
 	public String getLocation(String type, Player p, String event) {
 		load("null");
-		plugin.getConfiguration().load();
-		return prop.getString(p.getName() + "." + type, plugin.getConfiguration().fileConfiguration.getString(type + "fail"));
+		plugin.main.getConfiguration().load();
+		return prop.getString(p.getName() + "." + type, plugin.main.getConfiguration().fileConfiguration.getString(type + "fail"));
 	}
 	
 	public boolean isLocal(Player p) {

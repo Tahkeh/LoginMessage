@@ -2,13 +2,13 @@ package com.tahkeh.loginmessage.matcher.entries;
 
 import org.bukkit.OfflinePlayer;
 
-import com.tahkeh.loginmessage.Main;
+import com.tahkeh.loginmessage.LoginMessage;
 
 public class World extends DefaultEntry {
 
-	private final Main plugin;
+	private final LoginMessage plugin;
 
-	public World(String text, Main plugin) {
+	public World(String text, LoginMessage plugin) {
 		super(text);
 		this.plugin = plugin;
 	}

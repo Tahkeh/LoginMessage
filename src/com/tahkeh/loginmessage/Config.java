@@ -13,7 +13,7 @@ public class Config // For all your configuration needs
 	private File folder;
 	private XLogger log;
 
-	public Config(File folder, Main instance, XLogger log) {
+	public Config(File folder, LoginMessage instance, XLogger log) {
 		this.folder = folder;
 		this.log = log;
 	}

@@ -2,14 +2,13 @@ package com.tahkeh.loginmessage.handlers;
 
 import org.bukkit.entity.Player;
 
-import com.tahkeh.loginmessage.Main;
-
+import com.tahkeh.loginmessage.LoginMessage;
 import belgium.Balor.Workers.AFKWorker;
 
 public class AFKHandler {
-	private final Main plugin;
+	private final LoginMessage plugin;
 
-	public AFKHandler(Main plugin) {
+	public AFKHandler(LoginMessage plugin) {
 		this.plugin = plugin;
 	}
 

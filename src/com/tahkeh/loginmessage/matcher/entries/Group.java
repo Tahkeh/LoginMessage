@@ -2,21 +2,21 @@ package com.tahkeh.loginmessage.matcher.entries;
 
 import org.bukkit.OfflinePlayer;
 
-import com.tahkeh.loginmessage.Main;
+import com.tahkeh.loginmessage.LoginMessage;
 
 import de.xzise.wrappers.permissions.PermissionsHandler;
 
 public class Group extends DefaultEntry {
 	private final PermissionsHandler handler;
-	private final Main plugin;
+	private final LoginMessage plugin;
 
-	public Group(String group, PermissionsHandler handler, Main plugin) {
+	public Group(String group, PermissionsHandler handler, LoginMessage plugin) {
 		super(group);
 		this.handler = handler;
 		this.plugin = plugin;
 	}
 
-	public Group(final SignedTextData signedTextData, PermissionsHandler handler, Main plugin) {
+	public Group(final SignedTextData signedTextData, PermissionsHandler handler, LoginMessage plugin) {
 		super(signedTextData);
 		this.handler = handler;
 		this.plugin = plugin;

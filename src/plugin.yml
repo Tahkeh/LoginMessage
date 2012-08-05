@@ -1,6 +1,6 @@
 name: LoginMessage
-main: com.tahkeh.loginmessage.Main
-version: 0.8.1
+main: com.tahkeh.loginmessage.LoginMessage
+version: 0.8.2
 authors: [Tahkeh, xZise]
 
 commands:
